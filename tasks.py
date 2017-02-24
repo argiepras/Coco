@@ -148,6 +148,11 @@ def allianceloss():
             break
 
 
+#hourly check for vacation-eligible nations and subsequent placing them in it
+@periodic_task(run_every=crontab(minute="5", hour="*", day_of_week="*"))
+def vaccheck():
+    Nation.objects.filter(last_seen__gt=timezone.now() - inactivedelta())
+
 
 
 @periodic_task(run_every=crontab(minute="0", hour="0, 12", day_of_week="*"))
