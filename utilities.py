@@ -29,19 +29,7 @@ def attrchange(current, amount, limit=0):
 
 def planechange(current, amount):
     if current + amount > 10: 
-        return amount - (current + amountdef paginate_me(query, count, page):
-    paginator = Paginator(query, count)
-    page = int(page)
-    try:
-        listofstuff = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        listofstuff = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        listofstuff = paginator.page(paginator.num_pages)
-
-    return paginator, listofstuff - 10)
+        return amount - (current + amount)
     elif current + amount < 0:
         return amount - (current + amount)
     return amount
