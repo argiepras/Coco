@@ -1,0 +1,468 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load timetags %}
+<style>
+	.bank {
+		text-align: left;
+	}
+</style>
+<div class="container">
+		
+<div class="row">
+	<div class="col-xs-6 col-xs-offset-3">
+		<h1>{{ alliance.name }} control panel</h1>
+	</div>
+	<div class="col-xs-3">
+		<a href="{% url 'alliance:main' %}">
+			<button class="btn" style="margin-top: 20px">Back to overview</button>
+		</a>
+	</div>
+</div>
+{% if result %}
+	<div class="result">
+		{{ result }}
+	</div>
+{% endif %}
+
+{% if permissions.can_invite %}
+<form method="POST">{% csrf_token %}
+	<p style="margin: 50px"><h4>invite player</h4></p>
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			{{ inviteform.name }}
+		</div>
+	</div>
+	<button type="submit" class="btn btn-default" style="margin: 20px" name="invite">Invite</button>
+</form>
+{% endif %}
+
+
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#settings">
+	<h3><b>General Settings</b></h3>
+</div>
+<div class="collapse" id="settings">
+{% if permissions.template.rank == 0 %} 
+	<p>Set new heir</p>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			{{ heirform.heir }}
+		</div>
+		<div class="col-xs-1">
+			<button type="submit" class="btn btn-default" name="setheir">
+				Set Heir
+			</button>
+		</div>
+	</div>
+	</form>
+{% endif %}
+	<p style="margin-top: 2em; margin-bottom: 1em;">Set Description</p>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			{{ descriptionform.content }}
+		</div>
+		<div class="col-xs-1">
+			<button type="submit" class="btn btn-default" name="setdescription">
+				Set Description
+			</button>
+		</div>
+	</div>
+	</form>
+
+
+	<p style="margin-top: 2em; margin-bottom: 1em;">Set Anthem</p>
+	<h5 style="margin-bottom: 1em;">
+		Paste the video code from the youtube link, eg. https://www.youtube.com/watch?v=<b>R0tam7UPXHs</b>
+	</h5>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			{{ anthemform.anthem }}
+		</div>
+		<div class="col-xs-1">
+			<button type="submit" class="btn btn-default" name="setanthem">
+				Set New Anthem
+			</button>
+		</div>
+	</div>
+	</form>
+
+
+	<p style="margin-top: 2em; margin-bottom: 1em;">Set Flag</p>
+	<h5 style="margin-bottom: 1em;">
+		Paste the full URL</b>
+	</h5>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			{{ flagform.flag }}
+		</div>
+		<div class="col-xs-1">
+			<button type="submit" class="btn btn-default" name="setflag">
+				Set New Flag
+			</button>
+		</div>
+	</div>
+	</form>
+
+
+	<p style="margin-top: 2em; margin-bottom: 1em;">Application setting</p>
+	<form method="POST">{% csrf_token %}
+	{% for radio in applicantsetform.choice %}
+	<div class="row">
+		<div class="col-xs-6 col-xs-offset-2 spacer-small">
+			{{ radio.choice_label }}
+		</div>
+		<div class="col-xs-1">
+			{{ radio.tag }}
+		</div>
+	</div>
+	{% endfor %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			<button type="submit" class="btn btn-default spacer" name="setapplicants">
+				Set
+			</button>
+		</div>
+	</div>
+	</form>
+
+	<form method="POST">{% csrf_token %}
+		{% for radio in applicantcommform.choice %}
+	<div class="row">
+		<div class="col-xs-6 col-xs-offset-2 spacer-small">
+			{{ radio.choice_label }}
+		</div>
+		<div class="col-xs-1">
+			{{ radio.tag }}
+		</div>
+	</div>
+	{% endfor %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			<button type="submit" class="btn btn-default spacer" name="setcommapplicants">
+				Set
+			</button>
+		</div>
+	</div>
+	</form>
+</div>
+
+{% if permissions.can_initiatives %}
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#initiatives">
+	<h3><b>Alliance Initiatives</b></h3>
+</div>
+<div class="collapse" id="initiatives">
+	<table class="table table-striped">
+		<thead>
+			<tr>
+				<td style="width: 80%">Initiative</td>
+				<td>Action</td>
+				<td>Time to Change</td>
+			</tr>
+		</thead>
+		<tbody>
+		{% for initiative in initiatives %}
+			<tr>
+				<td>
+					<a href="#" data-toggle="tooltip" data-placement="right" title="{{ initiative.tooltip }}">
+						{{ initiative.txt }}
+					</a>
+				</td>
+				<td><form method="POST">{% csrf_token %}
+					{% if initiative.status %}
+					<input type="hidden" name="initiative" value="{{ initiative.initiative }}">
+				<button type="submit" class="btn btn-danger" name="initiativechange" value="off">
+					Recall
+				</button>
+					{% else %}
+					<input type="hidden" name="initiative" value="{{ initiative.initiative }}">
+				<button type="submit" class="btn btn-success" name="initiativechange" value="on">
+					Enact
+				</button>
+					{% endif %}
+				</td></form>
+				<td>
+				{% if initiative.timer %}
+					{{ initiative.timer|timer }}
+				{% else %}
+					<span style="color: green"><b>Now</b></span>
+				{% endif %}
+				</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+</div>
+{% endif %}
+
+
+{% if permissions.can_manage %}
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#management">
+	<h3><b>Member Management</b></h3>
+</div>
+<div class="collapse" id="management">
+
+	<div class="row spacer">
+		<div class="col-xs-6 col-xs-offset-3">
+			<p>Set member title</p>
+		</div>
+	</div>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-4 col-xs-offset-4">
+			<div class="input-group">
+			{{ membertitleform.title }}
+      		<span class="input-group-btn">
+        		<button type="submit" class="btn btn-default" name="membertitle">Set</button>
+      		</span>
+    		</div>
+		</div>
+	</div>
+	</form>
+
+{% if permissions.can_promote %}
+	<div class="row spacer">
+		<div class="col-xs-6 col-xs-offset-3">
+			<p>Promote member to officer</p>
+		</div>
+	</div>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-2 col-xs-offset-3">
+			{{ promoteform.member }}
+		</div>
+		<div class="col-xs-2">
+			{{ promoteform.template }}
+		</div>
+		<div class="col-xs-2">
+			<button type="submit" class="btn btn-default" name="promote">
+				Promote member
+			</button>
+		</div>
+	</div>
+	</form>
+{% endif %}
+
+{% if permissions.can_change %}
+	<div class="row spacer">
+		<div class="col-xs-6 col-xs-offset-3">
+			<p>Change officer permissions</p>
+		</div>
+	</div>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-2 col-xs-offset-3">
+			{{ changeform.officer }}
+		</div>
+		<div class="col-xs-2">
+			{{ changeform.template }}
+		</div>
+		<div class="col-xs-2">
+			<button type="submit" class="btn btn-default" name="change">
+				Change Permissions
+			</button>
+		</div>
+	</div>
+	</form>
+{% endif %}
+
+{% if permissions.can_demote %}
+	<div class="row spacer">
+		<div class="col-xs-6 col-xs-offset-3">
+			<p>Demote officer</p>
+		</div>
+	</div>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-2 col-xs-offset-4">
+			{{ demoteform.officer }}
+		</div>
+		<div class="col-xs-2">
+			<button type="submit" class="btn btn-default" name="demote">
+				Demote officer
+			</button>
+		</div>
+	</div>
+	</form>
+{% endif %}
+</div><!-- end of management collapse -->
+{% endif %}
+
+
+{% if permissions.can_manage_permissions %}
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#permissions">
+	<h3><b>Permission Management</b></h3>
+</div>
+<div class="collapse" id="permissions">
+	<p style="margin-top: 2em; margin-bottom: 1em;">Alter Existing Template</p>
+	<form method="POST" action="{% url 'alliance:templates' %}">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-3 col-xs-offset-3">
+			{{ templatesform.template }}
+		</div>
+		<div class="col-xs-2">
+			<button type="submit" class="btn btn-default" name="alter">
+				Alter Template
+			</button>
+		</div>
+	</div>
+	</form>
+
+	<p style="margin-top: 2em;">Delete Existing Template</p>
+	<h5 style="margin-bottom: 1em;">note: officers with the template are demoted to members</h5>
+	<form method="POST">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-3 col-xs-offset-3">
+			{{ templatesform.template }}
+		</div>
+		<div class="col-xs-2">
+			<button type="submit" class="btn btn-default" name="delete">
+				Delete Template
+			</button>
+		</div>
+	</div>
+	</form>
+
+	<p style="margin-top: 2em; margin-bottom: 1em;">Alter Existing Template</p>
+	<form method="POST" action="{% url 'alliance:templates' %}">{% csrf_token %}
+	<div class="row">
+		<div class="col-xs-6 col-xs-offset-3">
+			<button type="submit" class="btn btn-default" name="new">
+				Create New Template
+			</button>
+		</div>
+	</div>
+	</form>
+</div>
+{% endif %}
+
+
+{% if permissions.can_banking %}
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#banking">
+	<h3><b>Banking Management</b></h3>
+</div>
+<div class="collapse" id="banking">
+	<p>
+		Set maximum withdrawal limits and whether limits apply per nation or as alliance total
+	</p>
+<form method="POST">{% csrf_token %}
+	<div class="row spacer-small">
+		<div class="col-xs-6 col-xs-offset-3">
+			{% for radio in bankingform.per_nation %}
+			<div class="row spacer-small">
+				<div class="col-xs-4 col-xs-offset-3">
+					{{ radio.choice_label }}
+				</div>
+				<div class="col-xs-1">
+					{{ radio.tag }}
+				</div>
+			</div>
+			{% endfor %}
+		</div>
+	</div>
+	<div class="row spacer-small">
+		<div class="col-xs-4 col-xs-offset-2">
+			<p class="bank">Cash withdrawal limit</p>
+		</div>
+		<div class="col-xs-3">
+			<div class="input-group">
+ 				<span class="input-group-addon">$</span>
+  					{{ bankingform.budget_limit }}
+  				<span class="input-group-addon">k</span>
+			</div>
+		</div>
+	</div>
+	<div class="row spacer-small">
+		<div class="col-xs-4 col-xs-offset-2">
+			<p class="bank">Oil withdrawal limit</p>
+		</div>
+		<div class="col-xs-3">
+			<div class="input-group">
+  				{{ bankingform.oil_limit }}
+  				<span class="input-group-addon">Mbbls</span>
+			</div>
+		</div>
+	</div>
+	<div class="row spacer-small">
+		<div class="col-xs-4 col-xs-offset-2">
+			<p class="bank">Manufactured goods withdrawal limit</p>
+		</div>
+		<div class="col-xs-3">
+			<div class="input-group">
+  				{{ bankingform.mg_limit }}
+  				<span class="input-group-addon">Tons</span>
+			</div>
+		</div>
+	</div>
+	<div class="row spacer-small">
+		<div class="col-xs-4 col-xs-offset-2">
+			<p class="bank">Food withdrawal limit</p>
+		</div>
+		<div class="col-xs-3">
+			<div class="input-group">
+  				{{ bankingform.food_limit }}
+  				<span class="input-group-addon">Tons</span>
+			</div>
+		</div>
+	</div>
+	<div class="row spacer-small">
+		<div class="col-xs-4 col-xs-offset-2">
+			<p class="bank">Raw Material withdrawal limit</p>
+		</div>
+		<div class="col-xs-3">
+			<div class="input-group">
+  				{{ bankingform.rm_limit }}
+  				<span class="input-group-addon">Tons</span>
+			</div>
+		</div>
+	</div>
+	<div class="row spacer-small">
+		<div class="col-xs-6 col-xs-offset-3">
+			<button type="submit" class="btn btn-default" name="bankingset">
+				Set New Limits
+			</button>
+		</div>
+	</div>
+</form>
+</div>
+{% endif %}
+
+
+{% if permissions.is_taxman %}
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#taxmanning">
+	<h3><b>Taxation Management</b></h3>
+</div>
+<div class="collapse" id="taxmanning">
+	<p>
+		Set tax rates for the alliance tax brackets
+	</p>
+<form method="POST">{% csrf_token %}
+	{% for field in taxrateform %}
+	<div class="row spacer-small">
+		<div class="col-xs-3 col-xs-offset-3">
+			<p>{{ field.label }}</p>
+		</div>
+		<div class="col-xs-2">
+			<div class="input-group">
+				{{ field }}
+				<span class="input-group-addon">%</span>
+			</div>
+		</div>
+	</div>
+	{% endfor %}
+	<div class="row spacer-small">
+		<div class="col-xs-4 col-xs-offset-4">
+			<button type="submit" class="btn btn-default" name="taxes">
+				Set new taxrates
+			</button>
+		</div>
+	</div>
+</form>
+</div>
+{% endif %}
+
+</div>
+
+{% endblock %}

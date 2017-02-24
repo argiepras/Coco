@@ -1,0 +1,24 @@
+
+{% if img %}
+    {% load static %}
+    <div><center>
+        <img src="{% static 'events/'|add:img %}" style="max-height: 250px; max-width: 250px">
+    </center></div>
+{% endif %}
+<p style="margin: 40px">{{ description }}</p>
+
+<form method="POST">
+<input type="hidden" name="event" value="{{ id }}">
+<center>
+{% for button in buttons %}
+    <div class="col-xs-6">
+        <a href="#" data-toggle="tooltip" data-placement="right" title="{{ button.tooltip }}">
+            <i class="icon-question-sign">
+                <button type="submit" name="choice" value="{{ button.name }}" class="btn btn-default spacer">
+                    {{ button.description }}
+                </button>
+            </i>        
+        </a>
+    </div>
+{% endfor %}
+</center>

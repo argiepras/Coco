@@ -1,0 +1,11 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+<div class="warresult">
+    {% load static %}
+    <img src="{% static img %}">
+        <p style="margin: 30px"><b>{{ result }}</b></p>
+<a href=""><button class="btn">Return</button></a>
+</div>
+
+{% endblock %}

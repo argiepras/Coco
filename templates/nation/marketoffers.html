@@ -1,0 +1,61 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<h2 style="margin: 50px">Free Market Offers</h2>
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+{% load humanize %}
+{% if offers %}
+
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'market:offers' page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+<div class="declarations">
+    {% for offer in offers %}
+        <div class="declaration">
+            <div class="row">
+                <div class="col-sm-10">
+                    <div style="text-align: left; padding-left: 10px">
+                    <a href="{{ offer.nation.get_absolute_url }}">
+                    <img src="{{ offer.nation.settings.showflag }}" height="20">
+                    <b>{{ offer.nation.name }}</b></a> 
+                    has offered the following
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    {{ offer.timestamp|naturaltime }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="dec-content">
+                        {{ offer.content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<p>There are no offers made yet! Be the first to make one!</p>
+
+{% endif %}
+
+<form method="POST">{% csrf_token %}
+<div class="row">
+    <div class="col-sm-4 col-sm-offset-4">
+        {{ offerform.offer }}
+    </div>
+</div>
+    <div><button type="submit" class="btn" style="margin: 20px" name="postoffer">Place Offer</button></div>
+</form>
+
+{% endblock %}

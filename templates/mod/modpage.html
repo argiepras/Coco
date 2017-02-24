@@ -1,0 +1,136 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+    <p class="spacer"><h2>Mod {{ mod.name }}</h2></p>
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+<div class="bigspacer">
+    <div class="row">
+        <div class="col-xs-7 col-xs-offset-1">
+            <p class="leftie">Active reports: </p>
+        </div>
+        <div class="col-xs-4"> 
+            <p>Total: {{ reportcount }}</p>
+        </div>
+    </div>
+<form method="POST">{% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td>Report</td>
+                <td>Type</td>
+                <td>Claimed at</td>
+                <td>Action</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in active_reports %}
+                <tr>
+                    <td><a href="{{ report.get_absolute_url }}">
+                        {{ report.reported.name }} reported by {{ report.reporter.name }}
+                    </a></td>
+                    <td>{{ report.reason }}</td>
+                    <td>{{ report.mod_timestamp|date:"o/m/d G:i" }}</td>
+                    <td>
+                        <button type="submit" class="btn btn-default" name="revoke" value="{{ report.pk }}">
+                            Revoke
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+    
+</div>
+
+<div class="bigspacer">
+    <div class="row">
+        <div class="col-xs-7 col-xs-offset-1">
+            <p class="leftie">Last 10 completed reports: </p>
+        </div>
+        <div class="col-xs-4"> 
+            <p>Total: {{ completed_reportcount }}</p>
+        </div>
+    </div>
+<form method="POST">{% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td>Report</td>
+                <td>Type</td>
+                <td>Completed at</td>
+                <td>Conclusion</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in completed_reports %}
+                <tr>
+                    <td><a href="{{ report.get_absolute_url }}">
+                        {{ report.reported.name }} reported by {{ report.reporter.name}}
+                    </a></td>
+                    <td>{{ report.reason }}</td>
+                    <td>{{ report.mod_timestamp|date:"o/m/d G:i" }}</td>
+                    <td>{{ report.conclusion }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+    <button class="btn btn-default">See all reports</button>
+</div>
+
+
+    <div class="row">
+        <div class="col-xs-7 col-xs-offset-1">
+            <p class="leftie">Last 10 player views: </p>
+        </div>
+        <div class="col-xs-4"> 
+            <p>Total: {{ total_playerviews }}</p>
+        </div>
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td>Player</td>
+                <td>Alliance</td>
+                <td>View time</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for view in views %}
+                <tr>
+                    <td><a href="{{ view.nation.get_absolute_url }}"><b>
+                        {{ view.nation.name }}
+                    </b></a></td>
+                    <td>
+                    {% if view.nation.has_alliance %}
+                        <a href="{{ view.nation.alliance.get_absolute_url }}"><b>
+                            {{ view.nation.alliance.name }}
+                        </b></a>
+                    {% else %}
+                        None
+                    {% endif %}
+                    </td>
+                    <td>{{ view.timestamp|date:"o/m/d G:i" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <button class="btn btn-default spacer">
+        See entire view history
+    </button>
+    
+    {% if nation.pk != mod.pk %}
+    <form method="POST">{% csrf_token %}
+        <button type="submit" class="btn btn-danger bigspacer" name="demote">
+            Demote from moderator
+        </button>
+    </form>
+    {% endif %}
+
+</div>
+{% endblock %}

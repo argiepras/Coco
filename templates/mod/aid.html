@@ -1,0 +1,62 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load modtags %}
+<div class="container">
+    <p class="spacer"><h2> {{ title }}</h2></p>
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-9">
+            <a href="{% url 'mod:nation' target.index %}">
+                <button class="btn btn-default">
+                    Back to overview
+                </button>
+            </a>
+        </div>
+    </div>
+<div class="bigspacer">
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    {% if direction == 'out' %}
+        <li><a href="{% url 'mod:nation_outgoing' target.index page.page %}">{{ page.page }}</a></li>
+    {% else %}
+        <li><a href="{% url 'mod:nation_incoming' target.index page.page %}">{{ page.page }}</a></li>
+    {% endif %}
+{% endfor %}
+</ul> 
+</div>
+<form method="POST">{% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td>{{ direction|aiddirection }}</td>
+                <td>Type</td>
+                <td>Amount</td>
+                <td>TImestamp</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for aid in aidlist %}
+                <tr>
+                    <td>
+                    {% if direction == 'out' %}
+                        <a href="{{ aid.reciever.get_absolute_url }}">
+                            {{ aid.reciever.name }}
+                        </a>
+                    {% else %}
+                        <a href="{{ aid.sender.get_absolute_url }}">
+                            {{ aid.sender.name }}
+                        </a>
+                    {% endif %}
+                </td>
+                    <td>{{ aid.resource|aidname }}</td>
+                    <td>{{ aid|aidamount }}</td>
+                    <td>{{ aid.timestamp|date:"o/m/d G:i" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+    
+</div>
+
+{% endblock %}

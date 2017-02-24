@@ -1,0 +1,49 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load modtags %}
+<div class="container">
+    <p class="spacer"><h2>IPs associated with {{ target.name }}</h2></p>
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-9">
+            <a href="{% url 'mod:nation' target.index %}">
+                <button class="btn btn-default">
+                    Back to overview
+                </button>
+            </a>
+        </div>
+    </div>
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+<p>Amount of nations seen with each IP is denoted in the ()</p>
+<p>As such 125.534.213.532 (<b>5</b>) is 5 nations associated with the IP</p>
+<p>Click an IP to see all the nations associated with it</p>
+{% if checked %}
+    {% ip_listing %}
+{% endif %}
+<div class="row bigspacer">
+    <div class="col-xs-8 col-xs-offset-2">
+    <form method="POST">{% csrf_token %}
+        <table class="table table-striped">
+            <thead>
+                <td>First Seen</td>
+                <td>IP</td>
+            </thead>
+            <tbody>
+                {% for iplog in IPs %}
+                    <tr>
+                        <td>{{ iplog.timestamp|date:"o/m/d G:i" }}</td>
+                        <td><button type="submit" class="neutralbutton" name="checkip" value="{{ iplog.pk }}">
+                            {{ iplog.IP }} ({{ iplog.nationcount }})
+                        </button></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+    </div>
+</div>
+</div>
+{% endblock %}

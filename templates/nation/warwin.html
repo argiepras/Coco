@@ -1,0 +1,13 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+{% load static %}
+<div class="warresult">
+<img src="{% static 'war/surrender.jpg' %}">
+<p style="margin: 40px">
+  The last of their forces shatter and flee before your advancing army. Your troops march victoriously into their capital and you demand total surrender. The enemy leader has no choice and capitulates. A humiliating peace treaty is signed, with your nation being payed the equivalent of a fifth of their GDP, ${{ gdp.amount }} million, in reparations and conceded {{ land.amount }} square kilometers of land.
+</p>
+<a href=""><button class="btn" style="margin-top: 40px">Return</button></a>
+</div>
+
+{% endblock %}

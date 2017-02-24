@@ -1,0 +1,50 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<h2 style="margin: 50px">World Declarations</h2>
+{% load humanize %}
+{% if declarations %}
+
+<div>pagination</div>
+<div class="declarations">
+    {% for declaration in declarations %}
+        <div class="declaration">
+            <div class="row">
+                <div class="col-sm-10">
+                    <div style="text-align: left; padding-left: 10px">
+                    <a href="{{ declaration.nation.get_absolute_url }}">
+                    <img src="{{ declaration.nation.settings.showflag }}" height="20">
+                    <b>{{ declaration.nation.name }}</b>
+                    </a> declared the following
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    {{ declaration.timestamp|naturaltime }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="dec-content">
+                        {{ declaration.content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<p>There are no global declarations yet! Be the first to make one!</p>
+
+{% endif %}
+
+<form method="POST">{% csrf_token %}
+<div class="row">
+    <div class="col-sm-4 col-sm-offset-4">
+        {{ decform.message }}
+    </div>
+</div>
+    <div><button type="submit" class="btn" style="margin: 20px" name="declare">Declare</button></div>
+</form>
+
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+{% load static %}
+<div class="warresult">
+    <img src="{% static 'war/chem2.jpg' %}">
+    <p style="padding: 40px">
+        Your deploy chemical weapons over their major cities, killing thousands and heavily damaging their economy and manpower! Though you are condemned throughout the world, the enemy is greatly wounded from this attack.
+    </p>
+    <p>
+        The enemy suffers ${{ gdp }} millions worth of economic damages and {{ troops }} thousand casualties in military lossses alone.
+    </p>
+    <a href=""><button class="btn" style="margin-top: 40px">Return</button></a>
+</div>
+
+{% endblock %}

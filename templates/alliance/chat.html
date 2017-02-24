@@ -1,0 +1,77 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load humanize %}
+<div class="container">
+<h2 style="margin: 50px">{{ alliance.name }} Chat</h2>
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+{% if chatlist %}
+
+
+<div> 
+<ul class="pagination">
+{% if chatlist.has_previous %}
+  <li><a href="{% url 'alliance:chat' chatlist.previous_page_number %}">{{ chatlist.previous_page_number }}</a></li>
+  <li><a href="{% url 'alliance:chat' chatlist.number %}">{{ chatlist.number }}</a></li>
+    {% if chatlist.has_next %}
+  <li><a href="{% url 'alliance:chat' chatlist.next_page_number %}">{{ chatlist.next_page_number }}</a></li>
+    {% endif %}
+{% elif not chatlist.has_previous and not chatlist.has_next %}
+    <li><a href="{% url 'alliance:chat' chatlist.number %}">{{ chatlist.number }}</a></li>
+{% else %}
+    <li><a href="{% url 'alliance:chat' chatlist.number %}">{{ chatlist.number }}</a></li>
+  <li><a href="{% url 'alliance:chat' chatlist.next_page_number %}">{{ chatlist.next_page_number }}</a></li>
+  <li><a href="{% url 'alliance:chat' chatlist.next_page_number|add:'1' %}">{{ chatlist.next_page_number|add:'1' }}</a></li>
+{% endif %}
+</ul> 
+</div>
+
+
+<div class="declarations">
+    {% for chat in chatlist %}
+        <div class="declaration">
+            <div class="row">
+                <div class="col-sm-10">
+                    <div style="text-align: left; padding-left: 10px">
+                    <a href="{{ chat.nation.get_absolute_url }}">
+                    <img src="{{ chat.nation.settings.showflag }}" height="20">
+                    <b>{{ chat.nation.name }}</b></a> 
+                        declared the following
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                    {{ chat.timestamp|naturaltime }}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="dec-content">
+                        {{ chat.content }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% else %}
+
+<p style="margin: 50px">There is no alliance chatter yet! Be the first to start squawking!</p>
+
+{% endif %}
+
+<form method="POST">{% csrf_token %}
+<div class="row">
+    <div class="col-sm-4 col-sm-offset-4">
+        {{ decform.message }}
+    </div>
+</div>
+    <div><button type="submit" class="btn" style="margin: 20px" name="post">Post</button></div>
+</form>
+</div>
+{% endblock %}

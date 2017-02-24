@@ -1,0 +1,84 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+        {% load spytags %}
+
+   <br />
+   <a href="{% url 'nation:intelligence' %}"><button class="btn btn-default" />Back to Intelligence Agency</button> </a>
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+   {% load static %}
+   <br /><br />  <img src="{% static spy.portrait %}" /><br />
+   <h2>Agent {{ spy.name }}</h2>
+   
+<table class="table table-hover">
+   <tr>
+        <td><b>Codename</b></td>
+        <td><b>Specialty</b></td>
+        {% if nation == spy.nation %}
+        <td><b>Experience</b></td>
+        <td><b>Infiltration</b></td>
+        {% endif %}
+        <td><b>Status</b></td>
+        <td><b>Location</b></td>
+        <td><b>{% if enemy %}Home country{% endif %}</b></td>
+    </tr>
+    <tr>
+        <td>{{ spy.name }}</td>
+        <td>{{ spy.specialty }}</td>
+        {% if spy.nation == nation %}
+        <td><div class="dropdown">
+            <a data-toggle="dropdown" href="#"><img src="statsicon.png" height=17px />
+                {{ spy.experience }}
+           </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                {{ spy.experience }}/100
+            </ul></div>
+        </td>
+        <td><div class="dropdown">
+            <a data-toggle="dropdown" href="#"><img src="statsicon.png" height=17px />
+                {{ spy.infiltration }}
+           </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                <p>Next month changes:</p>
+                {{ spy|infilchanges }}
+            </ul></div>
+        </td>
+        {% endif %}
+        <td>
+        {% if spy.nation == nation %}
+            {{ spy|status }}
+        {% else %}
+            {{ spy|foreignstatus }}
+        {% endif %}
+        </td>
+        <td><a href="{{ spy.location.get_absolute_url }}">
+            <img src="{{ spy.location.settings.showflag }}" height="25">
+                {{ spy.location.name }}
+        </a></td>
+        <td>{% if enemy %}<a href="{{ spy.nation.get_absolute_url }}">
+            <img src="{{ spy.nation.settings.showflag }}" height="25">
+                {{ spy.nation.name }}
+        </a>{% endif %}
+        </td>
+    </tr>
+</table>
+   
+   <h3>Actions</h3>
+   
+{% if spy.arrested and nation.pk == spy.nation.pk %}
+
+    <p style="margin: 100px; color: red">Agent {{ spy.name }} is currently imprisoned and cannot perform any actions!</p>
+{{ actionlist }}
+{% else %}
+    {% if actionlist == 'home' %}
+        {% include 'nation/spy_home.html' %}
+    {% elif actionlist == 'deployed' %}
+        {% include 'nation/spy_deployed.html' %}
+    {% else %}
+        {% include 'nation/spy_enemy.html' %}
+    {% endif %}
+{% endif %}
+{% endblock %}

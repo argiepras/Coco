@@ -1,0 +1,76 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load basetags %}
+
+<div class="container">
+<div class="row">
+    <div class="col-xs-4 col-xs-offset-4">
+        <h2>Sent Invitations</h2>
+        {% load static %}
+        <img src="{% static 'img/invites.jpg' %}" height="80" style="margin: 20px">
+    </div>
+    <div class="col-xs-1 col-xs-offset-2">
+        <a href="{% url 'alliance:main' %}">
+            <button class="btn" style="margin-top: 20px; margin-right: 20px">
+                Back to control panel
+            </button>
+        </a>
+    </div>
+</div>
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+
+{% if invites %}
+<form method="POST">{% csrf_token %}
+    <table class="table table-striped" style="margin-top: 5em; margin-bottom: 2em">
+        <thead>
+            <tr>
+                <td>Name</td>
+                <td>GDP</td>
+                <td>Region</td>
+                <td>Alignment</td>
+                <td>Inviter</td>
+                <td>Revoke</td>
+            </tr>
+        </thead>
+        <tbody>
+    {% for invite in invites %}
+            <tr>
+                <td><a href="{{ invite.nation.get_absolute_url }}">
+                    <b>{{ invite.nation.name }}</b>
+                </a></td>
+                <td>${{ invite.nation.gdp }}m</td>
+                <td>{{ invite.nation.subregion }}</td>
+                <td>{{ invite.nation.alignment|alignment }}</td>
+                <td><a href="{{ invite.inviter.get_absolute_url }}">
+                    <b>{{ invite.inviter.name }}</b>
+                </a></td>
+                <td>
+                    <input type="checkbox" class="form-control" name="ids" value="{{ invite.pk }}">
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+        <button type="submit" class="btn btn-danger" name="revoke" value="some" style="margin-right: 100px">
+            Revoke Selected Invites
+        </button>
+        <button type="submit" class="btn btn-danger" name="revoke" value="all" style="margin-left: 100px">
+            Revoke All Invites
+        </button>
+</form>
+
+{% else %}
+
+<h4 style="margin: 50px">It would appear all our invitations got lost in the mail..</h4>
+
+{% endif %}
+
+</div>
+
+{% endblock %}

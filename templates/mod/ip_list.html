@@ -1,0 +1,18 @@
+<p>The following nations are associated with {{ selected_ip }}</p>
+
+<div class="row">
+    <div class="col-xs-8 col-xs-offset-2">
+        <p>
+            {% for iplog in associates %}
+            <b>
+                <a href="{{ iplog.nation.get_modview_url }}">
+                    {{ iplog.nation.name }}
+                </a>
+            </b>
+                {% if forloop.last == False %}
+                    ,
+                {% endif %}
+            {% endfor %}
+        </p>
+    </div>
+</div>

@@ -1,0 +1,25 @@
+{% extends 'nation/base.html' %}
+
+{% block content %}
+
+
+<h1>LOGO</h1>
+
+<br> <br>
+{% lorem 3 p random %}
+
+<a href="{% url 'register' %}">
+    <button class="btn btndefault big">Register here</button>
+</a>
+
+
+<br>
+<p>speshul thanks to people who support this game</p>
+<div class="row">
+{% for donor in donors %}
+    <div class="col-sm-1">
+        <span color="blue">{{ donor.name }}</span>
+    </div>
+{% endfor %}
+
+{% endblock %}

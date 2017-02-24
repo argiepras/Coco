@@ -1,0 +1,160 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+<div class="container">
+<style>
+
+.align {
+    line-height: 100px;
+    vertical-align: center;
+}
+
+.smallalign {
+    line-height: 50px;
+    vertical-align: center;
+}
+
+</style>
+    
+{% load basetags %}
+{% load spytags %}
+{% load static %}
+<div id="top" style="margin-bottom: 20px">
+    <h2>Intelligence</h2>
+    <img src="{% static 'img/intelligence.png' %}" /><br /><br />
+    
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+    <form method="POST"> {% csrf_token %}
+    {% if nation.settings.donor %}
+    <div class="row" style="margin-bottom: 20px">
+        <div class="col-xs-2 col-xs-offset-5">
+        {{ newspy.name }}
+        </div>
+    </div>
+    {% endif %}    
+    <div class="row">
+        <div class="col-xs-3 col-xs-offset-3">
+            {{ newspy.specialty }}
+        </div>
+        <div class="col-xs-2">
+            <button type="submit" style="margin-left: 40px" class="btn btn-default" name="train" />Train Agent ($({{ cost }}k)</button>
+        </div>        
+    </div>                            
+    </form>
+</div>
+{% if extraditions %}
+    <form method="POST">{% csrf_token %}
+    <div class="spacer">
+        <table class="table table-hover">
+            {% for extradition in extraditions %}
+                <tr>
+                    <td rowspan="2"><span class="smallalign"><a href="{{ extradition.nation.get_absolute_url }}">
+                        <b>{{ extradition.nation.name }}</b></a>
+                        has requested we take custody of
+                        an agent {{ extradition.spy.name }} from
+                        <a href="{{ extradition.spy.nation.get_absolute_url }}">
+                        <b>{{ extradition.spy.nation.name }}</b></a></span>
+                    </td>
+                    <td>
+                        <button type="submit" class="btn btn-default" name="accept" value="{{ extradition.pk }}">
+                            Accept
+                        </button>
+                    </td>
+                    <td>
+                        <button type="submit" class="btn btn-default" name="deny" value="{{ extradition.pk }}">
+                            Decline
+                        </button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+{% endif %}
+{% if spies %}
+<table class="table table-hover">
+    <tr>
+        <td><b>Portrait</b></td>
+        <td><b>Codename</b></td>
+        <td><b>Specialty</b></td>
+        <td><b>Experience</b></td>
+        <td><b>Infiltration</b></td>
+        <td><b>Status</b></td>
+        <td><b>Location</b></td>
+        <td><b></b></td>
+    </tr>
+    {% for spy in spies %}
+    <tr>
+        {% load static %}
+        <td><center>
+            <a href="{{ spy.get_absolute_url }}">
+                <img src="{% static spy.portrait %}" height="100px" />
+        </a></center></td>
+        <td><a href="{{ spy.get_absolute_url }}"><span class="align">{{ spy.name }}</span></a></td>
+        <td><span class="align">{{ spy.specialty }}</span></td>
+        <td><span class="align">{{ spy.experience }}</span></td>
+        <td><div class="dropdown">
+             <a data-toggle="dropdown" href="#"><img src="statsicon.png" height=17px /> 
+                <span class="align">{{ spy.infiltration }}</span>
+           </a>
+            <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            <p>Next month changes:</p>
+                {{ spy|infilchanges }}
+            </ul></div></td>
+        <td><span class="align">{{ spy|status }}</span></td>
+        <td><span class="align">
+            <a href="{{ spy.location.get_absolute_url }}">
+                <b>{{ spy.location.name }}</b>
+            </a>
+        </span></td>
+    </tr>
+    {% endfor %}
+             
+</table>
+{% else %}
+
+<p style="margin: 40px">Unfortunately, the next batch of agents hasn't finish training at {{ nation.alignment|agency }}</p>
+
+{% endif %}
+
+{% if enemyspies %}
+    <p><h2 style="margin-bottom: 50px; margin-top: 150px">Foreign agents</h2></p>
+        <p>These are the foreign agents known to operate within our borders.</p>
+    <form method="POST">
+        <table class="table table-hover">
+            <thead>
+                <td><b>Portrait</b></td>
+                <td><b>Codename</b></td>
+                <td><b>Specialty</b></td>
+                <td><b>Status</b></td>
+                <td><b>Nation</b></td>
+            </thead>
+            <tbody>
+                {% for spy in enemyspies %}
+                    <tr>
+                <tr>
+                    {% load static %}
+                    <td><center>
+                        <a href="{{ spy.get_absolute_url }}">
+                            <img src="{% static spy.portrait %}" height="100px" />
+                    </a></center></td>
+                    <td><a href="{{ spy.get_absolute_url }}"><span class="align">{{ spy.name }}</span></a></td>
+                    <td><span class="align">{{ spy.specialty }}</span></td>
+                    <td><span class="align">{{ spy|foreignstatus }}</span></td>
+                    <td><span class="align">
+                        <a href="{{ spy.nation.get_absolute_url }}">
+                            <b>{{ spy.nation.name }}</b>
+                    </span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+{% endif %}
+</div>
+{% endblock %}

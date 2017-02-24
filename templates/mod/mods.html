@@ -1,0 +1,58 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+
+<div class="spacer-big">
+    <h2>Current Mods</h2>
+</div>
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+<form method="POST">{% csrf_token %}
+<div class="row" style="margin-top: 100px; margin-bottom: 100px;">
+    <div class="col-xs-12">
+        <p>Appoint new mod</p>
+    </div>
+    <div class="col-xs-6 col-xs-offset-3">
+        <div class="input-group">
+            {{ promoteplayerform.player }}
+            <span class="input-group-btn">
+                <button class="btn btn-default" type="submit" name="promote">
+                    Appoint New Mod
+                </button>
+            </span>
+        </div>
+    </div>
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <td>Nation name</td>
+        <td>User name</td>
+        <td>action</td>
+    </thead>
+    <tbody>
+        {% for mod in mods %}
+        <tr>
+            <td>
+                <a href="{{ mod.get_mod_url }}">
+                    <b>{{ mod.name }}</b>
+                </a>
+            </td>
+            <td>{{ mod.user.username }}</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="demote" value="{{ mod.pk }}">
+                    Demote
+                </button>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</form>
+</div>
+{% endblock %}

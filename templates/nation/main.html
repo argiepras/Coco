@@ -1,0 +1,565 @@
+{% extends 'nation/base.html' %}
+
+{% block content %}
+{% load basetags %}
+{% load humanize %}
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <script src="http://code.jquery.com/jquery.js"></script>
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+
+
+{% if atwar %}
+    <p>
+        <h3 style="color: red; margin: 50px">We are at war!</h3>
+    </p>
+{% endif %}
+    
+    <center>
+    <p><i class="lead">{{ nation.show_descriptor|descriptor }}</i></p>
+    <h1 style="font-size: 48px"><b>{{ nation.name }}</b></h1>
+    <br>
+    <img src="{{ flag }}" alt="lol" height="170">
+
+    <br /><br />{{ nation.description }}
+
+    {% if nation.settings.anthem %}
+    <div style="margin: 20px">
+        <iframe width="300" height="30" src="https://www.youtube.com/embed/{{nation.settings.anthem}}?rel=0&autoplay=1" frameborder="0"></iframe>
+    </div>
+    {% endif %}
+    
+    <br />
+    <div class="accordion" id="accordion2">
+<div class="accordion-group">
+<div class="accordion-heading">
+    <div class="accordion-heading">
+    
+    
+    <a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+
+<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFive">
+    <center>
+        <img src="{{ avatar }}" height="150">
+    
+    
+    <h4><tr><td>{{ nation.show_title|title }}:
+            <i><b>{{ username }}</b></td></tr></table></h4></a>
+</div>
+<div id="collapseFive" class="accordion-body collapse in">
+<div class="accordion-inner">
+<center><table class="table table-striped table-condensed table-hover table-bordered">
+        <td >Approval:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+    {% load static %}
+  <img src="{% static 'assets/statsicon.png' %}" height=17px /> <i>{{ nation.approval|approval }}</i>
+           </a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p><p>{{ nation.approval }}%</p>
+  </ul>
+</div></td>
+            </tr></table></center></div></div></div>
+            
+            
+
+<div class="accordion-group">
+    <div class="accordion-heading">
+    
+    <a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+    
+    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+     <center><img src="{% static 'main/government.png' %}" /><h3>Government</h3></center>
+</a>
+</div>
+<div id="collapseOne" class="accordion-body collapse in">
+    <div class="accordion-inner">
+        <center><table class="table table-striped table-condensed table-hover table-bordered">
+        <tr>
+            <td>Political System:</td>
+            <td><i>{{ nation.government|government }}</td>
+        </tr>
+        
+        <tr>
+            <td >Stability:</td>
+            <td ><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i>{{ nation.stability|stability }}</i><div style="color: white"></div></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            <p>{{ nation.stability }}%</p>
+            <p>Next month changes:</p>
+                {{ nation|stabilitychange }}
+            </ul></i></div></td>
+            </tr>
+  
+        <tr>        
+                 <td>Territory:</td>
+                 <td><div class="dropdown"><a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /> <i>{{ nation.farmland }} / {{ nation.land }} km<sup>2</sup></i></a>
+                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    
+                    <strong>Land Use</strong><br /><br />
+                       {{ nation|landuse }}
+                    </ul>
+                </div>
+             </td></tr>
+        
+        <tr>
+            <td >Rebel Threat:</td>
+            <td ><i>{{ nation.rebels|rebels }}</i></td>
+        </tr>
+        
+        
+        </table></center></div></div></div>
+
+
+
+
+
+<div class="accordion-group">
+<div class="accordion-heading">
+    <div class="accordion-heading">
+    
+    
+    <a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+
+<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseSeven">
+    <center>
+
+        <center><img src="{% static 'main/domestic.png' %}" /><h3>Domestic</h3></center></a>
+</div>
+<div id="collapseSeven" class="accordion-body collapse in">
+<div class="accordion-inner">
+<center><table class="table table-striped table-condensed table-hover table-bordered">
+<tr>
+            <td>Population:</td>
+            <td><i>{{ nation.population|intcomma }}</i></td>
+        </tr>
+        
+             <tr>
+            <td>Quality of Life:</td>
+           <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /> <i>{{ nation.qol|qol }}</i>
+           </a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p><p>{{ nation.qol }}%</p>
+  <p>Next month changes:</p>
+    {{ nation|qolchange:'literacy' }}
+    {{ nation|qolchange:'healthcare' }}
+  </ul>
+</div></td>
+        </tr>
+             <tr>
+                 <td>Healthcare:</td>
+                 <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /> <i>{{ nation.healthcare|healthcare }}</i>
+           </a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p><p>{{ nation.healthcare }}%</p>
+</div></td>
+             </tr>
+             <tr>
+                 <td>Literacy:</td>
+                 <td><i>{{ nation.literacy }}%</i></td>
+             </tr>
+             
+             
+             <tr>
+            <td>Research:</td>
+           <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /> <i>{{ nation.research }}</i>
+           </a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    {{ nation|researchgain }}
+  </ul>
+</div></td>
+        </tr>
+        <tr>
+             <td>Universities:</td>
+             <td><i>{{ nation.universities }}
+            {% if nation.universities == 1 %}
+                university
+            {% else %}
+                universities
+            {% endif %}
+            </i></td>
+        </tr>
+        
+        
+        
+        
+        </table></center></div></div></div>
+
+
+
+
+<div class="accordion-group">
+<div class="accordion-heading">
+
+<a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+
+<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseTwo">
+        <center><img src="{% static 'main/economy.png' %}" /><h3>Economy</h3></center>
+
+</a>
+</div>
+<div id="collapseTwo" class="accordion-body collapse in">
+    <div class="accordion-inner">
+        <center><table class="table table-striped table-condensed table-hover table-bordered">
+        
+        
+        <tr>
+            <td>Economic System:</td>
+            <td><i>{{ nation.economy|econsystem }}</i></td>
+        </tr>
+        <tr>
+                 <td>Available Budget:</td>
+                 <td><div class="dropdown"><a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /><i>${{ nation.budget }}k</i></a>
+                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                       <p>+<span style="color: green">${{ budgetgain }}k</span> every ten minutes</p>
+                       {% if tax %}
+                       <p>-<span style="color: red">${{ tax }}k</span> every ten minutes from alliance tax</p>
+                       {% endif %}
+                       
+                       
+                    </ul>
+                </div>
+             </td></tr>
+        <tr>
+            <td>Gross Domestic Product:</td>
+            <td><i>${{ nation.gdp }} million</i></td>
+        </tr>
+        <tr>
+            <td>Growth:</td>
+           <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i>${{ nation.growth|growthdisplay }} million
+           </i></a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    {{ nation|growthchange }}
+  </ul>
+</div></td>
+        </tr>
+      {% if nation.FI > 0 %}  
+      <tr>
+            <td>Foreign Investment:</td><td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i>
+
+
+  <img src="{% static 'assets/statsicon.png' %}" height=17px />${{ nation.FI }}k</b></i></a>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    {{ nation|FIchanges }}</ul></div>
+        </td>
+        </tr>
+    {% endif %}
+        <tr>
+             <td>Factories:</td>
+             <td><i>{{ nation.factories }} factories</i></td>
+        </tr>
+             <td>Manufactured Goods:</td>
+             <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ nation.mg }} Tons</b></i></a>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    {{ nation|mgchange }}</ul></div>
+        </td>
+        <tr>
+             <td>Discovered Oil Reserves:</td>
+             <td><i>{{ nation.oilreserves }} Mbbl</i></td>
+        </tr>
+        <tr>
+             <td>Oil wells:</td>
+             <td><i>{{ nation.wells }} wells</i></td>
+        </tr>
+        <tr>
+             <td>Oil Supply:</td>
+             <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ nation.oil }} Mbbl</b></i></a>
+        <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+        {{ nation|oilchange }}
+    </ul></div>
+        </td></tr>
+        <tr>
+             <td>Mines:</td>
+             <td><i>{{ nation.mines }} mines</i></td>
+        </tr>
+        <tr>
+             <td>Raw Material Supply:</td>
+             <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /> <i>{{ nation.rm }} Tons</i></a>
+             
+             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    {{ nation|rmchange }}</ul></div>
+             
+             </td>
+        </tr>
+             
+        <tr>
+             <td>Food Supply:</td>
+             <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i>{{ nation.food|famine }}</i></a>
+             
+             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+             {% if nation.food == 0 %}
+                "<span style="color: red"><b>Famines reduce approval and quality of life significantly! Buy or produce more food quickly!</b></span>"
+            {% endif %}
+  <p>Next month changes:</p>
+    {{ nation|foodchanges }}
+    </ul></div>
+             
+             </td>
+        </tr>
+			{% if nation.uranium_mines > 0 %}
+            <tr>
+                 <td>Uranium Mines:</td>
+                 <td><i>{{ nation.uranium }}</i></td>
+			</tr>
+            {% endif %}
+		{% if nation.uranium > 0 %} 
+            <tr>
+                 <td>Uranium:</td>
+                 <td><i>{{ nation.uranium }}</i></td>
+             </tr>
+		  {% if military.reactor > 0 %}
+             <tr>
+                 <td>Reactor:</td>
+                 <td><i>
+                 <div class="progress">
+                    <div class="progress-bar progress-bar-danger" style="width: {{ reactor_progress }}%"></div>
+                </div>
+                 </i></td>
+             </tr>
+            {% endif %}
+        {% endif %}
+        </table>
+             
+             
+             
+             
+        </center></div></div></div>
+
+
+
+<div class="accordion-group">
+<div class="accordion-heading">
+
+<a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+
+<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseThree">
+        <center><img src="{% static 'main/diplomacy.png' %}" /><h3>Foreign Policy</h3></center>
+
+</a>
+</div>
+<div id="collapseThree" class="accordion-body collapse in">
+<div class="accordion-inner">
+    <center> <table class="table table-striped table-condensed table-hover table-bordered">
+        <tr>
+                 <td>Official Alignment:</td>
+                 <td><i>{{ nation.alignment|alignment }}
+                 </i></td>
+             </tr>
+        <tr>
+            <td><img src="/static/smilies/lenintear.gif"> Soviet Relations:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i><img src="{% static '/static/assets/statsicon.png' %}" height=17px />{{ nation.soviet_points|relationpoints }}</i></a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    <div style="padding: 5px">
+    {{ nation|soviet_relations }}
+    </div>
+    </ul></div>
+        </td></tr>
+        <tr>
+            <td><img src="/static/smilies/america911.gif"> American Relations:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i><img src="{% static '/static/assets/statsicon.png' %}" height=17px />{{ nation.us_points|relationpoints }}</i></a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+  <p>Next month changes:</p>
+    <div style="padding: 5px">
+        {{ nation|us_relations }}
+    </div>
+    </ul></div>
+        </td>
+        <tr>
+            <td>Region:</td>
+            <td><a href="{{ nation.get_ranking_url }}"><i>{{ nation.subregion }}</i></a></td>
+        </tr>
+             <tr>
+                 <td>Alliance:</td>
+                    {% if nation.has_alliance %}
+                        <td><i><a href="{{ nation.alliance.get_absolute_url }}">
+                            {{ nation.alliance.name }}
+                        </a></i></td>
+                 {% else %}
+                        <td><i>None</i></td>
+                 {% endif %}
+             </tr>
+        <tr>
+            <td>Reputation:</td>
+            <td><i>{{ nation.reputation|reputation }}</i></td>
+            </tr>
+        </table></center></div></div></div>
+
+<div class="accordion-group">
+    <div class="accordion-heading">
+    
+    <a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+    
+    <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFour">
+        <center><img src="{% static 'main/military.png' %}" /><h3>Military</h3></center>
+    </a>
+    </div>
+    <div id="collapseFour" class="accordion-body collapse in">
+    <div class="accordion-inner">
+        <center> <table class="table table-striped table-condensed table-hover table-bordered">
+         
+        <tr>
+            <td>Army Size:</td>
+            <td><i>{{ military.army }}k active personnel</i></td>
+        </tr>
+        <tr>
+            <td>Manpower:</td>
+            <td><div class="dropdown">
+                 <a data-toggle="dropdown" href="#">
+                 <i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ nation.manpower|manpower }}</i></a>
+                 <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            <p>{{ nation.manpower }}/100</p>
+            {{ nation|manpowerchanges }}
+            </ul>
+                </td>
+        </tr>
+        <tr>
+            <td>Equipment:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#"><i><img src="{% static 'assets/statsicon.png' %}" height=17px />
+            {{ military.weapons|tech }}
+    </i></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ military.weapons }} weapons
+            </ul></td>
+        </tr>
+        <tr>
+            <td>Progress to next equipment level:</td>
+            <td><i>
+                <div class="progress">
+                    <div class="progress-bar progress-bar-danger" style="width: {{ military.to_next }}%"></div>
+                </div>
+            </i></td>
+        </tr>
+        <tr>
+            <td>Training:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+  <i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ military.training|training }}</i></a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ military.training }}/100
+            </ul></td>
+        </tr>
+        <tr>
+            <td>Airforce:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+  <i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ military.planes|airforce }}</i></a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ military.planes }}/10
+            </ul></td>
+        </tr>
+        <tr>
+            <td>Navy:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+  <i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ military.navy|navy }}</i></a>
+  <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ military.navy }}/100
+            </ul></td>
+        </tr>
+        <tr>
+            <td>Chemical Weapons:</td>
+            <td><i>
+                {% if military.chems < 10 %}
+                <div class="progress">
+                    <div class="progress-bar progress-bar-danger" style="width: {{ chems_progress }}%"></div>
+                </div>
+                {% elif military.chems == 0 %}
+                    None
+                {% else %}
+                    Armed
+                {% endif %}
+            </i></td>
+        </tr>
+        {% if military.nukes > 0 %}
+            <tr>
+                <td>Nuclear Weapons:</td>
+                <td><i>{{ military.nukes }}</i></td>
+            </tr>
+        {% endif %}
+        </table>
+                
+        {% if atwar %}
+            
+            <table class="table table-striped table-condensed table-hover table-bordered">
+            <tr>
+                <td>Type</td>
+                <td>Nation</td>
+                <td>Military Size</td>
+                <td>Training</td>
+                <td>Equipment</td>
+                <td>Air Force</td>
+                <td>Navy</td>
+            </tr>
+            {% if offensive %}
+
+        <tr>       
+            <td><font color="red">Offensive War</font></td>
+            
+             <td><b><font color="red">
+                <a href="{{ offensive.nation.get_absolute_url }}">
+                    <img src="{{ offensive.flag }}" height="20">
+                        {{ offensive.nation.name }}
+                 </a></font></td>
+            
+            <td>{{ offensive.army }}k active personnel</td>
+            
+            <td><i>{{ offensive.training|training }}</i></td>
+                         
+            <td><i>{{ offensive.weapons|tech }}</i></td>
+            
+            <td><i>{{ offensive.planes|airforce }}</i></td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+  <i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ offensive.navy|navy }}</i></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ offensive.navy }}/100
+            </ul></td>
+            </tr>
+            {% endif %}
+            {% if defensive %}
+        <tr>
+            
+            <td><font color="red">Defensive War</font></td>
+            
+            <td><b><a href="{{ defensive.nation.get_absolute_url }}">
+                    <img src="{{ defensive.flag }}" height="20">
+                        {{ defensive.nation.name }}
+                 </a></font></td>
+            
+            <td>{{ defensive.army }}k active personnel</td>
+            
+            <td><i>{{ defensive.training|training }}</i></td>
+                         
+            <td><i>{{ defensive.weapons|tech }}</i></td>
+            
+            <td><i>{{ defensive.planes|airforce }}</i></td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+  <i><img src="{% static 'assets/statsicon.png' %}" height=17px />{{ defensive.navy|navy }}</i></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ defensive.navy }}/100
+            </ul></td>
+            </tr>
+            {% endif %}
+            </i></td>
+        </tr>
+
+        </table></i></i></i></i></center></div></div></div></div>
+{% endif %}
+</div>
+
+{% endblock %}

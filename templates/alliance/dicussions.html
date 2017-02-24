@@ -1,0 +1,19 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+<h3>{{ name }} Discussion</h3>
+
+{% if result %}
+<p>{{ result }}</p>
+{% endif %}
+
+{% for dec in declarations %}
+<div class="declaration">
+    Declaration made by {{ dec.nation.name }} on {{ dec.timestamp }}
+    <div class="declarationcontent">
+        {{ dec.content }}
+    </div>
+</div>
+
+
+{% endblock %}

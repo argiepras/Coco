@@ -1,0 +1,132 @@
+{% extends 'nation/base.html' %}
+
+{% block content %}
+
+
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <script src="http://code.jquery.com/jquery.js"></script>
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+
+<table class="table table-hover table-bordered"><tr>
+  <td><a href="{% url 'nation:economic' %}"><h2><center>Economic</center></h2></a></td>
+  <td><a href="{% url 'nation:domestic' %}"><h2><center>Domestic</center></h2></a></td>
+  <td><a href="{% url 'nation:foreign' %}"><h2><center>Foreign</center></h2></a></td>
+  <td><a href="{% url 'nation:military' %}"><h2><center>Military</center></h2></a></td>
+  <td><a href="{% url 'market:main' %}"><h2><center><b>Market</b></center></h2></a></td>
+  </tr>
+</table>
+    
+    <center><h2>Global Market</h2>
+    {% load static %}
+    <center><img src="{% static 'img/market.jpg' %}"><br /><br />
+
+                                            Global markets changed by <b>{{ change }}</b>% this month.
+    <br /><br />
+                    <a href="{% url 'market:offers' 1 %}">The Free Market is also a great place to directly buy and sell anything and everything with other nations!</a>
+    <br />
+    
+    {% if result %}
+        <div class="result">{{ result }}</div>
+    {% endif %}
+
+    <br />
+    <a href="#" data-toggle="tooltip" data-placement="left" title="Your budget increases every ten minutes, reaching 0.10% of your GDP (${{ nation.gdp }}k) after 12 hours. You may save up to 0.20% of your GDP (${{ nation.gdp|add:nation.gdp }}k).">
+
+    Available budget: ${{ stats.budget }}k<i class="icon-question-sign"></i></a>
+    <br /><br />
+
+<form method="POST">{% csrf_token %}
+    <table class="table table-hover">
+        <tr>
+            <td><b>Action</b></td>
+            <td><b>Stockpile</b></td>
+            <td><b></b></td>
+            <td><b></b></td>
+        </tr>
+        <tr>
+            <td><b>Buy Oil</b></td>
+            <td>{{ stats.oil }} mbbl</td>
+            <td>-$<b>{{ oilbuyprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-success" name="buy_oil" value="1">Buy</button>
+            <button type="submit" class="btn btn-success" name="buy_oil" value="5">Buy 5</button>
+             <button type="submit" class="btn btn-success" name="buy_oil" value="20">Buy 20</button>
+             </td>
+        </tr>
+        <tr>
+            <td><b>Sell Oil</b></td>
+            <td>{{ stats.oil }} mbbl</td>
+            <td>+$<b>{{ oilsellprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-danger" name="sell_oil" value="1">Sell</button>
+            <button type="submit" class="btn btn-danger" name="sell_oil" value="5">Sell 5</button>
+            <button type="submit" class="btn btn-danger" name="sell_oil" value="20">Sell 20</button>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Buy Raw Material</b></td>
+            <td>{{ stats.rm }} Htons</td>
+            <td>-$<b>{{ rmbuyprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-success" name="buy_rm" value="1">Buy</button>
+            <button type="submit" class="btn btn-success" name="buy_rm" value="5">Buy 5</button>
+            <button type="submit" class="btn btn-success" name="buy_rm" value="20">Buy 20</button>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Sell Raw Material</b></td>
+            <td>{{ stats.rm }} Htons</td>
+            <td>+$<b>{{ rmsellprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-danger" name="sell_rm" value="1">Sell</button>
+            <button type="submit" class="btn btn-danger" name="sell_rm" value="5">Sell 5</button>
+            <button type="submit" class="btn btn-danger" name="sell_rm" value="20">Sell 20</button>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Buy Food</b></td>
+            <td>{{ stats.food }} Htons</td>
+            <td>-$<b>{{ foodbuyprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-success" name="buy_food" value="1">Buy</button>
+            <button type="submit" class="btn btn-success" name="buy_food" value="5">Buy 5</button>
+            <button type="submit" class="btn btn-success" name="buy_food" value="20">Buy 20</button>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Sell Food</b></td>
+            <td>{{ stats.food }} Htons</td>
+            <td>+$<b>{{ foodsellprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-danger" name="sell_food" value="1">Sell</button>
+            <button type="submit" class="btn btn-danger" name="sell_food" value="5">Sell 5</button>
+            <button type="submit" class="btn btn-danger" name="sell_food" value="20">Sell 20</button>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Buy Manufactured Goods</b></td>
+            <td>{{ stats.mg }} tons</td>
+            <td> -$<b>{{ mgbuyprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-success" name="buy_mg" value="1">Buy</button>
+            <button type="submit" class="btn btn-success" name="buy_mg" value="5">Buy 5</button>
+            <button type="submit" class="btn btn-success" name="buy_mg" value="20">Buy 20</button>
+            </td>
+        </tr>
+        <tr>
+            <td><b>Sell Manufactured Goods</b></td>
+            <td>{{ stats.mg }} tons</td>
+            <td>+$<b>{{ mgsellprice }}</b>k</td>
+            <td>
+            <button type="submit" class="btn btn-danger" name="sell_mg" value="1">Sell</button>
+            <button type="submit" class="btn btn-danger" name="sell_mg" value="5">Sell 5</button>
+            <button type="submit" class="btn btn-danger" name="sell_mg" value="20">Sell 20</button>
+            </td>
+        </tr>
+        
+        
+    </table> 
+</form>
+      
+
+{% endblock %}

@@ -1,0 +1,202 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+
+{% if new %}
+    <h3 style="margin: 50px;">New template</h3>
+{% else %}
+    <h3 style="margin: 50px;">{{ templatename }} template</h3>
+{% endif %}
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+<form method="POST">{% csrf_token %}
+{% if founder %}
+    <div class="row spacer">
+        <div class="col-xs-2 col-xs-offset-4"> 
+            Template type
+        </div>
+        <div class="col-xs-2">
+            {{ form.permset }}
+        </div>
+    </div>
+{% endif %}
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-4"> 
+            {{ form.title }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-4"> 
+            Officer rank {{ form.rank }}
+        </div>
+    </div>
+
+    <div class="row spacer-top">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Kick member</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.kick }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Promote member</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.promote }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Kick officer</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.kick_officer }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Demote officer</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.demote_officer }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Mass comm</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.mass_comm }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Change officer permissions</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.change_officer }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Leadership comm</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.officer_comm }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Accept/Reject applicants</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.applicants }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Set taxes</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.taxman }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Invite nations</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.invite }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Set withdrawal limits</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.banking }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Enact Initiatives</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.enact_initiative }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Withdraw</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.withdraw }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Delete bank logs</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.delete_log }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Create permission template</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.create_template }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">Delete permission template</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.delete_template }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-1">
+            <p class="templating">Change permission template</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.change_template }}
+        </div>
+
+        <div class="col-xs-3">
+            <p class="templating">See alliance stats</p>
+        </div>
+        <div class="col-xs-1 leftie">
+            {{ form.see_stats }}
+        </div>
+    </div>
+
+<!-- missing  call_for_election -->
+
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-4">
+            {% if new %}
+            <button type="submit" class="btn btn-default" name="createnew">
+                Create new template
+            </button>
+            {% else %}
+            <button type="submit" class="btn btn-default" name="commitchange" value="{{ tmpk }}">
+                Alter template
+            </button>
+            {% endif %}
+        </div>
+    </div>
+</form>
+</div>
+
+{% endblock %}

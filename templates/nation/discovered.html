@@ -1,0 +1,38 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+    <p><h2 style="margin: 50px">Foreign agents</h2></p>
+    {% if spies %}
+    <p style="margin: 20px">Here's a list of known foreign agents</p>
+    <form method="POST">
+        <table class="table table-striped">
+            <thead>
+                <td>Name</td>
+                <td>Nation</td>
+                <td>Specialty</td>
+                <td>Status</td>
+            </thead>
+            <tbody>
+                {% for spy in spies %}
+                    <tr>
+                        <td>{{ spy.name }}</td>
+                        <td>
+                            <a href="{{ spy.nation.get_abosolute_url }}">
+                                <b>{{ spy.nation.name }}</b>
+                            </a>
+                        </td>
+                        <td>{{ spy.specialty }}</td>
+                        
+                {% endfor %}
+            </tbody>
+        </table>
+    </form>
+
+
+
+    {% else %}
+        <p>We haven't discovered any foreign agents operating within our borders.</p>
+    {% endif %}
+
+</div>
+{% endblock %}

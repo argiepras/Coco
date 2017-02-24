@@ -1,0 +1,686 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load basetags %}
+{% load humanize %}
+
+        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <script src="http://code.jquery.com/jquery.js"></script>
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+              <center>
+
+            <p><i class="lead">{{ target.show_descriptor|descriptor }}</i></p>
+              <p id="nationtitle"><b>{{ target.name }}</b></p>
+
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+
+    <img src="{{ flag }}" height="170">
+
+            <br /><br />{{ target.description }}
+                        
+            <p>
+        <iframe width="300" height="30" src="https://www.youtube.com/embed/{{ target.settings.anthem }}?rel=0&autoplay=1" frameborder="0"></iframe>
+    </p></center>
+    
+    <br />
+    <br />
+        <div class="accordion" id="accordion2">
+        <div class="accordion-group">
+        <div class="accordion-heading">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseOne">
+
+
+            <center>
+            <img src="{{ avatar }}" height="100">
+
+            <br /><br /></a>
+            {{ target.show_title|title }}: <b>{{ target.user.username }}</b></i>{{ target.last_seen|lastonline }}
+            
+        <div id="collapseOne" class="accordion-body collapse">
+        <div class="accordion-inner">
+            <table class="table table-striped table-condensed table-hover table-bordered">
+        
+                    <tr>
+            
+            <td>Approval:</td>
+            <td><i>{{ target.approval|approval }}</i></td>
+            </tr>
+</table></center></div></div></div>
+        <div class="accordion-group">
+        <div class="accordion-heading">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseTwo">
+
+
+    <center><img src="/static/main/government.png" /><h3>Government</h3></center></a></div><div id="collapseTwo" class="accordion-body collapse">
+        <div class="accordion-inner">
+         <table class="table table-striped table-condensed table-hover table-bordered">
+        <tr>
+            <td>Political System:</td>
+            <td><i>{{ target.government|government }}</i></td>
+        </tr>
+        <tr>
+            <td>Stability:</td>
+            <td><i>{{ target.stability|stability }}</i></td>
+        </tr>
+        
+             <tr>
+            <td>Territory:</td>
+            <td><i>{{ target.land }} km<sup>2</sup></i></td>
+        </tr>
+        <tr>
+            <td>Rebel Threat:</td>
+            <td><i>{{ target.rebels|rebels }}</i></td>
+        </tr>
+        
+        
+        </table></div></div></div>
+        
+        
+        
+        
+        <div class="accordion-group">
+<div class="accordion-heading">
+    <div class="accordion-heading">
+    
+    
+    <a href="#" data-toggle="tooltip" data-placement="right" title="-"><i class="icon-question-sign"></i></a>
+
+<a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseSeven">
+    <center>
+
+        <center><img src="/static/main/domestic.png" /><h3>Domestic</h3></center></a>
+</div>
+<div id="collapseSeven" class="accordion-body collapse">
+<div class="accordion-inner">
+<center><table class="table table-striped table-condensed table-hover table-bordered">
+<tr>
+            <td>Population:</td>
+            <td><i>{{ target.population|intcomma }}</i></td>
+        </tr>
+        
+             <tr>
+                 <td>Quality of Life:</td>
+                 <td><i>{{ target.qol|qol }}</i></td>
+             </tr> <tr>
+                 <td>Healthcare:</td>
+                 <td><i>{{ target.healthcare|healthcare }}</i></td>
+             </tr>
+              <tr>
+                 <td>Literacy:</td>
+                 <td><i>{{ target.literacy }}%</i></td>
+             </tr>
+             
+             <tr>
+             <td>Universities:</td>
+                 <td><i>{{ target.universities }} universit{% if target.universities > 1 %}ies{% else %}y{% endif %}</i></td>
+             </tr>
+             <tr>
+             <td>Research:</td>
+             {% if intel %}
+             <td>{{ target.research }}</td>
+             {% else %}
+             <td><span style="background-color: black">CLASSIFIED</span></td>
+             {% endif %}
+        </tr>
+             
+             
+        
+        
+        
+        
+        </table></center></div></div></div>
+        
+        
+        
+
+        <div class="accordion-group">
+        <div class="accordion-heading">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseThree">
+        <center><img src="/static/main/economy.png" /><h3>Economy</h3></center></a></div>
+            <div id="collapseThree" class="accordion-body collapse">
+        <div class="accordion-inner">
+         <table class="table table-striped table-condensed table-hover table-bordered">
+          
+        <tr>
+            <td>Economic System:</td>
+            <td><i>{{ target.economy|econsystem }}</i></td>
+        </tr>
+             <tr>
+             <td>Industry:</td>
+             {% if target.factories == 1 %}
+                <td><i>{{ target.factories }} factory</i></td>
+             {% else %}
+                <td><i>{{ target.factories }} factories</i></td>
+             {% endif %}
+             </tr>
+        <tr>
+            <td>Gross Domestic Product:</td>
+            <td><i>${{ target.gdp }} million</i></td>
+        </tr>
+        <tr>
+            <td>Growth:</td>
+            <td><i>${{ target.growth }} million per month</i></td>
+        </tr>
+        {% if target.FI > 0 %}
+          <tr>
+            <td>Foreign Investment:</td>
+            <td><i>${{ target.FI }}k</i></td>
+        </tr> 
+        {% endif %}
+            
+             
+		<tr>
+             <td>Manufactured Goods:</td>
+             {% if intel %}
+                <td><i>{{ target.mg }} Tons</i></td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+        </tr>
+		<tr>
+             <td>Discovered Oil Reserves:</td>
+             <td><i>{{ target.oilreserves }} Mbbls</i></td>
+        </tr>
+        <tr>
+             <td>Oil Production:</td>
+             <td><i>{{ target.wells }} Mbbls</i></td>
+        </tr>
+        <tr>
+             <td>Oil Supply:</td>
+            {% if intel %}
+                <td><i>{{ target.oil }}</i></td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+        </tr>
+        
+        <tr>
+            <td>Raw Material Production:</td>
+            <td><i>{{ target.mines }} Tons</i></td>
+        </tr>
+        <tr>
+            <td>Raw Material:</td>
+            {% if intel %}
+                <td><i>{{ target.rm }} tons</td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+        </tr>
+        <tr>
+             <td>Food:</td>
+             {% if intel %}
+                <td><i>{{ target.food }} thousand tons</td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+        </tr>
+		 <tr>
+                <td>Uranium:</td>
+            {% if intel %}
+                <td><i>{{ target.uranium }} tons</td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+             </tr>
+		<tr>
+                <td>Reactor:</td>
+            {% if intel %}
+                <td><i>{% if reactor_progress < 100 %}
+                <div class="progress">
+                    <div class="progress-bar progress-bar-danger" style="width: {{ reactor_progress }}%"></div>
+                </div>
+                {% else %}
+                    Armed
+                {% endif %}</td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+        </tr>
+        </table></div></div></div>
+
+
+         <div class="accordion-group">
+        <div class="accordion-heading">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFour">
+        <center><img src="/static/main/diplomacy.png" /><h3>Foreign Policy</h3></center></a></div>
+        <div id="collapseFour" class="accordion-body collapse">
+        <div class="accordion-inner">
+         <table class="table table-striped table-condensed table-hover table-bordered">
+        <tr>
+                 <td>Official Alignment:</td>
+                 <td><i>{{ target.alignment|alignment }}</i></td>
+             </tr>
+        <tr>
+            <td>Region:</td>
+            <td><i>{{ target.subregion }}</i></td>
+        </tr>
+             <tr>
+                 <td>Alliance:</td>
+                 {% if target.has_alliance %}
+                    <td><i>
+                        <a href="{{ target.alliance.get_absolute_url }}">{{ target.alliance.name }}</a>
+                    </i></td>
+                 {% else %}
+                    <td><i>None</i></td>
+                 {% endif %}
+             </tr>
+        <tr>
+            <td>Reputation:</td>
+            <td><i>{{ target.reputation|reputation }}</i></td>
+           </tr>
+        </table></div></div></div>
+
+        <div class="accordion-group">
+        <div class="accordion-heading">
+        <a class="accordion-toggle" data-toggle="collapse" data-parent="#accordion2" href="#collapseFive">
+        <center><img src="/static/main/military.png" /><h3>Military</h3></center></a></div>
+        <div id="collapseFive" class="accordion-body collapse">
+        <div class="accordion-inner">
+         <table class="table table-striped table-condensed table-hover table-bordered">
+        <tr>
+            <td>Army Size:</td>
+            <td><i>{{ targetmilitary.army }}k active personnel</i></td>
+        </tr>
+        <tr>
+        <td>Manpower:</td>
+            <td><i>{{ target.manpower|manpower }}</i></td>
+        </tr>
+        <tr>
+            <td>Equipment:</td>
+            <td><i>{{ targetmilitary.weapons|tech }}</i></td>
+        </tr>
+        <tr>
+            <td>Progress to next equipment level:</td> 
+            <td><i>
+            {% if intel %}
+                <div class="progress">
+                    <div class="progress-bar progress-bar-danger" style="width: {{ targetmilitary.to_next }}%"></div>
+                </div>
+            {% else %}
+                <span style="background-color: black">CLASSIFIED</span>
+            {% endif %}
+            </i></td>
+        </tr> 
+             <tr>
+                 <td>Training:</td>
+                 <td><i>{{ targetmilitary.training|training }}</i></td>
+             </tr>
+             
+        <tr>
+            <td>Airforce:</td>
+            <td><i>{{ targetmilitary.planes|airforce }}</i></td>
+        </tr>
+		<tr>
+            <td>Navy:</td>
+            <td><div class="dropdown">
+  <a data-toggle="dropdown" href="#">
+  <i><img src="/static/assets/statsicon.png" height=17px />{{ targetmilitary.navy|navy }}</i></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            {{ targetmilitary.navy }}/100
+            </ul></td>
+        </tr>
+        <tr>
+            <td>Chemical Weapons:</td>
+            {% if intel %}
+                <td><i>
+                {% if chemical_progress < 100 %}
+                <div class="progress">
+                    <div class="progress-bar progress-bar-danger" style="width: {{ chemical_progress }}%"></div>
+                </div>
+                {% else %}
+                    Armed
+                {% endif %}
+                </i></td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+        </tr>
+        <tr>
+            <td>Nuclear Weapons:</td>
+            {% if intel %}
+                <td><i>{{ target.military.nukes }} nuclear bombs</i></td>
+            {% else %}
+                <td><span style="background-color: black">CLASSIFIED</span></td>
+            {% endif %}
+		</tr>
+        {% if wars %}
+        <tr>
+             <td>Wars:</td>
+             <td><i>
+             {% if wars.attacking %}
+                <p>{{ target.name }} is attacking 
+                    <a href="{{ wars.attacking.get_absolute_url }}">
+                        {{ wars.attacking.name }}
+                </a>!</p>
+            {% endif %}
+            {% if wars.defending %}
+                <p>{{ target.name }} is being attacked by
+                    <a href="{{ wars.defending.get_absolute_url }}">
+                        {{ wars.defending.name }}
+                </a>!</p>
+            {% endif %}            
+            </i></td>
+        </tr>
+        {% endif %}
+
+         </table>
+        </div></div></div>
+		
+<hr />
+
+{% if not nation.settings.vacation %}
+
+            
+            <center> Communique:<div id="communique">
+                <form method="POST">{% csrf_token %}
+                <div style="margin: 15px">
+                    {{ commform.message }}
+                </div>
+                <button type="submit" class="btn btn-inverse" name="comm" type="submit">send</button>
+                </div>
+                </form><br /><br />
+			
+    {% if atwar %}
+            
+            <center><font color="red"><h2>You are at war!</h2></font-color>
+<form method="POST">{% csrf_token %}
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            <button type="submit" class="btn btn-danger attackgroup-land" name="attack">Launch land offensive!</button>
+        </div>
+    </div>
+</form>
+            
+        {% if True %}
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            <button class="btn btn-danger attackgroup" data-toggle="collapse" data-target="#airattacks">
+                Launch air raid!
+            </button>
+        </div>
+    </div>
+        <div id="airattacks" class="collapse quick">
+                <a href="#" data-toggle="tooltip" title="Will destroy a level of the enemy's airforce.">
+<form method="POST">{% csrf_token %}
+
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="air">Target enemy airbases</button></a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+                <a href="#" data-toggle="tooltip" title="Will destroy 1% of enemy GDP and reduce their growth by 5 million.">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="econ">Target economic infrastructure</button></a>
+        </div>
+    </div>
+               
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4"> 
+            <a href="#" data-toggle="tooltip" title="Will decrease manpower and decrease quality of life and stability, but result in a drop in reputation.">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="cities">Target cities</button></a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">    
+                <a href="#" data-toggle="tooltip" title="Will reduce enemy military size by 5% with a minimum of 2k soldiers.">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="army">Target ground forces</button></a>
+        </div>
+    </div>        
+           
+
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">   
+                <a href="#" data-toggle="tooltip" title="Will reduce enemy chemical weapons development, even if they have already completed it">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="chems">Target chemical weapons storage</button></a>
+        </div>
+    </div>      
+
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">            
+                <a href="#" data-toggle="tooltip" title="Will destroy one factory.">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="industry">Target factories</button></a>
+        </div>
+    </div>
+                
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+                <a href="#" data-toggle="tooltip" title="Will destroy one oil rig.">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="oil">Target oil wells.</button></a>
+        </div>
+    </div>
+            
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+                <a href="#" data-toggle="tooltip" title="Will decrease their agricultural level, reducing food production. Reduces reputation. Must have chemical weapons.">
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="orange">Target Agriculture.</button></a>
+        </div>
+    </div>
+</form>
+</div>
+        {% endif %}
+
+<form method="POST">{% csrf_token %}
+        {% if nation.military.navy > 0 %}
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            <button type="submit" class="btn btn-danger attackgroup" name="naval">Launch naval offensive!</button>
+        </div>
+    </div>
+        {% endif %}
+            
+        {% if nation.military.chems == 10 %}
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            <button type="submit" class="btn btn-danger attackgroup" name="chem" >Launch chemical weapons Attack!</button>
+        </div>
+    </div>
+        {% endif %}
+
+        {% if nation.military.nukes > 0 %}    
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            <button type="submit" class="btn btn-danger attackgroup" name="nuke" ><img src="http://i.imgur.com/AByUgqY.gif"><br /><b>NUCLEAR STRIKE</b></button>
+        </div>
+    </div>
+        {% endif %}
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4 ">
+            <button type="submit" class="btn peace" name="peace">Offer white peace</button>
+        </div>
+    </div>
+            </form>
+            </center><br />
+</form>
+    {% elif warrable %}
+			<br /><br />
+
+            <form method="POST">{% csrf_token %}
+                <button type="submit" class="btn btn-danger btn-large" name="war" style="width: 200px; height: 50px;" >Declare War!</button>
+            
+            </form>
+        
+            <hr />
+    {% endif %}
+{% endif %}
+    {% if spycount > 0 %}
+        Covert Action
+        <br /><br />
+
+            <form method="POST">{% csrf_token %}
+            <div class="row">
+                <div class="col-xs-4 col-xs-offset-4 spacer">
+                    Available Agents: {{ spyselectform.spy }}
+                </div>
+            </div>
+                <button type="submit" class="btn btn-inverse" name="infiltrate" >
+                    Infiltrate
+                </button>
+            </form>
+                
+    {% endif %}
+                
+                 <br /><br />
+    {% if spies %}
+         Agents deployed here
+         <br /><br />
+    <table class="table table-hover">
+        <tr>
+            <td><b>Portrait</b></td>
+            <td><b>Codename</b></td>
+            <td><b>Specialty</b></td>
+            <td><b>Experience</b></td>
+            <td><b>Infiltration</b></td>
+            
+        </tr>
+    {% load static %}
+    {% for spy in spies %}
+        <tr>
+            <td><center><a href="{{ spy.get_absolute_url }}"><img src="{% static spy.portrait %}" height="100px" /></a></center></td>
+            <td><a href="{{ spy.get_absolute_url }}">{{ spy.name }}</a></td>
+            <td>{{ spy.specialty }}</td>
+            <td>{{ spy.experience }}</td>
+            <td>{{ spy.infiltration }}</td>
+        </tr>
+    {% endfor %}
+    </table>
+
+    {% endif %}
+    
+        <hr />            
+            Diplomacy
+        <br />
+            
+        <p>
+            There is a $10k loss from your budget for the giving of resources to nations of opposing alignment or economic systems, and a 10% loss from cash transfers. Trading with nations that are non-aligned and mixed market systems results in no loss.
+        </p>
+    <table class="table">
+    {% if aidform.budget %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Wire Cash</td>
+            <td>${{ aidform.budget }}k</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="aid" value="budget">Wire</button>
+            </td>
+        </tr>
+    </form>
+        {% endif %}
+    {% if nation.military.army > 10 %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Send 10k man expeditionary force</td>
+            <td></td>
+            <td>
+                <button type="submit" class="btn btn-default" name="expeditionary">Send</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    {% if aidform.oil %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Ship Oil</td>
+            <td>{{ aidform.oil }} Mbbl(s)</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="aid" value="oil">Ship</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    {% if aidform.rm %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Ship raw materials</td>
+            <td>{{ aidform.rm }} hundred tons</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="aid" value="rm">Ship</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    {% if aidform.food %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Ship Food</td>
+            <td>{{ aidform.food }} thousand tons</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="aid" value="food">Ship</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    {% if aidform.mg %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Ship manufactured goods</td>
+            <td>{{ aidform.mg }} tons</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="aid" value="mg">Ship</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Cede 100km of Territory</td>
+            <td>
+                Ceding territory will result in a significant decline in stability and approval in your country.
+            </td>
+            <td>
+                <button type="submit" class="btn btn-default" name="cede">Cede</button>
+            </td>
+        </tr>
+    </form>
+    {% if nation.military.weapons > 5 %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Provide 5 Weapons</td>
+            <td>Weapons trade reduces your reputation.</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="giveweapons">Smuggle</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    {% if nation.research >= 50 %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Provide 50 Research</td>
+            <td></td>
+            <td>
+                <button type="submit" class="btn btn-default" name="research">Share</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    {% if nation.uranium %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Send 1 ton of uranium</td>
+            <td>Trade in uranium will reduce reputation.</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="uranium">Send</button>
+            </td>
+        </tr>
+    {% endif %}
+    {% if nukes %}
+    <form method="POST"> {% csrf_token %}
+        <tr>
+            <td>Transfer Nuclear Weapon</td>
+            <td>Nuclear proliferation will result in a very large reduction in reputation.</td>
+            <td>
+                <button type="submit" class="btn btn-default" name="nuke">Send</button>
+            </td>
+        </tr>
+    </form>
+    {% endif %}
+    </table>
+</form>
+</center>
+
+{% endblock %}

@@ -1,0 +1,235 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+<h2 style="margin: 2em;">World News</h2>
+
+
+
+
+<div>
+    {% load static %}
+    <img src="{% static 'img/war.jpg' %}">
+</div>
+
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'news' page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+</div>
+
+<table class="table table-striped table-hover">
+    <thead>
+        <tr>
+            <td>Aggressor</td>
+            <td>Aggressor's Alliance</td>
+            <td>Aggressor's Military</td>
+            <td>Defender</td>
+            <td>Defender's Alliance</td>
+            <td>Defender's Military</td>
+        </tr>
+    </thead>
+    <tbody>
+    {% for war in wars %}
+        <tr>
+            <td>
+                <a href="{{ war.attacker.get_absolute_url }}">
+                    <b>{{ war.attacker.name }}</b>
+                </a>
+            </td>
+            <td>
+                {% if war.attacker.has_alliance %}
+                    <a href="{{ war.attacker.alliance.get_absolute_url }}">
+                        <b>{{ war.attacker.alliance.name }}</b>
+                    </a>
+                {% else %}
+                    None
+                {% endif %}
+            </td>
+            <td><b>{{ war.attacker.military.army }}k</b></td>
+
+            <td>
+                <a href="{{ war.defender.get_absolute_url }}">
+                    <b>{{ war.defender.name }}</b>
+                </a>
+            </td>
+            <td>
+                {% if war.defender.has_alliance %}
+                    <a href="{{ war.defender.alliance.get_absolute_url }}">
+                        <b>{{ war.defender.alliance.name }}</b>
+                    </a>
+                {% else %}
+                    None
+                {% endif %}
+            </td>
+            <td><b>{{ war.defender.military.army }}k</b></td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<p style="margin-top: 8em"><h2>Statistics</h2></p>
+
+<table class="table table-hover" style="width: 60%">
+    <tbody>
+        <tr>
+            <td>Active Last Hour:</td>
+            <td>{{ newstats.active1 }}</td>
+        </tr>
+         <tr>
+            <td>Active Last 24 Hours:</td>
+            <td>{{ newstats.active24 }}</td>
+        </tr>
+        <tr>
+            <td>Active Last Week:</td>
+            <td>{{ newstats.activeweek }}</td>
+        </tr>
+        <tr>
+            <td>Active Last 30 days:</td>
+            <td>{{ newstats.active30 }}</td>
+        </tr>
+        <tr>
+            <td>Total Created Nations:</td>
+            <td>{{ newstats.total_nations }}</td>
+        </tr>
+        <tr>
+            <td>Nations Created Last 24 hours:</td>
+            <td>{{ newstats.total_nations24 }}</td>
+        </tr>
+        <tr>
+            <td>Nations Created Last Week:</td>
+            <td>{{ newstats.total_nations7 }}</td>
+        </tr>
+        <tr>
+            <td>Total Population:</td>
+            <td>{{ newstats. }}</td>
+        </tr>
+        <tr>
+            <td>Gross Global GDP:</td>
+            <td>${{ newstats.gdp }}m</td>
+        </tr>
+        <tr>
+            <td>Global Growth:</td>
+            <td>${{ newstats.growth }}m</td>
+        </tr>
+        <tr>
+            <td>Global Factory Count:</td>
+            <td>{{ newstats.factories }}</td>
+        </tr>
+        <tr>
+            <td>Global University Count:</td>
+            <td>{{ newstats.universities }}</td>
+        </tr>
+        <tr>
+            <td>Global Oil Reserves:</td>
+            <td>{{ newstats.oilreserves }} mbbls</td>
+        </tr>
+        <tr>
+            <td>Global Oil Production:</td>
+            <td>{{ newstats.wells }} mbbls</td>
+        </tr>
+        <tr>
+            <td>Global Oil Stockpiles:</td>
+            <td>{{ newstats.oil }} mbbls</td>
+        </tr>
+        <tr>
+            <td>Global Raw Material Production:</td>
+            <td>{{ newstats.mines }} Tons</td>
+        </tr>
+        <tr>
+            <td>Global Raw Material Stockpiles:</td>
+            <td>{{ newstats.rm }} Tons</td>
+        </tr>
+        <!--<tr>
+            <td>Global Food Production:</td>
+            <td>{{ newstats. }}</td>
+        </tr>-->
+        <tr>
+            <td>Global Raw Food Stockpiles:</td>
+            <td>{{ newstats.food }}</td>
+        </tr>
+        <tr>
+            <td>Global Uranium Supply:</td>
+            <td>{{ newstats.uranium }} Tons</td>
+        </tr>
+        <tr>
+            <td>Nuclear Reactors:</td>
+            <td>{{ newstats.reactors }}</td>
+        </tr>
+        <tr>
+            <td>Nuclear Warheads:</td>
+            <td>{{ newstats.nukes }}</td>
+        </tr>
+        <tr>
+            <td>Total Weapons:</td>
+            <td>{{ newstats.weapons }}</td>
+        </tr>
+        <tr>
+            <td>Total Military Aircraft:</td>
+            <td>{{ newstats.planes }}</td>
+        </tr>
+        <tr>
+            <td>Total Naval Vessels:</td>
+            <td>{{ newstats.navy }}</td>
+        </tr>
+        <tr>
+            <td>Total Servicemen:</td>
+            <td>{{ newstats.army }}</td>
+        </tr>
+        <tr>
+            <td>Eastern Aligned Nations:</td>
+            <td>{{ newstats.east }}</td>
+        </tr>
+        <tr>
+            <td>Western Aligned Nations:</td>
+            <td>{{ newstats.west }}</td>
+        </tr>
+        <tr>
+            <td>Unaligned Nations:</td>
+            <td>{{ newstats.neutral }}</td>
+        </tr>
+        <tr>
+            <td>Capitalist Economies:</td>
+            <td>{{ newstats.capitalists }}</td>
+        </tr>
+        <tr>
+            <td>Command Economies:</td>
+            <td>{{ newstats.commands }}</td>
+        </tr>
+        <tr>
+            <td>Mixed Economies:</td>
+            <td>{{ newstats.mixed }}</td>
+        </tr>
+        <tr>
+            <td>Dictatorships:</td>
+            <td>{{ newstats.dictatorship }}</td>
+        </tr>
+        <tr>
+            <td>Military States:</td>
+            <td>{{ newstats.military_state }}</td>
+        </tr>
+        <tr>
+            <td>Single Party States:</td>
+            <td>{{ newstats.single_party_state }}</td>
+        </tr>
+        <tr>
+            <td>Authoritarian Democracies:</td>
+            <td>{{ newstats.authoritarian_democracy }}</td>
+        </tr>
+        <tr>
+            <td>Democracies:</td>
+            <td>{{ newstats.democracy }}</td>
+        </tr>
+        <tr>
+            <td>Active Wars:</td>
+            <td>{{ newstats.activewars }}</td>
+        </tr>
+        <tr>
+            <td>Communiques Sent last 24 hours:</td>
+            <td>{{ newstats.commcount }}</td>
+        </tr>
+    </tbody>
+</table>
+
+{% endblock %}

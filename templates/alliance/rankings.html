@@ -1,0 +1,62 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+
+<div class="container">
+<p style="margin: 50px"><h2>Alliances of the World</h2></p>
+{% load static %}
+<img src="/static/img/alliancerankings.png" />
+
+
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'alliance:rankings' page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+</div>
+
+
+<div class="row">
+	<div class="col-xs-12">
+	<center>
+		{% if alliances %}
+			<table class="table table-striped">
+				<thead>
+					<tr>
+						<td style="max-width: 150px;"></td>
+						<td style="width: 25%;"><b>Alliance</b></td>
+						<td style="width: 65%;"><b>Description</b></td>
+						<td style="width: 5%;"><b>Members</b></td>
+						<td style="width: 5%;"><b>Accepts applications</b></td>
+					</tr>
+				</thead>
+				<tbody>
+				{% for alliance in alliances %}
+				<tr>
+					<td>
+						<a href="{{ alliance.get_absolute_url }}"><img src="{{ alliance.flag }}" alt="flag" class="sflag"></a>
+					</td>
+					<td>
+						<a href="{{ alliance.get_absolute_url }}"><h4><b>{{ alliance.name }}</b></h4></a>
+					</td>
+					<td><h5>{{ alliance.description }}</h5></td>
+					<td class="tdi"><h5>{{ alliance.members.all.count }}</h5></td>
+					{% if alliance.accepts_applicants %}
+						<td class="tdi"><h5 style="color: green"><b>Yes</b></h5></td>
+					{% else %}
+						<td class="tdi"><h5 style="color: red"><b>No</b></h5></td>
+					{% endif %}
+				</tr>
+				{% endfor %}
+				</tbody>
+			</table>
+		{% else %}
+			<p>There are no alliances!</p>
+		{% endif %}
+		</center>
+	</div>
+</div>
+
+
+</div>
+{% endblock %}

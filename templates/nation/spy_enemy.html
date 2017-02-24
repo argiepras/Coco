@@ -1,0 +1,83 @@
+<table class="table table-hover">
+      <form method="post">{% csrf_token %}
+    <tr>
+        <td>Action</td>
+        <td>Description</td>
+        <td>Cost</td>
+        <td></td><td>
+    </tr>
+    {% if not spy.arrested %}
+    <tr>
+        <td>Arrest</td>
+        <td>Issues an arrest order on the spy. Success depends on infiltration, experience and time passed since the spy was discovered.</td>
+        <td>$20k</td>
+        <td>
+            <button type="submit"  class="btn btn-default" name="action" value="arrest">Arrest</button>
+        </td>
+    </tr>
+    <tr>
+        <td>Execute</td>
+        <td>Arrangements are made for the spy to have an accident. Success depends on infiltration, experience and time passed since the spy was discovered.</td>
+        <td>${{ accidentcost }}k</td>
+        <td>
+            <button type="submit"  class="btn btn-default" name="action" value="accident">Command</button>
+        </td>
+    </tr>
+    {% if spy.surveillance %}
+    <tr>
+        <td>End suvelliance</td>
+        <td>Ends the surveillance of the foreign agent.</td>
+        <td>No cost</td>
+        <td>
+            <button type="submit"  class="btn btn-default" name="action" value="end_surveillance">End</button>
+        </td>
+    </tr>
+    {% else %}
+    <tr>
+        <td>Place under surveillance</td>
+        <td>Assigns a spy to shadow the agent. Enemy agents under surveillance has a much greater chance to be arrested and lower chance to succeed in sabotage</td>
+        <td>${{ surveilcost }}k</td>
+        <td>
+            <div style="width: 200px; margin-bottom: 10px">
+                {{ surveillanceform.spy }}
+            </div>
+            <button type="submit"  class="btn btn-default" name="action" value="surveillancing">Assign</button>
+        </td>
+    </tr>
+    {% endif %}
+    {% else %}
+    <tr>
+        <td>Execute</td>
+        <td>Labels the spy an enemy of the state and issues an execution order on him.</td>
+        <td>$50k</td>
+        <td>
+            <button type="submit"  class="btn btn-default" name="action" value="execute" />Execute</button>
+        </td>
+    </tr>
+    <tr>
+        <td>Extradite</td>
+        <td>Sends a transfer request to another country to make him not our problem anymore.</td>
+        <td>
+            
+            $50k
+        </td>
+        <td>
+            <div style="width: 200px; margin-bottom: 10px">
+                {{ transferform.name }}
+            </div>
+            <button type="submit"  class="btn btn-default" name="action" value="extradite" />Send off</button>
+        </td>
+    </tr>
+    <tr>
+        <td>Deport</td>
+        <td>Releases and deports the spy in question.</td>
+        <td>
+            $10k
+        </td>
+        <td>
+            <button type="submit"  class="btn btn-default" name="action" value="deport" />Deport</button>
+        </td>
+    </tr>
+    {% endif %}
+    </form>
+</table>

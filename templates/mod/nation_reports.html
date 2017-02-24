@@ -1,0 +1,60 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load modtags %}
+<div class="container">
+    <p class="spacer"><h2>{{ target.name }}s reports</h2></p>
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-9">
+            <a href="{% url 'mod:nation' target.index %}">
+                <button class="btn btn-default">
+                    Back to overview
+                </button>
+            </a>
+        </div>
+    </div>
+<div class="bigspacer">
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'mod:nation_reports' target.index page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+</div>
+    <table class="table table-striped">
+        <thead>
+            <td>Reported</td>
+            <td>Type</td>
+            <td>Claimed</td>
+            <td>Investigating mod</td>
+            <td>Time Reported</td>
+            <td>Details</td>
+            <td></td>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+                <tr>
+                    <td><a href="{{ report.reported.get_modview_url }}">
+                    {{ report.reported.name }}
+                    </a></td>
+                    <td>{{ war|wartype:target }}</td>
+                    <td>{{ war|outcome:target }}</td>
+                    <td>{{ war|losses:target }}</td>
+                    <td>{{ war.timestart|date:"o/m/d G:i" }}</td>
+                    {% if war.war.over %}
+                    <td>{{ war.timeend|date:"o/m/d G:i" }}</td>
+                    {% else %}
+                    <td>N/A</td>
+                    {% endif %}
+                    <td>
+                        <a href="{{ war.get_absolute_url }}">
+                            <button class="btn btn-default">
+                                View Details
+                            </button>
+                        </a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

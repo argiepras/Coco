@@ -1,0 +1,120 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+    <p class="spacer"><h2>Moderation Center</h2></p>
+
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+    <div class="row" style="margin-top: 100px">
+        <div class="col-xs-12">
+            <div class="col-xs-1">
+                <a href="#">
+                    <button class="btn btn-default allbtn">Suspect players 
+                        <span class="badge">{{ suspectcount }}</span>
+                    </button>
+                </a>
+
+                <div style="margin-top: 20px">
+                    <a href="{% url 'mod:reports' 1 %}">
+                        <button class="btn btn-default allbtn">Uninvestigated reports 
+                            <span class="badge">{{ reportcount }}</span>
+                        </button>
+                    </a>
+                </div>
+            </div>
+            <form method="POST">{% csrf_token %}
+                <div class="col-xs-4 col-xs-offset-3">
+                    {{ globalcommform.content }}
+                </div>
+        </div>
+    </div>
+    <div class="row spacer">
+        <div class="col-xs-12">
+            <button type="submit" class="btn btn-default" name="comm">
+                Issue Global Comm
+            </button>
+        </div>
+    </div>
+    </form>
+
+    <div class="row" style="margin-top: 100px">
+        <div class="col-xs-12">
+            <p>Quick actions</p>
+        </div>
+    </div>
+<form method="POST">{% csrf_token %}
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-3">
+            {{ quickactionform.player }}
+        </div>
+        <div class="col-xs-3">
+            {{ quickactionform.action }}
+        </div>
+    </div>
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-4">
+            {{ quickactionform.reason }}
+        </div>
+    </div>
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-4">
+            <button type="submit" class="btn btn-default" name="quick">
+                Submit
+            </button>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top: 50px;">
+        <div class="col-xs-12">
+            <p>Assign new ID</p>
+        </div>
+    </div>
+    <div class="row spacer-small">
+        <div class="col-xs-4 col-xs-offset-4">
+            {{ newidform.old }}
+        </div>
+    </div>
+    <div class="row spacer-small">
+        <div class="col-xs-2 col-xs-offset-5">
+            {{ newidform.new }}
+        </div>
+    </div>
+    <div class="row spacer-small">
+        <div class="col-xs-12">
+            <button type="submit" class="btn btn-default" name="newid">
+                Assign ID
+            </button>
+        </div>
+    </div>
+</form>
+
+
+
+
+    <div class="row" style="margin-top: 100px">
+        <div class="col-xs-12">
+            <p>For actual investigation</p>
+        </div>
+    </div>
+<form method="POST">{% csrf_token %}
+    <div class="row spacer">
+        <div class="col-xs-3 col-xs-offset-4">
+            {{ viewplayerform.player }}
+        </div>
+        <div class="col-xs-1">
+            <button type="submit" class="btn btn-default" name="viewplayer">
+                View player
+            </button>
+        </div>
+    </div>
+</form>
+
+
+
+
+
+</div>
+{% endblock %}

@@ -1,0 +1,284 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load alliancetags %}
+
+{% if permissions.is_officer or permissions.template.founder %}
+
+
+<div class="container">
+<div style="margin: 50px">
+	<div class="row">
+		<div class="col-xs-12">
+		{% if permissions.can_applicants %}
+			<div class="col-xs-1">
+				<a href="{% url 'alliance:applications' %}">
+				<button class="btn btn-default allbtn">Applications <span class="badge">{{ alliance.applications.count }}
+				</span></button></a>
+
+				<div style="margin-top: 20px">
+					<a href="{% url 'alliance:invites' %}">
+					<button class="btn btn-default allbtn">Outstanding invites 
+						<span class="badge">{{ alliance.outstanding_invites.count }}</span>
+					</button></a>
+				</div>
+			</div>
+		<div class="col xs-1 col-xs-offset-10">
+			<a href="{% url 'alliance:control_panel' %}">
+				<button class="btn">Control panel</button>
+			</a>
+		</div>
+		{% else %}
+		<div class="col xs-1 col-xs-offset-11">
+			<a href="{% url 'alliance:control_panel' %}">
+				<button class="btn">Control panel</button>
+			</a>
+		</div>
+		{% endif %}
+		</div>
+	</div>
+</div>
+{% endif %}
+		{% if result %}
+			<div class="result">
+				<p>{{ result }}</p>
+			</div>
+		{% endif %}
+		<p><h1>{{ alliance.name }}</h1></p>
+		{% if invited %}
+			<p>You have been invited to this alliance! Will you join or spurn their advances?</p>
+			<form method="POST" role="form">
+			{% csrf_token %}
+			<input name="invite" value="accept">
+			<input name="invite" value="decline">
+			</form>
+		{% endif %}
+
+		<img src="{{ alliance.flag }}" class="dflag" style="display: inline;">
+		<center>
+		<div class="row">
+			<div class="col-xs-6 col-xs-offset-3">
+				<p style="margin: 40px">{{ alliance.description }}</p>
+			</div>
+		</div>
+
+
+
+
+
+		{% if permissions.can_masscomm %}
+		<div id="masscomm">
+			<h3>Mass comm</h3>
+			<div class="row">
+				<div class="col-xs-4 col-xs-offset-4">
+					<form method="POST" role="form">{% csrf_token %}
+						{{ masscommform.message }}
+						{% if permissions.can_officercomm %}
+							<div style="margin-top: 20px;">
+								<button type="submit" name="masscomm" value="leadership" class="btn btn-default" style="margin-right: 15px">
+									Send leadership comm
+								</button>
+								<button type="submit" name="masscomm" value="everyone" class="btn btn-default" style="margin-left: 15px">
+									Send mass comm
+								</button>
+							</div>
+						{% else %}
+							<div style="margin-top: 20px;">
+								<button type="submit" name="masscomm" value="everyone" class="btn btn-default">
+									Send mass comm
+								</button>
+							</div>
+						{% endif %}
+					</form>
+				</div>
+			</div>
+		</div>
+		{% endif %}
+
+<div>
+    <button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#banking">
+        Alliance banking
+    </button>
+    <div class="collapse" id="banking">
+    {% if permissions.can_banking %}
+        <div style="margin: 10px">
+            <a href="{% url 'alliance:bank' 1 %}">
+                <button class="btn btn-default">
+                    Bank Overview
+                </button>
+            </a>
+        </div>
+    {% endif %}
+    <div style="margin: 20px">
+    <form method="POST">{% csrf_token %}
+        <div class="row">
+            <div class="col-xs-3 col-xs-offset-3">
+                {{ depositform.amount }}
+            </div>
+            <div class="col-xs-3">
+                {{ depositform.resource }}
+            </div>
+        </div>
+        <div class="row">
+        {% if permissions.can_withdraw %}
+            <div class="col-xs-2 col-xs-offset-4">
+                <button type="submit" class="btn btn-default spacer" name="deposit">
+                    Deposit
+                </button>
+            </div>
+            <div class="col-xs-2">
+                <button type="submit" class="btn btn-default spacer" name="withdraw">
+                    Withdraw
+                </button>
+            </div>
+        {% else %}
+            <div class="col-xs-4 col-xs-offset-4">
+                <button type="submit" class="btn btn-default spacer" name="deposit">
+                    Deposit
+                </button>
+            </div>
+        {% endif %}
+        </div>
+    </form>
+    </div>
+    </div>
+</div>
+
+<button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#inits">
+	Alliance initiatives
+</button>
+<div class="collapse" id="inits">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td style="width: 80%">Policy</td>
+                <td style="width: 20%">Status</td>
+            </tr>
+        </thead>
+        <tbody>
+        {% for initiative in initiatives %}
+            <tr>
+                <td><a href="#" data-toggle="tooltip" data-placement="right" title="{{ initiative.tooltip }}">
+                        {{ initiative.txt }}
+                    </a></td>
+                <td>
+                    {% if initiative.status %}
+                        <span style="color: green">Yes</span>
+                    {% else %}
+                        <span style="color: red">No</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+  </div>
+
+
+<div>
+<button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#taxes">
+	Alliance Taxes
+</button>
+</div>
+<div id="taxes" class="collapse">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td style="width: 80%">Tax Bracket</td>
+                <td style="width: 20%">Tax Rate</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Wealthiest Nations</td>
+                <td>{{ alliance.initiatives.wealthy_tax }}%</td>
+            </tr>
+            <tr>
+                <td>Upper Middle Nations</td>
+                <td>{{ alliance.initiatives.uppermiddle_tax }}%</td>
+            </tr>
+            <tr>
+                <td>Lower Middle Nations</td>
+                <td>{{ alliance.initiatives.lowermiddle_tax }}%</td>
+            </tr>
+            <tr>
+                <td>Poorest Nations</td>
+                <td>{{ alliance.initiatives.poor_tax }}%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+
+		<h3>Member list</h3>
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Rank</th>
+					<th>Region</th>
+					<th>GDP</th>
+					{% if permissions.template.kick %}
+					<th>Kick</th>
+					{% endif %}
+				</tr>
+			</thead>
+			<tbody>
+			<form method="POST" role="form">
+		{% csrf_token %}
+		{% for member in members %}
+		<tr>
+			<td><a href="{{ member.get_absolute_url }}">
+                {% if member.permissions.template.officer %}
+                    <img src="{{ alliance.icon }}" width="{{ member.permissions|iconsize }}"
+                    height="{{ member.permissions|iconsize }}">
+                {% endif %}
+                {{ member.name }}
+                
+            </a></td>
+			<td>{{ member.permissions.template.title }}</td>
+			<td>{{ member.subregion }}</td>
+			<td>{{ member.gdp }}</td>
+
+			{% if permissions|kick:member == True %}
+				<td>
+                    <input type="checkbox" value="{{ member.pk }}" name="member_choice">
+                </td>
+				{% else %}
+				<td>
+				</td>
+			{% endif %}
+
+		</tr>
+		{% endfor %}
+			</tbody>
+		</table>
+			<button type="submit" class="btn btn-danger spacer" name="kick" value="kick">Purge</button>
+		</form>
+
+<div class="row spacer-big">
+    <form method="POST" role="form"> {% csrf_token %}
+        {% if permissions.panel_access %}
+        <div class="col-xs-4">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" name="leave">
+                Leave {{ alliance.name }}
+            </button>
+        </div>
+        <div class="col-xs-4 col-xs-offset-4">
+            <button type="submit" class="btn btn-danger" name="resign">
+                Resign as {{ permissions.template.title }}
+            </button>
+        </div>
+        {% else %}
+        <div class="col-xs-12">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger" name="leave">
+                Leave {{ alliance.name }}
+            </button>
+        </div>
+        {% endif %}
+    </form>
+</div>
+
+</div>
+{% endblock %}

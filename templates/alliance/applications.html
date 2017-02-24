@@ -1,0 +1,84 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load basetags %}
+<div class="container">
+<div class="row">
+	<div class="col-xs-4 col-xs-offset-4">
+		<h2>Our Applications</h2>
+		{% load static %}
+		<img src="{% static 'img/applications.jpg' %}" height="70" style="margin: 20px">
+	</div>
+	<div class="col-xs-1 col-xs-offset-2">
+		<a href="{% url 'alliance:main' %}">
+			<button class="btn" style="margin-top: 20px; margin-right: 20px">
+				Back to control panel
+			</button>
+		</a>
+	</div>
+</div>
+
+{% if result %}
+	<div class="result">
+		{{ result }}
+	</div>
+{% endif %}
+
+{% if applications %}
+<form method="POST">{% csrf_token %}
+<div class="row">
+	<div class="col-xs-10 col-xs-offset-1">
+	<table class="table table-striped" style="margin-top: 50px">
+		<thead>
+			<tr>
+				<td>Nation</td>
+				<td>GDP</td>
+				<td>Region</td>
+				<td>Alignment</td>
+				<td>Action</td>
+			</tr>
+		</thead>
+		<tbody>
+		{% for applicant in applications %}
+			<tr>
+				<td>
+					<a href="{{ applicant.nation.get_absolute_url }}">
+						<b>{{ applicant.nation.name }}</b>
+					</a>
+			</td>
+				<td>{{ applicant.nation.gdp }}</td>
+				<td>{{ applicant.nation.subregion }}</td>
+				<td>{{ applicant.nation.alignment|alignment }}</td>
+				<td>
+			<input type="checkbox" class="form-control" name="ids" value="{{ applicant.pk }}" id="app_{{ applicant.pk }}">
+				</td>
+			</tr>
+		{% endfor %}
+		</tbody>
+	</table>
+	</div>
+</div>
+
+<div style="margin: 40px">
+	<button type="submit" class="btn btn-success" name="accept" style="margin-right: 100px">
+		Accept selected
+	</button>
+	<button type="submit" class="btn btn-danger" name="deny" style="margin-left: 100px">
+		Deny selected
+	</button>
+</div>
+
+</form>
+
+{% else %}
+
+
+<div style="margin: 200px">
+	<h4>Our alliance is not a popular one, for we have no applications..</h4>
+</div>
+
+{% endif %}
+
+</div>
+
+
+{% endblock %}

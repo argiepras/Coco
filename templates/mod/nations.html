@@ -1,0 +1,91 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+    <p class="spacer"><h2>All nations</h2></p>
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+
+    <div style="margin-top: 50px; margin-bottom: 20px">
+        <form method="POST">{% csrf_token %}
+            <div class="row">
+                <div class="col-xs-12"><p>Search for players</p></div>
+                <div class="col-xs-6 col-xs-offset-3">
+                    <div class="input-group">
+                        {{ searchform.player }}
+                    <span class="input-group-btn">
+                        <button class="btn btn-default" type="submit" name="search">
+                            Search
+                        </button>
+                    </span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    {% if search_query %}
+        {% if username_matches.count > 0 %}
+            <p>Username matches:</p>
+            <p>
+                {% for horse in username_matches %}
+                    <a href="{{ found.get_modview_url }}">
+                        <b>{{ horse.name }}</b>
+                    </a>
+                    {% if forloop.last == False %}
+                        ,
+                    {% endif %}
+                {% endfor %}
+            </p>
+        {% endif %}
+        {% if nation_name_matches.count > 0 %}
+            <p class="spacer">Nation name matches:</p>
+            <p>
+                {% for player in nation_name_matches %}
+                    <a href="{{ player.get_modview_url }}">
+                        <b>{{ player.name }}</b>
+                    </a>
+                    {% if forloop.last == False %}
+                        ,
+                    {% endif %}
+                {% endfor %}
+            </p>
+        {% endif %}
+        {% if username_matches.count == 0 and nation_name_matches.count == 0 %}
+            <p>No matches found for "{{ search_query }}"</p>
+        {% endif %}
+    {% endif %}
+    <div> 
+        <ul class="pagination">
+        {% for page in pages %}
+            <li><a href="{% url 'mod:nations' page.page %}">{{ page.page }}</a></li>
+        {% endfor %}
+        </ul> 
+    </div>
+
+    <table class="table table-striped table-hover">
+        <thead>
+            <td>Nation name</td>
+            <td>Leader name</td>
+            <td>GDP</td>
+            <td>Subregion</td>
+        </thead>
+        <tbody>
+            {% for player in nations %}
+            <tr>
+                <td>
+                    <a href ="{{ player.get_modview_url }}">
+                        <b>{{ player.name }}</b>
+                    </a>
+                </td>
+                <td>{{ player.user.username }}</td>
+                <td>${{ player.gdp }}m</td>
+                <td>{{ player.subregion }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        
+
+</div>
+{% endblock %}

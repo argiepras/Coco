@@ -1,0 +1,316 @@
+
+<html>
+(if donor/sub, no ads, otherwise you're fucked)
+    <head>
+        <title>BLOC 4 2.0 - a multiplayer political simulation game</title>
+        <link href="style.css" rel="stylesheet" type="text/css"/>
+        <link rel="shortcut icon" href="/favicon.ico" type="image/ico">
+        <link rel="shortcut icon" type="image/ico" href="http://www.bloc.name/favicon.ico" />
+        
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <script src="policyjsdomestic.js"></script>
+         <script src="policyjseconomic.js"></script>
+          <script src="policyjsmarket.js"></script>
+           <script src="policyjsmilitary.js"></script>
+        
+        <!-- Bootstrap -->
+        <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet" media="screen">
+        <script src="http://code.jquery.com/jquery.js"></script>
+        
+        
+        <script src="bootstrap/js/bootstrap.min.js"></script>
+
+        <!-- U1q8lndk0GRVaRVCQ029_iwoEO0 -->
+
+        <script>
+            jQuery(function ($) {
+                $("a").tooltip()
+            });
+            
+            $('#myTab a').click(function (e) {
+  e.preventDefault();
+  $(this).tab('show');
+})
+        </script>
+    </head>    
+<style>.dropdown-backdrop{
+    position: static;
+}
+
+.navbar .navbar-nav {
+  display: inline-block;
+  float: none;
+  vertical-align: top;
+}
+
+.navbar .navbar-collapse {
+  text-align: center;
+}
+
+
+</style>
+<div style="position: fixed; top: 0; width: 100%; color: white; z-index:100;">
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="main.php">(fetch custom flag)<img height="20" src="flags/(fetch vanilla flag) " /> 
+      (fetch nation name)
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        
+        <li><a href="nnews.php">News (how many news?)</a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Communiques  (how many comms?) <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+             <li><a href="messages.php">Received</a></li>
+      <li><a href="messages.php?to=yes">Sent</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Policies <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+             <li><a href="economics.php">Economic</a></li>
+          <li><a href="domestic.php">Domestic</a></li>
+          <li><a href="foreign.php">Foreign</a></li>
+          <li><a href="military.php">Military</a></li>
+          <li><a href="market.php">Market</a></li>
+          <li><a href="intelligence.php">Intelligence</a></li>
+          <li><a href="research.php">Research</a></li>
+          </ul>
+        </li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><img  src="globe.png" width="20">  The World <b class="caret"></b></span></a>
+          <ul class="dropdown-menu">
+            
+        (what continent am I?)
+         <li>(be sure to send them to the correct continental chat)</li>
+         <li><a href="globaldeclarations.php">Global Declarations (how may globdecs?)</button></a></li>
+         <li><a href="freemarket.php">The Free Market (how many offers?)</button></a></li>
+      <li><a href="rankings.php">World Rankings</button></a></li>
+      <li><a href="map.php">World Map</button></a></li>
+      <li><a href="news.php">News And Statistics</button></a></li>
+          </ul>
+        </li>
+        
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> The Alliances <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+             
+        (what is the alliance?)
+         <li><a href="alliancestats.php?allianceid="(insert alliance code here)>Your Alliance</a></button></li>
+         <li><a href="alliancediscussion.php?allianceid="(insert alliance code here)>Alliance Chat  (how many decs?)</a></button></li>
+       <?php  }   ?>
+       <li><a href="alliancedecs.php">Alliance Declarations (how many decs?)</button></a></li>
+          <li><a href="alliancerankings.php">Alliance Rankings</button></a></li>
+          </ul>
+        </li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Community <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+             
+        <li><a href="http://blocgame.com/forums/index.php">Forums</a></li>
+          <li><a href="https://discord.gg/013cl5T96FvOVV8X2">Chat</a></li>
+          <li><a href="http://blocgame.wikia.com/wiki/BlocGame_Wiki">Wiki</a></li>
+          <li><a href="https://www.facebook.com/blocgame/">Facebook</a></li>
+          </ul>
+        </li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> User <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+             
+        <li><a href="logout.php">Logout</a></li>
+          <li><a href="settings.php">Settings</a></li>
+          <li><a href="subscribe.php">Subscribe</a></li>
+          </ul>
+        </li>
+        
+        
+        </ul>
+        
+      </ul>
+      
+      
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav></div>
+    
+    
+    
+    
+  
+      
+      <!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE-->
+      <!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE-->
+      <center>
+    <!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE--><!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE-->
+            
+(if user didn't log in, show the below)
+            
+            
+            
+            <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <!-- Brand and toggle get grouped for better mobile display -->
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span><div style="color: white;">LOGIN</div>
+    </button>
+    <a class="navbar-brand" href="#"></a>
+  </div>
+
+  <!-- Collect the nav links, forms, and other content for toggling -->
+  <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+    <ul class="nav navbar-nav">
+      <form class="navbar-form navbar-left"  action="{% url 'registration:login' %}" method="post">
+        <div class="form-group">
+          <li><input type="text" class="form-control" name="username" placeholder="Username"></li></div>
+          <div class="form-group"><li><input type="password" name="password" class="form-control" placeholder="Password"></li>
+        </div>
+        <button type="submit" name="login" class="btn btn-default">Login</button>
+      </form>
+    <li><a href="{% url 'registration:register' %}"><button class="btn btn-default btn-sm">Register</button></a></li>
+    </ul>
+     
+    <ul class="nav navbar-nav navbar-right">
+    <li><a href="{% url 'registration:recover' %}"><button class="btn btn-default btn-sm">Recover Password</button></a></li>
+     <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default btn-sm">Community <b class="caret"></b></button></a>
+        <!--<ul class="dropdown-menu">
+          <li><a href="http://blocgame.com/forums/index.php"><button class="btn btn-default">Forum</button></a></li>
+          <li><a href="http://blocgame.com/chat.php"><button class="btn btn-default">Chat</button></a></li>
+          <li><a href="http://www.reddit.com/r/blocgame"><button class="btn btn-default">Reddit</button></a></li>
+          <li><a href="http://blocgame.wikia.com/wiki/BlocGame_Wiki">Wiki</a></li>-->
+          
+        </ul>
+      </li>
+      <li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default btn-sm"><img  src="globe.png" width="18">  The World <b class="caret"></b></button></a>
+      <ul class="dropdown-menu">
+      <li><a href="{% url 'nation:map' %}">World Map</a></li>
+      <li><a href="{% url 'nation:rankings' %}">World Rankings</a></li>
+      <li><a href="{% url 'nation:news' %}">World News</a></li>
+      </ul>
+      </li>
+    </ul>
+    
+  </div><!-- /.navbar-collapse -->
+</nav>
+</div></div>
+<!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE-->
+      <!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE-->
+      <center>
+    <!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE--><!-- IMPORTANT CENTER FOR EVERYTHING FUCKFACKFACE-->
+
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+    <div id="con_div"> <div id="content">
+     
+    <!--(google ads, shown only if not donor/sub)-->
+            
+
+{% block content %}
+{% endblock %}
+
+<div style="font-size:15; background-color: rgba(0, 0, 0, 0.93); color:grey"><br />
+(inspirational quotes, for some reason)
+<br /><br />
+ 
+ <table style="background: transparent;"><tr><td style="padding: 10px;">
+    <a style="font-size:13; color: white;" href="index.php">BLOC</a>
+    
+    
+    </td><td style="padding: 10px;">
+  
+    <a style="font-size:12; color: white;" href="about.php">about</a>
+    </td><td style="padding: 10px;">
+    <a style="font-size:12; color: white;" href="legalbs.php">terms and conditions</a>
+    </td><td style="padding: 10px;">
+    (calculating time...)
+      <a style="font-size:12; color: white;">(how many peaders are on?) leaders online</a>
+    </td><td style="padding: 10px;">
+    <a style="font-size:12; color: white;">Turn Change: 0:00, 12:00 server time</a>
+    </td><td style="padding: 10px;">
+    <a style="font-size:12; color: white;">Server Time: (show time calced above)</a>
+    </td></tr></table>
+ 
+ 
+ </div></div>
+    </div>
+    
+    {% if logged_in %}
+    <div id="bottombar">
+     <center>
+    <table style="background:transparent;"><tr>
+     <td style="padding: 10px;">
+      </td><td style="padding-top: 1px; padding-right: 15px; color: green; text-align:  center; min-width:20px;">
+       <a href="#" data-toggle="tooltip" data-placement="top" title="Available Budget" style="color: white;">${{stats.budget}}k</a>
+       </td><td style="top-padding: 1px; padding-right: 15px;  color: white; text-align:  center; min-width:20px;">
+       <a href="#" data-toggle="tooltip" data-placement="top" title="Oil Stockpile (Mbbls)" style="color: white;"><img src="oil.png" height="20px" />{{stats.oil}}
+       </td><td style="top-padding: 1px; padding-right: 15px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Raw Material Stockpile (Htons)" style="color: white;"><img src="rm.png" height="20px" /> {{stats.rm}}
+      </td>
+      <td style="top-padding: 1px; padding-right: 15px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Manufactured Goods (Tons)" style="color: white;"><img src="mg.png" height="20px" /> {{stats.mg}}
+      </td>
+      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Weapons" style="color: white;"><img src="weapons.png" height="20px" /> {{stats.research}}
+      </td>
+      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Food (Tons)" style="color: white;"><img src="food.png" height="20px" /> {{stats.food}}
+      </td>
+      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Research" style="color: white;"><img src="research2.png" height="20px" /> {{stats.research}}
+      </td>
+      <td style="padding-right: 30px;"></td>
+      </tr></table>
+    </center>    
+    </div>
+
+    {% endif %}
+
+    <script type="text/javascript">
+    function checkTime(i) {
+    if (i < 10) {
+        i = "0" + i;
+    }
+    return i;
+}
+
+function startTime() {
+    var today = new Date();
+    var h = today.getHours();
+    var m = today.getMinutes();
+    var s = today.getSeconds();
+    // add a zero in front of numbers<10
+    m = checkTime(m);
+    s = checkTime(s);
+    document.getElementById('time').innerHTML = h + ":" + m + ":" + s;
+    t = setTimeout(function () {
+        startTime()
+    }, 500);
+}
+startTime();
+    </script>

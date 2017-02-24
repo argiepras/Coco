@@ -1,0 +1,22 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+
+<div class="row spacer">
+    <div class="col-xs-2 col-xs-offset-9">
+        <a href="{% url 'alliance:control_panel' %}">
+            <button class="btn">
+                Back to control panel
+            </button>
+        </a>
+    </div>
+</div>
+
+<p style="margin: 100px">{{ header}}</p>
+
+{% if result %}
+<p>{{ result }}</p>
+{% endif %}
+
+</div>
+{% endblock %}

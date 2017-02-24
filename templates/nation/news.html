@@ -1,0 +1,68 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load humanize %}
+{% load event_tags %}
+<div class="container">
+
+
+<h3 style="margin: 40px"><b>National News</b></h3>
+{% load static %}
+<img src="{% static 'img/newspaper.jpg' %}">
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+<div style="margin: 40px">
+    <form method="POST">{% csrf_token %}
+        <button type="submit" class="btn btn-danger" name="deleteall">
+            Delete all news
+        </button>
+    </form>
+</div>
+
+
+{% if news %}
+<div class="declarations">
+    {% for newsitem in news %}
+    <form method="POST">{% csrf_token %}
+        <div class="news">
+            <div class="row">
+                <div class="col-sm-10">
+                    <div style="text-align: left; padding: 10px;">
+                    The following happened roughly {{ newsitem.timestamp|naturaltime }}
+                    </div>
+                </div>
+                <div class="col-sm-2">
+                {% if not newsitem.event %}
+                    <button type="submit" class="btn btn-danger" name="delete" value="{{ newsitem.pk }}" style="margin: 5px;">
+                        Delete news
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="news-content">
+                    {% if newsitem.event %}
+                        {% event_display newsitem %}
+                    {% else %}
+                        {{ newsitem.content|safe }}
+                    {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+    {% endfor %}
+</div>
+
+{% else %}
+<p style="margin: 10em">
+    Hundreds of monkeys seized a beer supply truck and proceeded to intoxicate themselves. The primates then went on a drunken rampage and wrecked the capital city! Otherwise a slow news day...
+</p>
+{% endif %}
+
+{% endblock %}

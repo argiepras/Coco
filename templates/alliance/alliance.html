@@ -1,0 +1,134 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load basetags %}
+
+<h2 style="margin: 50px"><b>{{ alliance.name }}</b></h2>
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+{% if invite %}
+    <form method="POST">{% csrf_token %}
+        <button type="submit" class="btn btn-default" name="invite" value="accept">
+            Accept Invitation
+        </button>
+        <button type="submit" class="btn btn-default" name="invite" value="refuse">
+            Refuse Invitation
+        </button>
+    </form>
+{% endif %}
+
+
+{% if applied %}
+    <form method="POST">{% csrf_token %}
+        <input type="submit" class="btn btn-default" name="unapply" value="Retract Application">
+    </form>
+{% else %}{% if alliance.accepts_applicants %}
+    <form method="POST">{% csrf_token %}
+        <input type="submit" class="btn btn-default" name="apply" value="Apply for Membership">
+    </form>
+{% endif %}{% endif %}
+
+<img src="{{ alliance.flag }}">
+<div class="anthem">
+    <iframe width="300" height="30" src="https://www.youtube.com/embed/{{alliance.anthem}}?rel=0&autoplay=1" frameborder="0" allowfullscreen></iframe>
+</div>
+
+<div class="row">
+    <div class="col-xs-6 col-xs-offset-3">
+        <p style="margin: 40px">{{ alliance.description }}</p>
+    </div>
+</div>
+<div>
+<button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#inits">Alliance initiatives</button>
+</div>
+<div class="collapse" id="inits">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td style="width: 80%">Policy</td>
+                <td style="width: 20%">Status</td>
+            </tr>
+        </thead>
+        <tbody>
+        {% for initiative in initiatives %}
+            <tr>
+                <td>{{ initiative.txt }}</td>
+                <td>
+                    {% if initiative.status %}
+                        <span style="color: green">Yes</span>
+                    {% else %}
+                        <span style="color: red">No</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div>
+<button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#taxes">Alliance Taxes</button>
+</div>
+<div id="taxes" class="collapse">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td style="width: 80%">Tax Bracket</td>
+                <td style="width: 20%">Tax Rate</td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Wealthiest Nations</td>
+                <td>{{ alliance.initiatives.wealthy_tax }}%</td>
+            </tr>
+            <tr>
+                <td>Upper Middle Nations</td>
+                <td>{{ alliance.initiatives.uppermiddle_tax }}%</td>
+            </tr>
+            <tr>
+                <td>Lower Middle Nations</td>
+                <td>{{ alliance.initiatives.lowermiddle_tax }}%</td>
+            </tr>
+            <tr>
+                <td>Poorest Nations</td>
+                <td>{{ alliance.initiatives.poor_tax }}%</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+    
+
+
+<div class="membertable" style="margin-top: 50px">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td><b>Nation</b></td>
+                <td><b>Title</b></td>
+                <td><b>GDP</b></td>
+                <td><b>Region</b></td>
+                <td><b>Alignment</b></td>
+            </tr>
+        </thead>
+        <tbody>
+        {% for member in members %}
+            <tr>
+                <td><a href="{{ member.get_absolute_url }}">{{ member.name }}</a></td>
+                <td>{{ member.permissions.template.title }}</td>
+                <td>${{ member.gdp }}m</td>
+                <td>{{ member.subregion }}</td>
+                <td>{{ member.alignment|alignment }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+
+{% endblock %}

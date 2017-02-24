@@ -1,0 +1,478 @@
+
+<html>
+    <head>
+        <title>Cold Conflict - a multiplayer political simulation game</title>
+        {% load staticfiles %}
+        <link href="{% static 'nation/css/style.css' %}" rel="stylesheet" type="text/css"/>
+        <link rel="shortcut icon" href="/static/favicon.ico" type="image/ico">
+        {% load static %}
+        <link rel="shortcut icon" type="image/ico" href="{% static 'favicon.ico' %}">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="{% static 'nation/js/policyjsdomestic.js' %}"></script>
+         <script src="'{% static 'nation/js/policyjseconomic.js' %}"></script>
+          <script src="{% static 'nation/js/policyjsmarket.js' %}"></script>
+           <script src="'{% static 'nation/js/policyjsmilitary.js' %}"></script>
+        
+        <!-- Bootstrap -->
+        <link href="{% static 'nation/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
+        <script src="http://code.jquery.com/jquery.js"></script>
+        
+        
+        <script src="{% static 'nation/js/bootstrap.min.js' %}"></script>
+
+        <script>
+            jQuery(function ($) {
+                $("a").tooltip()
+            });
+            
+            $('#myTab a').click(function (e) {
+  e.preventDefault();
+  $(this).tab('show');
+})
+        </script>
+    </head>    
+<style>.dropdown-backdrop{
+    position: static;
+}
+
+.navbar .navbar-nav {
+  display: inline-block;
+  float: none;
+  vertical-align: top;
+}
+
+.navbar .navbar-collapse {
+  text-align: center;
+}
+
+.red {
+  color: red;
+}
+.green {
+  color: green;
+}
+
+.result {
+  background-color: rgba(62, 62, 62, 0.3);
+  color: red;
+  padding: 20px;
+  margin: 20px;
+  border-color: black;
+  width: 40%;
+}
+
+.warresult  {
+  background-color: rgba(42, 42, 42, 0.3);
+  color: red;
+  padding: 20px;
+  margin: 20px;
+  border-color: black;
+  width: 70%;
+}
+
+.attackgroup {
+    margin: 20px;
+    width: 250px;
+}
+
+.attackgroup-land {
+    width: 250px;
+}
+
+.airgroup {
+    margin: 20px;
+    width: 210px;
+}
+
+.peace {
+  margin: 40px;
+}
+
+.declaration {
+  border: solid rgba(62, 62, 62, 0.5) 1px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.dec-content {
+  border-top: solid rgba(42, 42, 42, 0.5);
+  min-height: 70px;
+  text-align: left;
+  padding: 20px;
+}
+
+.sflag {
+  max-width: 150px;
+  max-height: 100px;
+}
+
+.anthem {
+  margin: 20px;
+}
+
+.allbtn {
+  width: 170px;
+}
+
+.btn-collapse {
+  background-color: rgba(52, 52, 52, 0.4);
+  border: none;
+  margin-top: 50px; 
+  margin-bottom: 10px
+}
+
+.search {
+  margin: 40px;
+}
+
+.spacer {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.spacer-small {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+
+.news {
+  border: solid rgba(92, 92, 92, 0.5) 1px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.news-content {
+  border-top: solid rgba(92, 92, 92, 0.5);
+  min-height: 70px;
+  text-align: left;
+  padding: 20px;
+}
+
+.templating {
+  text-align: right;
+}
+
+.spacer-top {
+  margin-top: 5em;
+}
+
+.spacer-big {
+  margin: 5em;
+}
+
+.bigspacer {
+  margin-bottom: 5em;
+  margin-top: 5em;
+}
+
+.leftie {
+  text-align: left;
+}
+
+
+.rightie {
+  text-align: right;
+}
+
+.announce {
+  color: red;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background-color: rgba(40, 40, 40, 0.5);
+  border-bottom: 1px solid grey;
+  border-radius: 10px;
+}
+
+.newsbadge {
+  background-color: red;
+}
+
+.neutralbutton {
+    color: inherit;
+    
+    background:none!important;
+    border:none; 
+    padding:0!important;
+}
+
+.neutralbutton:hover {
+    color: inherit;
+    text-decoration-line: underline;
+    background:none!important;
+    border:none; 
+    padding:0!important;
+}
+
+</style>
+
+{% if logged_in %}
+<div style="position: fixed; top: 0; width: 100%; color: white; z-index:100;">
+<nav class="navbar navbar-default">
+  <div class="container-fluid">
+    <!-- Brand and toggle get grouped for better mobile display -->
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false">
+        <span class="sr-only">Toggle navigation</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="{%url 'nation:main' %}">
+        <img height="20" src="{{ nation.settings.showflag }}">
+      {{ nation.name }}
+      </a>
+    </div>
+
+    <!-- Collect the nav links, forms, and other content for toggling -->
+    <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+      <ul class="nav navbar-nav">
+        
+        <li><a href="{% url 'nation:news' %}">News
+        {% if newscount > 0 %}
+         <span class="badge newsbadge">{{ newscount }}</span>
+        {% endif %}
+         </a></li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Communiques<span class="caret"></span>
+          {% if commcount > 0 %}
+           <span class="badge">{{commcount}}</span>
+          {% endif %}
+           </a>
+          <ul class="dropdown-menu">
+             <li><a href="{% url 'nation:comms' 1 %}">Received</a></li>
+      <li><a href="{% url 'nation:sentcomms' 1 %}">Sent</a></li>
+          </ul>
+        </li>
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Policies <span class="caret"></span></a>
+          <ul class="dropdown-menu">
+             <li><a href="{% url 'nation:economic' %}">Economic</a></li>
+          <li><a href="{% url 'nation:domestic' %}">Domestic</a></li>
+          <li><a href="{% url 'nation:foreign' %}">Foreign</a></li>
+          <li><a href="{% url 'nation:military' %}">Military</a></li>
+          <li><a href="{% url 'market:main' %}">Market</a></li>
+          <li><a href="{% url 'nation:intelligence' %}">Intelligence</a></li>
+          <li><a href="{% url 'nation:research' %}">Research</a></li>
+          </ul>
+        </li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><img  src="{% static 'main/globe.png' %}" width="20">  The World <b class="caret"></b></span></a>
+          <ul class="dropdown-menu">
+            
+         <li><a href="{% url 'regionaldiscussions' 1 %}">Regional Discussion <span class="badge">{{ regionaldecs }}</span></li>
+         <li><a href="{% url 'declarations' 1 %}">Global Declarations <span class="badge">{{ globaldecs }}</span></button></a></li>
+         <li><a href="{% url 'market:offers' 1 %}">The Free Market <span class="badge">{{ marketoffers }}</span></button></a></li>
+      <li><a href="{% url 'rankings' 1 %}">World Rankings</button></a></li>
+      <li><a href="{% url 'map' %}">World Map</button></a></li>
+      <li><a href="{% url 'news' 1 %}">News And Statistics</button></a></li>
+          </ul>
+        </li>
+        
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> The Alliances <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+          {% if nation.alliance %}
+         <li><a href="{% url 'alliance:main' %}">{{ nation.alliance.name }}</a></li>
+         <li><a href="{% url 'alliance:chat' 1 %}">Alliance Chat  <span class="badge">{{ allydecs }}</span></a></button></li>
+       {% endif %}
+              <li>
+                  <a href="{% url 'alliance:declarations' 1 %}">
+                      Alliance Declarations 
+                      <span class="badge">{{ alliancedeclarations }}</span>
+                  </a>
+              </li>
+          <li><a href="{% url 'alliance:rankings' 1 %}">Alliance Rankings</button></a></li>
+          </ul>
+        </li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Community <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+             
+        <li><a href="{% url 'forum' %}">Forums</a></li>
+          <li><a href="{% url 'chat' %}">Chat</a></li>
+          <!--<li><a href="">Wiki</a></li>-->
+          </ul>
+        </li>
+        
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> User <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+             
+          <li><a href="{% url 'nation:settings' %}">Settings</a></li>
+        <li><a href="{% url 'logout' %}">Logout</a></li>
+        </ul>
+        </li>
+
+        {% if nation.settings.mod %}
+        <li class="dropdown">
+          <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Moderation <b class="caret"></b></a>
+          <ul class="dropdown-menu">
+          <li><a href="{% url 'mod:main' %}">Moderation Center</a></li>
+          <li><a href="{% url 'mod:nations' 1 %}">View Nations</a></li>
+          {% if nation.settings.head_mod %}
+          <li><a href="{% url 'mod:mods' %}">Mods</a></li>
+          {% endif %}
+          <li><a href="{% url 'mod:reports' 1 %}">Reports</a></li>
+
+        </ul>
+        </li>
+        {% endif %}
+        
+        
+        </ul>
+        
+      </ul>
+      
+      
+    </div><!-- /.navbar-collapse -->
+  </div><!-- /.container-fluid -->
+</nav></div>
+    
+{% else %}
+            <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+  <div class="navbar-header">
+    <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+      <span class="sr-only">Toggle navigation</span><div style="color: white;">LOGIN</div>
+    </button>
+    <a class="navbar-brand" href="#"></a>
+  </div>
+
+  <!-- Collect the nav links, forms, and other content for toggling -->
+  <div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
+    <ul class="nav navbar-nav">
+      <form class="navbar-form navbar-left"  action="{% url 'login' %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+          <li>{{ login_form.username }}</li></div>
+          <div class="form-group"><li>{{ login_form.password }}</li>
+        </div>
+        <button type="submit" name="login" class="btn btn-default">Login</button>
+      </form>
+    <li><a href="{% url 'register' %}"><button class="btn btn-default">Register</button></a></li>
+    </ul>
+     
+    <ul class="nav navbar-nav navbar-right">
+    <li><a href=""><button class="btn btn-default">Recover Password</button></a></li>
+     <li class="dropdown">
+        <a href="#" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default">Community <b class="caret"></b></button></a>
+        <ul class="dropdown-menu">
+          <li><a href="{% url 'forum' %}"><button class="btn btn-default">Forum</button></a></li>
+          <li><a href="{% url 'chat' %}"><button class="btn btn-default">Chat</button></a></li>
+          <li><a href=""><button class="btn btn-default">Reddit</button></a></li>
+          <li><a href="">Wiki</a></li>
+          
+        </ul>
+      </li>
+      <li class="dropdown"><a href="{% url 'map' %}" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default btn-sm"><img  src="{% static 'main/globe.png' %}" width="18">  The World <b class="caret"></b></button></a>
+      <ul class="dropdown-menu">
+      <li><a href="">World Map</a></li>
+      <li><a href="">World Rankings</a></li>
+      <li><a href="">World News</a></li>
+      </ul>
+      </li>
+    </ul>
+    
+  </div><!-- /.navbar-collapse -->
+</nav>
+</div></div>
+{% endif %}
+      <center>
+            
+    <div id="con_div"> <div id="content">
+    <div class="announce">
+      Remember that this is the beta test, report any found bugs on the forum or discord
+    </div>
+
+     
+{% block content %}
+{% endblock %}
+
+<div style="font-size:15; background-color: rgba(0, 0, 0, 0.93); color:grey"><br />
+(inspirational quotes, for some reason)
+<br /><br />
+ 
+ <table style="background: transparent;"><tr><td style="padding: 10px;">
+    <a style="font-size:13; color: white;" href="{% url 'index' %}">Index</a>
+    
+    
+    </td><td style="padding: 10px;">
+  
+    <a style="font-size:12; color: white;" href="{% url 'about' %}">about</a>
+    </td><td style="padding: 10px;">
+    <a style="font-size:12; color: white;" href="{% url 'legal' %}">terms and conditions</a>
+    </td><td style="padding: 10px;">
+      <a style="font-size:12; color: white;">{{ onlineleaders }} leaders online</a>
+    </td><td style="padding: 10px;">
+    <a style="font-size:12; color: white;">Turn Change: 0:00, 12:00 server time</a>
+    </td><td style="padding: 10px;">
+    <a style="font-size:12; color: white;">Server Time: {{ curtime|date:'G:i' }}</a>
+    </td></tr></table>
+ 
+ 
+ </div>
+ </div>
+    </div>
+    
+    {% if logged_in %}
+    <div id="bottombar">
+     <center>
+    <div class="container-fluid">
+    <div class="row">
+    <div class="col-xs-12">
+    <table style="background:transparent;"><tr>
+     <td style="padding: 10px;">
+      </td><td style="padding-top: 1px; padding-right: 15px; color: green; text-align:  center; min-width:20px;">
+       <a href="#" data-toggle="tooltip" data-placement="top" title="Available Budget" style="color: white;">${{stats.budget}}k</a>
+       </a></td><td style="top-padding: 1px; padding-right: 15px;  color: white; text-align:  center; min-width:20px;">
+       <a href="#" data-toggle="tooltip" data-placement="top" title="Oil Stockpile (Mbbls)" style="color: white;"><img src="{% static 'nation/bottom/oil.png' %}" height="20px" />{{stats.oil}}
+       </a></td><td style="top-padding: 1px; padding-right: 15px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Raw Material Stockpile (Htons)" style="color: white;"><img src="{% static 'nation/bottom/rm.png' %}" height="20px" /> {{stats.rm}}
+      </a></td>
+      <td style="top-padding: 1px; padding-right: 15px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Manufactured Goods (Tons)" style="color: white;"><img src="{% static 'nation/bottom/mg.png' %}" height="20px" /> {{stats.mg}}
+      </a></td>
+      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Weapons" style="color: white;"><img src="{% static 'nation/bottom/weapons.png' %}" height="20px" /> {{stats.weapons}}
+      </a></td>
+      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Food (Tons)" style="color: white;"><img src="{% static 'nation/bottom/food.png' %}" height="20px" /> {{stats.food}}
+      </a></td>
+      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Research" style="color: white;"><img src="{% static 'nation/bottom/research2.png' %}" height="20px" /> {{stats.research}}
+      </td>
+      <td style="padding-right: 30px;"></td>
+      </tr></table>
+    </center>  
+   </div>
+    </div>
+    </div>
+
+    {% endif %}
+
+    <script type="text/javascript">
+    function checkTime(i) {
+    if (i < 10) {
+        i = "0" + i;
+    }
+    return i;
+}
+
+function startTime() {
+    var today = new Date();
+    var h = today.getHours();
+    var m = today.getMinutes();
+    var s = today.getSeconds();
+    // add a zero in front of numbers<10
+    m = checkTime(m);
+    s = checkTime(s);
+    document.getElementById('time').innerHTML = h + ":" + m + ":" + s;
+    t = setTimeout(function () {
+        startTime()
+    }, 500);
+}
+startTime();
+    </script>

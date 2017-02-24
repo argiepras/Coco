@@ -1,0 +1,140 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+    <p style="margin-top: 40px; margin-bottom: 80px"><h2>Report #{{ report.pk }}</h2></p>
+
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+
+    {% if report.investigated %}
+    <div class="row">
+        <div class="col-xs-8 col-xs-offset-2">
+            <table class="table table-striped table-bordered">
+                <tbody>
+                    <tr>
+                        <td>Reported</td>
+                        <td>{{ report.reported.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Reported by</td>
+                        <td>{{ report.reporter.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Investigated by</td>
+                        <td>{{ report.investigator.name }}</td>
+                    </tr>
+                    <tr>
+                        <td>Report reason</td>
+                        <td>{{ report.reason }}</td>
+                    </tr>
+                    <tr>
+                        <td>Additional information</td>
+                        <td>{{ report.comment }}</td>
+                    </tr>
+                    <tr>
+                        <td>Conclusion</td>
+                        <td>{{ report.conclusion }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+
+
+
+    <div class="row">
+        <div class="col-xs-8 col-xs-offset-2">
+            <table class="table table-striped table-bordered">
+                <tbody>
+                    <tr>
+                        <td>Reported</td>
+                        <td>
+                            <a href="{{ report.reported.get_modview_url }}">
+                                <b>{{ report.reported.name }}</b>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Reported by</td>
+                        <td>
+                            <a href="{{ report.reporter.get_modview_url }}">
+                                <b>{{ report.reporter.name }}</b>
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>Status</td>
+                        {% if report.open %}
+                        <td>Unclaimed</td>
+                        {% elif report.investigator.pk == nation.pk %}
+                        <td>Claimed by you</td>
+                        {% else %}
+                        <td>Claimed by {{ report.investigator.name }}</td>
+                        {% endif %}
+                    </tr>
+                    <tr>
+                        <td>Reason</td>
+                        <td>{{ report.reason }}</td>
+                    </tr>
+                    <tr>
+                        <td>Additional information</td>
+                        <td>{{ report.comment }}</td>
+                    </tr>
+                    <tr>
+                        <td>Timestamp</td>
+                        <td>{{ report.timestamp|date:"o/m/d G:i" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% endif %}
+
+
+    <p class="spacer">Report actions</p>
+    <form method="POST">{% csrf_token %}
+    <div class="row spacer">
+        <div class="col-xs-8 col-xs-offset-2">
+            {% if report.open %}
+                <button type="submit" class="btn btn-default" name="claim">
+                    Claim report
+                </button>
+            {% elif report.investigator.pk == nation.pk %}
+                <button type="submit" class="btn btn-default" name="release">
+                    Release report
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if report.investigator.pk == nation.pk %}
+
+
+    <div class="row spacer-top">
+        <div class="col-xs-4 col-xs-offset-2">
+            <p class="rightie">Reported nation is guilty:</p> 
+        </div>
+        <div class="col-xs-1">
+            {{ closereportform.guilty }}
+        </div>
+    </div>
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-4">
+            {{ closereportform.conclusion }}
+        </div>
+    </div>
+    <button type="submit" class="btn btn-default" name="close">
+        Close report
+    </button>
+
+
+    {% endif %}
+    </form>
+    
+</div>
+{% endblock %}

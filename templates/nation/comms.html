@@ -1,0 +1,121 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load basetags %}
+<style>
+#commtainer {
+	width: 80%;
+	background-color: rgba(204, 204, 204, 0.0);
+		border-color: black;
+}
+
+.quick {
+	align-content: center;
+}
+
+pre {
+		background-color: rgba(42, 42, 42, 0.3);
+		color: inherit;
+		margin: 0px;
+		padding-left: 30px;
+		padding-right: 30px;
+		padding-top: :15px;
+		padding-bottom: 15px;
+		white-space: pre-wrap;
+		word-wrap: break-word;
+		border-color: black;
+		font-family: inherit;
+		font: inherit;
+		text-align: left;
+	}
+
+.id_message {
+		width: 45%;
+		height: 150px;
+	}
+.spacer {
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.hspacer {
+	text-align: right;
+}
+
+</style>
+
+{% load humanize %}
+<center><h2><p style="padding: 30px">Incoming Communiques</p></h2>
+{% load static %}
+<div class="asset"><img src="{% static 'img/communiques.jpg' %}"></div>
+{% if comms %}
+<p>Your closest and must trusted advisor leans over and places these communiques before you...</p>
+{% endif %}
+
+{% if result %}
+<div class="result">{{ result }}</div>
+{% endif %}
+</center>
+
+
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'nation:comms' page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+</div>
+
+
+{% if comms %}
+	<ul class="list-group">
+	{% for element in comms %}
+		<li class="list-group-item" id="commtainer">
+			{{ element|commlabels }}
+			<p style="text-align: left;">
+			{% if element.sender == None %}
+				The following was recieved {{ element.timestamp|naturaltime }}
+			{% else %}
+				<b><a href="{{ element.sender.get_absolute_url }}">
+					{{ element.sender }}</a></b>
+					sent you a message {{ element.timestamp|naturaltime }}
+			{% endif %}
+			</p>
+			
+			<pre class="comm">{{ element.message }}</pre>
+		<div class="row">
+			<div class="col-sm-12">
+		<div style="display: inline-block;">
+		{% if element.sender != None %}
+			<button class="btn btn-default spacer" data-toggle="collapse" data-target="#quickreply{{ forloop.counter }}">Reply</button>
+		{% endif %}
+		</div>
+		<div style="display: inline-block; float: right; margin-top: 10px">
+		<form method="POST">{% csrf_token %}
+			<button class="btn btn-danger hspacer" name="delete" value="{{ element.pk }}">Delete</button>
+		</form>
+		</div>
+		{% if element.sender != None %}
+				<div id="quickreply{{ forloop.counter }}" class="collapse quick">
+				<form class="form-group" role="form" method="POST">
+					{% csrf_token %}
+					<div style="margin: 20px">
+						{{ replyform.message }}
+					</div>
+					<button type="submit" class="btn btn-default" name="reply" value="{{ element.sender.index }}">Send comm</button>
+				</form>
+				</div>
+			</div>
+		</div>
+		{% endif %}
+		</li>
+		<div class="spacer"></div>
+		{% endfor %}
+	</ul>
+
+{% else %}
+
+<p style="padding: 30px">Your closest and must trusted advisor leans over and whispers into your ear 'You are the most beloved leader with plenty of friends and admirers.' Otherwise no one has contacted you...</p>
+
+{% endif %}
+
+{% endblock %}

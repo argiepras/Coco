@@ -1,0 +1,48 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+{% load modtags %}
+<div class="container">
+    <p class="spacer"><h2>{{ target.name }}s actions</h2></p>
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-9">
+            <a href="{% url 'mod:nation' target.index %}">
+                <button class="btn btn-default">
+                    Back to overview
+                </button>
+            </a>
+        </div>
+    </div>
+<div class="bigspacer">
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'mod:nation_actions' target.index page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+</div>
+<form method="POST">{% csrf_token %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td>Action</td>
+                <td>Cost</td>
+                <td>Amount</td>
+                <td>TImestamp</td>
+            </tr>
+        </thead>
+        <tbody>
+            {% for action in actions %}
+                <tr>
+                    <td>{{ action.action }}</td>
+                    <td>{{ action.cost }}</td>
+                    <td>{{ action.amount }}</td>
+                    <td>{{ action.timestamp|date:"o/m/d G:i" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</form>
+    
+</div>
+
+{% endblock %}
