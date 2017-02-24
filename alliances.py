@@ -612,7 +612,7 @@ def bankinterface(request, page):
 
     paginator = Paginator(alliance.bank_logs.all().order_by('-pk'), 50)
     page = int(page)
-    try:alliancetotal
+    try:
         logentries = paginator.page(page)
     except PageNotAnInteger:
         # If page is not an integer, deliver first page.
@@ -647,7 +647,7 @@ def bankinterface(request, page):
 
 def bankstats(alliance):
     stats = {
-        'wealthy_tax_income': ,
+        'wealthy_tax_income': 1,
         
     }
     return stats

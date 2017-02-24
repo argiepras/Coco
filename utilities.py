@@ -232,10 +232,3 @@ def paginate_me(query, count, page):
         listofstuff = paginator.page(paginator.num_pages)
 
     return paginator, listofstuff
-
-def vaccheck(nation):
-    if nation.last_seen + timezone.timedelta(hours=v.inactive_threshold) < timezone.now():
-        nation.vacation = True
-        nation.save(update_fields=['vacation'])
-        return True
-    return False

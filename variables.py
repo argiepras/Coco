@@ -24,6 +24,9 @@ econcollapse = -33
 #hours until autovac mode
 inactive_threshold = 168
 
+def inactivedelta():
+    return timezone.timedelta(hours=inactive_threshold)
+
 declarationcost = 75
 
 foodproduction = {

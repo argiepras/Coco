@@ -20,7 +20,10 @@ from math import sqrt
 
 def nation_income(nation):
     if nation.has_alliance():
-        pass
+        bracket = nation.alliance.taxtype(nation)
+        taxrate = nation.alliance.taxrate(nation)
+        income = (int(round(nation.gdp/72)) if nation.budget < nation.gdp * 2 else 0)
+
 
 
 ######################
@@ -50,7 +53,7 @@ def allianceincome(alliance, display=False):
     try:
         alliance.averagegdp = totalgdp / alliance.members.filter(deleted=False, vacation=False).count()
     except:
-        continue #empty alliance
+        return #empty alliance
     alliancegain = 0
     for member in alliance.members.filter(vacation=False, deleted=False).iterator():
         if utils.vaccheck(member):
