@@ -19,10 +19,19 @@ from math import sqrt
 
 
 def nation_income(nation):
+    income = (nation.gdp/72 if nation.budget < nation.gdp * 2 else 0)
+    bracket = None
+    tax = 0
     if nation.has_alliance():
         bracket = nation.alliance.taxtype(nation)
         taxrate = nation.alliance.taxrate(nation)
-        income = (int(round(nation.gdp/72)) if nation.budget < nation.gdp * 2 else 0)
+        tax = int(round(income * taxrate))
+        income -= tax
+    return {
+        'bracket': bracket,
+        'tax': tax,
+        'income': income,
+    }
 
 
 
@@ -31,43 +40,35 @@ def nation_income(nation):
 ######################
 
 def alliancetotal(alliance, display=False):
-    membercount = alliance.members.filter(deleted=False, vacation=False).count()
-    income = allianceincome(alliance, display)
-    litcost = alliance_litcost(alliance, membercount)
-    healthcost = alliance_healthcost(alliance, membercount)
-    freedomcost = alliance_freedomcost(alliance)
-    weaponcost = alliance_weapcost(alliance, membercount)
-    return income - litcost - healthcost - freedomcost - weaponcost
+    x = alliance_income(alliance, display)
+    x.update(alliance_expenditures(alliance))
+    return x
 
+
+def alliance_income(alliance, display=False):
+    stats = {'total': 0}
+    #tax income from members
+    for member in alliance.members.filter(vacation=False, deleted=False):
+        info = nation_income(member)
+        #we populate the stats dictionary the lazy way
+        if info['bracket'] in stats:
+            stats[info['bracket']] += info['tax']
+        else:
+            stats.update({info['bracket']: info['tax']})
+        stats['total'] += info['tax']
+    if display:
+        stats.pop('total')
+    return stats
 
 
 def alliance_expenditures(alliance):
-    pass    
-
-
-
-def allianceincome(alliance, display=False):
-    initiatives = alliance.initiatives
-    stats = {}
-    totalgdp = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('gdp'))['gdp__sum']
-    try:
-        alliance.averagegdp = totalgdp / alliance.members.filter(deleted=False, vacation=False).count()
-    except:
-        return #empty alliance
-    alliancegain = 0
-    for member in alliance.members.filter(vacation=False, deleted=False).iterator():
-        if utils.vaccheck(member):
-            continue
-        if member.budget > member.gdp*2:
-            continue
-        taxrate = alliance.taxrate(member)
-        bracket = alliance.taxtype(member)
-        memberincome = nation.gdp / 72
-        if bracket in stats:
-            stats
-
-        
-
+    count = alliance.members.all().filter(vacation=False, deleted=False).count()
+    return {
+        'literacy_cost':  alliance_litcost(alliance, count),
+        'healthcare_cost': alliance_healthcost(alliance, count),
+        'freedom_cost': alliance_freedomcost(alliance),
+        'weapontrade_cost': alliance_weapcost(alliance),
+    }
 
 
 
@@ -75,29 +76,29 @@ def alliance_litcost(alliance, membercount):
     cost = 0
     if alliance.initiatives.literacy:
         totalgdp = alliance.averagegdp * membercount
-        cost = round(totalgdp/72/25.0)
-    return cost
+        cost = int(round(totalgdp/72/25.0))
+    return (1 if cost < 1 and alliance.initiatives.literacy else cost)
 
 def alliance_healthcost(alliance, membercount):
     cost = 0
     if alliance.initiatives.healthcare:
         totalgdp = alliance.averagegdp * membercount
-        cost = round(totalgdp/72/25.0)
-    return cost
+        cost = int(round(totalgdp/72/25.0))
+    return (1 if cost < 1 and alliance.initiatives.healthcare else cost)
 
 def alliance_freedomcost(alliance):
     cost = 0
     if alliance.initiatives.freedom:
         totlit = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('literacy'))['literacy__sum']
-        cost = round(totlit/50.0)
-    return cost
+        cost = int(round(totlit/50.0))
+    return (1 if cost < 1 and alliance.initiatives.freedom else cost)
 
 def alliance_weapcost(alliance):
     cost = 0
     if alliance.initiatives.weapontrade:
         totweps = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('military__weapons'))['military__weapons__sum']
-        cost = round(totweps/100.0)
-    return cost
+        cost = int(round(totweps/100.0))
+    return (1 if cost < 1 and alliance.initiatives.weapontrade else cost)
 
 #################
 ## West rep gain

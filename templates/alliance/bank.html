@@ -1,6 +1,6 @@
 {% extends 'nation/base.html' %}
 {% block content %}
-
+{% load alliancetags %}
 <div class="container">
 
 <p style="margin: 40px"><h3>Bank Overview</h3></p>
@@ -56,7 +56,6 @@
 
 <div>
 <h3>Income and expenditure</h3>
-<h5>income/expenditure number are every 10 minutes</h5>
 <table class="table table-striped table-hover">
     <thead>
         <tr>
@@ -67,19 +66,19 @@
     <tbody>
         <tr>
             <td>Wealthy nations</td>
-            <td><span style="color: green">+${{ bankstats.wealthy_tax_income }}k</span></td>
+            <td><span style="color: green">+${{ bankstats.wealthy_tax }}k</span></td>
         </tr>
         <tr>
             <td>Upper middle nations</td>
-            <td><span style="color: green">+${{ bankstats.uppermiddle_tax_income }}k</span></td>
+            <td><span style="color: green">+${{ bankstats.uppermiddle_tax }}k</span></td>
         </tr>
         <tr>
             <td>Lower middle nations</td>
-            <td><span style="color: green">+${{ bankstats.lowermiddle_tax_income }}k</span></td>
+            <td><span style="color: green">+${{ bankstats.lowermiddle_tax }}k</span></td>
         </tr>
         <tr>
             <td>Poor nations</td>
-            <td><span style="color: green">+${{ bankstats.poor_tax_income }}k</span></td>
+            <td><span style="color: green">+${{ bankstats.poor_tax }}k</span></td>
         </tr>
         <tr>
             <td>Literacy initiative</td>
@@ -103,7 +102,7 @@
         </tr>
         <tr>
             <td>Total</td>
-            <td><span style="color: {{ color }}">{{ total|safe }}</span></td>
+            <td>{{ bankstats.total|banktotal }}</td>
         </tr>
     </tbody>
 </table>

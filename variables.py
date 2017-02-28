@@ -135,6 +135,8 @@ opposite = {
     'defender': 'attacker',
  }
 
+
+
 #research bonuses
  
 researchbonus = {
@@ -211,6 +213,17 @@ rebels = {
     2: "Terrorist acts",
     3: "Armed clashes",
     4: "Civil War",
+}
+
+#hours between initative toggles
+initiative_timer = 72
+
+#what news items will display when an initiative can't be paid for
+initiative_loss  = {
+    'freedom': 'freedom of information',
+    'healthcare': 'healthcare',
+    'literacy': 'literacy',
+    'weapontrade': 'weapon trading',
 }
 
 

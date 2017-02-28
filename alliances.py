@@ -593,7 +593,7 @@ def control_panel(request):
 @alliance_required
 def bankinterface(request, page):
     context = {}
-    nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template', 'alliance__bank', 'alliance__bankstats').get(user=request.user)
+    nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template', 'alliance__bank').get(user=request.user)
     permissions = nation.permissions
     alliance = nation.alliance
     result = ''
@@ -624,33 +624,21 @@ def bankinterface(request, page):
     ############3########
     ## info display part
     ###########
-    total = turnchange.alliancetotal(alliance)
-    if total > 0:
-        color = 'green'
-        total = "+$%sk" % total
-    elif total < 0:
-        color = 'red'
-        total = "-$%sk" % (total*-1)
-    else:
-        color = 'white'
-        total = "$%sk" % total
+    #using a bankstats object for the member functions
+    #easy to total
+    #also means there's no need to fill out 0s when a field isn't added
+    incomebreakdown = Bankstats()
+    incomebreakdown.populate(turnchange.alliancetotal(alliance, display=True))
+
     context.update({
-        'bankstats': bankstats(alliance),
+        'bankstats': incomebreakdown,
         'bank': alliance.bank,
-        'totalcolor': color,
-        'total': total,
         'result': result,
         'logentries': logentries,
         'pages': utils.pagination(paginator, logentries)
     })
     return render(request, 'alliance/bank.html', context)
 
-def bankstats(alliance):
-    stats = {
-        'wealthy_tax_income': 1,
-        
-    }
-    return stats
 
 
 @login_required

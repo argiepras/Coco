@@ -298,9 +298,7 @@ class Settings(models.Model):
 
     def can_exit(self):
         if self.nation.vacation:
-            if self.vacation_timer > v.now():
-                return False
-            else:
+            if self.vacation_timer < v.now():
                 return True
         return False
 
@@ -516,6 +514,47 @@ class Ban(models.Model):
     def __unicode__(self):
         return u"%s" % self.IP
 
+###################
+####MARKET SHIT####
+###################
+
+class Market(models.Model):
+    threshold = models.IntegerField(default=30)
+    rm_counter = models.IntegerField(default=15)
+    rmprice = models.IntegerField(default=50)
+    oil_counter = models.IntegerField(default=15)
+    oilprice = models.IntegerField(default=60)
+    mg_counter = models.IntegerField(default=51)
+    mgprice = models.IntegerField(default=300)
+    food_counter = models.IntegerField(default=15)
+    foodprice = models.IntegerField(default=30)
+    totalsold = models.IntegerField(default=0)
+    totalbought = models.IntegerField(default=0)
+    change = models.IntegerField(default=0) #change in market activity
+    def __unicode__(self):
+        return u'Market data for turn %s' % self.pk
+
+#to preventing gaming the market by buying and selling to increase the sold/bought volumes
+class Marketlog(models.Model):
+    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="market_logs")
+    resource = models.CharField(max_length=4) #mg rm oil food
+    volume = models.IntegerField(default=0)
+    cost = models.IntegerField(default=0) #positive for buys negative for sells
+    turn = models.IntegerField(default=0) #set to market.pk
+    def __unicode__(self):
+        'Turn %s market log for %s' % (self.turn, self.nation.name)
+
+
+class Marketoffer(models.Model):
+    nation = models.ForeignKey(Nation, related_name="offers", on_delete=models.CASCADE)
+    timestamp = models.DateTimeField(default=v.now)
+    content = models.CharField(max_length=300)
+    alignment = models.IntegerField(default=1) #1 2 3 sov neu us
+    deleted = models.BooleanField(default=False)
+    deleter = models.ForeignKey(Nation, related_name="deleted_offers", on_delete=models.SET_NULL, null=True, blank=True)
+    deleted_timestamp = models.DateTimeField(default=v.now)
+
+
 
 #######################
 #### ALLIANCE SHIT ####
@@ -543,6 +582,13 @@ class Initiatives(models.Model):
     lowermiddle_tax = models.IntegerField(default=0)
     poor_tax = models.IntegerField(default=0)
 
+    def __unicode__(self):
+        return u"initiatives for %s" % self.alliance.name
+
+    def reset_timer(self, initiative):
+        field = '%s_timer' % initiative
+        self.__dict__[field] = timezone.now() + timezone.timedelta(hours=v.initiative_timer)
+        return field
 
 class Memberstats(models.Model):
     nation = models.OneToOneField(Nation, on_delete=models.CASCADE)
@@ -591,11 +637,12 @@ class Banklog(models.Model):
 
 
 class Bankstats(models.Model):
-    alliance = models.OneToOneField(Alliance, on_delete=models.CASCADE)
-    wealthy_tax_income = models.IntegerField(default=0)
-    uppermiddle_tax_income = models.IntegerField(default=0)
-    lowermiddle_tax_income = models.IntegerField(default=0)
-    poor_tax_income = models.IntegerField(default=0)
+    alliance = models.ForeignKey(Alliance, on_delete=models.CASCADE, related_name="bankstats")
+    turn = models.IntegerField(default=Market.objects.latest('pk').pk)
+    wealthy_tax = models.IntegerField(default=0)
+    uppermiddle_tax = models.IntegerField(default=0)
+    lowermiddle_tax = models.IntegerField(default=0)
+    poor_tax = models.IntegerField(default=0)
     healthcare_cost = models.IntegerField(default=0)
     literacy_cost = models.IntegerField(default=0)
     open_borders_cost = models.IntegerField(default=0)
@@ -606,15 +653,19 @@ class Bankstats(models.Model):
     def total(self):
         tot = 0
         for field in self._meta.fields:
-            if len(field.name.split('_')) == 3:
+            if field.name[-3:] == 'tax':
                 tot += self.__dict__[field.name]
-            elif len(field.name.split('_')) == 2:
+            elif field.name[-4:] == 'cost':
                 tot -= self.__dict__[field.name]
         return tot
 
     def clear(self):
         for field in self._meta.fields[2:]:
             self.__dict__[field.name] = 0
+
+    def populate(self, stats):
+        for field in stats:
+            self.__dict__[field] = stats[field]
 
 
                 
@@ -873,47 +924,6 @@ class Lastaction(models.Model):
     action = models.CharField(max_length=50, default="none")
     outcome = models.CharField(max_length=100, default="none")
     timestamp = models.DateTimeField(default=v.now)
-
-
-###################
-####MARKET SHIT####
-###################
-
-class Market(models.Model):
-    threshold = models.IntegerField(default=30)
-    rm_counter = models.IntegerField(default=15)
-    rmprice = models.IntegerField(default=50)
-    oil_counter = models.IntegerField(default=15)
-    oilprice = models.IntegerField(default=60)
-    mg_counter = models.IntegerField(default=51)
-    mgprice = models.IntegerField(default=300)
-    food_counter = models.IntegerField(default=15)
-    foodprice = models.IntegerField(default=30)
-    totalsold = models.IntegerField(default=0)
-    totalbought = models.IntegerField(default=0)
-    change = models.IntegerField(default=0) #change in market activity
-    def __unicode__(self):
-        return u'Market data for turn %s' % self.pk
-
-#to preventing gaming the market by buying and selling to increase the sold/bought volumes
-class Marketlog(models.Model):
-    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="market_logs")
-    resource = models.CharField(max_length=4) #mg rm oil food
-    volume = models.IntegerField(default=0)
-    cost = models.IntegerField(default=0) #positive for buys negative for sells
-    turn = models.IntegerField(default=0) #set to market.pk
-    def __unicode__(self):
-        'Turn %s market log for %s' % (self.turn, self.nation.name)
-
-
-class Marketoffer(models.Model):
-    nation = models.ForeignKey(Nation, related_name="offers", on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(default=v.now)
-    content = models.CharField(max_length=300)
-    alignment = models.IntegerField(default=1) #1 2 3 sov neu us
-    deleted = models.BooleanField(default=False)
-    deleter = models.ForeignKey(Nation, related_name="deleted_offers", on_delete=models.SET_NULL, null=True, blank=True)
-    deleted_timestamp = models.DateTimeField(default=v.now)
 
 
 
