@@ -17,14 +17,8 @@ from nation.events import *
 
 
 
+
 @periodic_task(run_every=crontab(minute="0,10,20,30,40,50", hour="*", day_of_week="*"))
-def set_avgdp():
-    for alliance in Alliance.objects.annotate(membercount=Count('members')).filter(membercount__gte=1).iterator():
-        Alliance.objects.filter(pk=alliance.pk).update(averagegdp=alliance.members.all().filter(\
-            deleted=False, vacation=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp'])
-    return alliance_gain()
-
-
 def alliance_gain():
     for alliance in Alliance.objects.select_related('bank', 'initiatives').all().iterator():
         bankstats = alliance.bankstats.get_or_create(pk=Market.objects.latest('pk').pk)[0]
@@ -237,8 +231,10 @@ def memberstatsclear(debug=False):
 
 def marketturn(debug=False):
     market = Market.objects.latest('pk')
-
-
+    new_market = Market()
+    for field in Market._meta.fields[1:]:
+        new_market._dict__[field.name] = market._dict__[field.name]
+    new_market.save()
     return infilgain()
 
 def infilgain():

@@ -5,18 +5,20 @@ from django.core.urlresolvers import reverse
 from . import variables as v
 
 from django.db import models
-from django.db.models import F
+from django.db.models import F, Avg
 from django.utils import timezone
 
 # Create your models here.
 #alliance first because it goes top to bottom and cries if a model refers to another model declared later
 class Alliance(models.Model):
+    def __init__(self, *args, **kwargs):
+        super(Alliance, self).__init__(*args, **kwargs)
+        self.averagegdp = self.members.all().filter(deleted=False, vacation=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
     name = models.CharField(max_length=30)
     description = models.CharField(max_length=1000, default="You can change this description in the alliance control panel")
     flag = models.CharField(max_length=100, default="/static/alliance/default.png")
     foibonus = models.IntegerField(default=0)
     comm_on_applicants = models.BooleanField(default=True)
-    averagegdp = models.IntegerField(default=0)
     anthem = models.CharField(max_length=15, default="eFTLKWw542g")
     accepts_applicants = models.BooleanField(default=True)
     icon = models.CharField(max_length=40, default="/static/alliance/defaulticon.png")
@@ -540,7 +542,7 @@ class Marketlog(models.Model):
     resource = models.CharField(max_length=4) #mg rm oil food
     volume = models.IntegerField(default=0)
     cost = models.IntegerField(default=0) #positive for buys negative for sells
-    turn = models.IntegerField(default=0) #set to market.pk
+    turn = models.IntegerField(default=Market.objects.latest('pk').pk) #set to market.pk
     def __unicode__(self):
         'Turn %s market log for %s' % (self.turn, self.nation.name)
 
