@@ -1126,6 +1126,7 @@ def battle(attacker, defender, war):
 
 @transaction.atomic
 def war_win(attacker, defender, war):
+    land = 
     atkactions = {
         'land': {'action': 'add', 'amount': defender.land/6},
         'gdp': {'action': 'add', 'amount': defender.gdp/5},
@@ -1174,11 +1175,13 @@ def war_win(attacker, defender, war):
             'defender_techend': {'action': 'set', 'amount': attacker.military.weapons},
             'timeend': {'action': 'set', 'amount': v.now()},
         }
+    defender.infiltrators.filter(arrested=True,)
     utils.atomic_transaction(Nation, attacker.pk, atkactions)
     utils.atomic_transaction(Nation, defender.pk, defactions)
     utils.atomic_transaction(Military, defender.military.pk, defmilactions)
     utils.atomic_transaction(War, war.pk, waractions)
     utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
+
     return atkactions
 
 

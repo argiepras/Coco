@@ -19,11 +19,11 @@ def timedeltadivide(timediff):
     seconds = str(seconds).zfill(2)
     return hours, minutes, seconds
 
-def attrchange(current, amount, limit=0):
-    if current + amount > 100: #return the amount required to reach 100 and limit respectively
-        return amount - (current + amount - 100)
-    elif current + amount < limit:
-        return amount - (current + amount)
+def attrchange(current, amount, lower=0, upper=100):
+    if current + amount > upper: #return the amount required to reach 100 and lower respectively
+        return amount - (current + amount - upper)
+    elif current + amount < lower:
+        return amount - (current + amount + lower)
     return amount
 
 

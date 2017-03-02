@@ -178,33 +178,37 @@ def turnchange(debug=False):
 
 
 def milturn(debug=False):
-    for mil in Military.objects.filter(nation__vacation=False, nation__deleted=False).iterator():
-        while True:
-            try:
-                action = {'training': {'action': 'add', 'amount': utils.attrchange(mil.training, -1)}}
-                utils.atomic_transaction(Military, mil.pk, action)
-            except IntegrityError:
-                continue
-            break
+    Military.objects.filter(
+        nation__vacation=False, 
+        nation__deleted=False, 
+        training__gt=0).update(training=F('training') - 1)
     return econturn()
 
 
 def econturn(debug=False):
-    for econ in Econdata.objects.filter(nation__vacation=False, nation__deleted=False).iterator():
-        while True:
-            try:
-                action = {
-                'nationalize': {'action': 'set', 'amount': False},
-                'expedition': {'action': 'set', 'amount': False},
-                'labor': {'action': 'set', 'amount': 1},
-                'drugs': {'action': 'add', 'amount': utils.attrchange(econ.drugs, 1)},
-                'diamonds': {'action': 'add', 'amount': utils.attrchange(econ.diamonds, 1)},
-                }
-                utils.atomic_transaction(Econdata, econ.pk, action)
-            except IntegrityError:
-                econ.refresh_from_db()
-                continue
-            break
+
+    Econdata.objects.filter(
+        nation__vacation=False, 
+        nation__deleted=False,
+        ).update(
+            labor=1,
+            expedition=False,
+            nationalize=False,
+        )
+    Econdata.objects.filter(
+        nation__vacation=False, 
+        nation__deleted=False,
+        nation__subregion__in=v.latin_america,
+        ).update(
+            drugs=F('drugs') + 1,
+        )
+    Econdata.objects.filter(
+        nation__vacation=False, 
+        nation__deleted=False,
+        nation__subregion__in=v.africa,
+        ).update(
+            diamonds=F('diamonds') + 1,
+        )
     return allianceturn()
 
 
@@ -216,16 +220,13 @@ def allianceturn(debug=False):
             alliance.save(update_fields=['averagegdp'])
         except: #nobody in the alliance
             pass
+    Memberstats.objects.all().update(oil=0, mg=0, rm=0, food=0, budget=0)
     return warcleanup()
+
 
 def warcleanup(debug=False):
     War.objects.all().update(attacked=False, defended=False, airattacked=False, airdefended=False, navyattacked=False, navydefended=False)
     War.objects.filter(over=True, timestamp__lte=timezone.now()).delete()
-    return memberstatsclear()
-
-
-def memberstatsclear(debug=False):
-    Memberstats.objects.all().update(oil=0, mg=0, rm=0, food=0, budget=0)
     return marketturn()
 
 
@@ -233,9 +234,10 @@ def marketturn(debug=False):
     market = Market.objects.latest('pk')
     new_market = Market()
     for field in Market._meta.fields[1:]:
-        new_market._dict__[field.name] = market._dict__[field.name]
+        new_market.__dict__[field.name] = market.__dict__[field.name]
     new_market.save()
     return infilgain()
+
 
 def infilgain():
     for spy in Spy.objects.filter(nation__vacation=False, nation__deleted=False).select_related('nation', 'location').iterator():

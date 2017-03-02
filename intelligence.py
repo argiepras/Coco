@@ -102,7 +102,10 @@ def details(request, spyid):
 
     if request.method == "POST":
         context.update(spyactions(request, spy))
-        spy.refresh_from_db()
+        try: #in case the spy was executed, otherwise this is a 500 internal error
+            spy.refresh_from_db()
+        except:
+            pass
 
     if context['deployed']:
         context.update({
@@ -296,7 +299,7 @@ def end_surveillance(request, spy):
         spy = Spy.objects.get(surveilling=spy)
         return endsurveillance(request.user.nation, spy)
     else:
-        return {'img': '', 'result': "The agent isn't under survelliance!"}
+        return {'img': '', 'result': "The agent isn't under surveillance!"}
 
 
 
@@ -356,7 +359,7 @@ def withdraw(nation, target, spy):
         chance = 95
         if target.spies.filter(location=target, specialty="Spy Hunter").exists() or spy.discovered:
             chance = 75
-        if spy.survelliance:
+        if spy.surveillance:
             chance = 10
             if spy.specialty == "Intelligence":
                 chance = 25
@@ -389,7 +392,7 @@ def armrebels(nation, target, spy):
         chance = random.randint(-750, 500)
         if strength < chance:
             result = "%s was caught arming the rebels. Agent %s has been arrested." % (spy.name, spy.name)
-            #news report
+            #no news report
             img = "spy.jpg"
             spyactions.update({'arrested': {'action': 'set', 'amount': True}})
         else:
@@ -411,7 +414,7 @@ def armrebels(nation, target, spy):
 
 
 def fundopposition(nation, target, spy):
-    img = ''
+    img = "spy.jpg"
     cost = target.gdp/30
     if spy.infiltration < 10:
         result = "Agent do not have enough infiltration!"
@@ -428,11 +431,9 @@ def fundopposition(nation, target, spy):
         chance = random.randint(-500, 500)
         if strength < chance:
             result = "%s was caught trying to fund the opposition. The agent has been arrested." % spy.name
-            #news report
-            img = "spy.jpg"
+            #no news report
             spyactions.update({'arrested': {'action': 'set', 'amount': True}})
         else:
-            img = "spy.jpg"
             result = "%s has successfully funded the opposition, decreasing government approval." % spy.name
             spyactions = {
                 'experience': {'action': 'add', 'amount': utils.attrchange(spy.experience, 5)},
@@ -470,12 +471,12 @@ def terroristattack(nation, target, spy):
         chance = random.randint(-300, 500)
         if strength < chance:
             result = "%s has been caught planning a terrorist attack! The agent responsible has been detained." % spy.name
-            news.terroristattack(nation)
+            news.terroristattack(target)
             img = "spy.jpg"
             spyactions.update({'arrested': {'action': 'set', 'amount': True}})
         else:
             img = "spy.jpg"
-            news.terroristattacked(nation)
+            news.terroristattacked(target)
             result = "%s has successfully pulled off a terrorist attack and framed it on an internal\
              faction, killing countless innocent civilians and decreasing stability in the country." % spy.name
             spyactions = {
@@ -632,7 +633,7 @@ def poison(nation, target, spy):
                 'weapons': {'action': 'subtract', 'amount': 2},
             }
             targetactions = {
-                'foodproduction': {'action': 'subtract', 'amount': (1 if target.foodproduction > 0 else 0)},
+                'foodproduction': {'action': 'subtract', 'amount': (1 if target.econdata.foodproduction > 0 else 0)},
             }
             utils.atomic_transaction(Econdata, target.econdata.pk, targetactions)
             utils.atomic_transaction(Nation, nation.pk, nationactions)

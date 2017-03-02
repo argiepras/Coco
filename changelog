@@ -1,0 +1,10 @@
+Changelog:
+
+ - arrested spies are now released on war loss
+ - fixed news items being inserted into the wrong nation upon successful spy action
+ - fixed executing spy resulting in 500 server error
+ - fixed error when withdrawing spies
+ - fixed missing csrf token for searching nations in rankings
+ - fixed error in market portion of turn code
+ - optimized military portion of turn code
+ - optimized policy resetting portion of turn code

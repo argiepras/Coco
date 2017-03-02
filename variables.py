@@ -203,6 +203,9 @@ regions = {
     'Africa': {'Nigeria': 10, 'Ethiopia': 11, 'Congo': 12, 'Southern Africa': 13},
     'Latin America': {'Gran Colombia': 21, 'The Andes': 23, 'Brasilia': 23, 'Southern Cone': 25},
 }
+
+africa = ['Nigeria', 'Ethiopia', 'Congo', 'Southern Africa']
+latin_america = ['Gran Colombia', 'The Andes', 'Brasilia', 'Southern Cone']
  
 rangethreshold = 30
 rangebonus = 2
