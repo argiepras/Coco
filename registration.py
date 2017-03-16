@@ -145,22 +145,6 @@ def log_in(request):
 
 
 @nologin_required
-def activate(request, reg_id):
-    try:
-        rego = Confirm.objects.get(code=reg_id)
-    except:
-        return render(request, 'registration/activate.html')
-    pwd = pwd_generator()
-    user = User.objects.create_user(username=rego.username, 
-            password=pwd, email=rego.email)
-    user = authenticate(username=rego.username, password=pwd)
-    login(request, user)
-    rego.delete()
-    tmp = tmpcret.replace('$pass', pwd).replace('$user', rego.username)
-    send_mail('Activation confirmation', tmp, 'admin@coldconflict.com', [rego.email])
-    return render(request, 'registration/activate.html', {'account': user})
-
-@nologin_required
 def recover(request):
     context = {'form': emailform()}
     if request.method == "POST":
@@ -212,7 +196,7 @@ and your address will be removed from our records.
 To complete registration, please click the following link within the next 
 7 days:
 
-http://coldconflict.com/activate/activationlink
+http://coldconflict.com/register/new/activationlink
 
 Sincerely,
 The badmin"""
