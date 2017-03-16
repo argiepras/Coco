@@ -27,8 +27,8 @@ def index(request):
 
 
 #main page
-@nation_required
 @login_required
+@nation_required
 def main(request, msg=False):
     #msg is a result string passed from new nation creation
     context = {'fish': 'bad'}
@@ -336,50 +336,52 @@ def nation_page(request, url):
             return render(request, 'notfound.html', {'item': 'nation'})
     return nationpage(request, idnumber)
 
-@nation_required
-@login_required
+
 def nationpage(request, idnumber):
-    nation = Nation.objects.select_related('military').prefetch_related('spies').get(user=request.user)
-    target = Nation.objects.select_related('military', 'settings').get(index=idnumber)
-    if nation.pk == target.pk:
-        return redirect('nation:main')
     context = {}
     result = False
-    try:
-        atwar = True
-        war = War.objects.filter(Q(attacker=nation, defender=target, over=False)|Q(defender=nation, attacker=target, over=False)).get()
-    except:
-        atwar = False
-        war = False
-    warrable, reason = utils.can_attack(nation, target)
+    target = Nation.objects.select_related('military', 'settings').get(index=idnumber)
+    if request.user.is_anonymous():
+        nation = None
+    else:
+        nation = Nation.objects.select_related('military').prefetch_related('spies').get(user=request.user)    
+        if nation.pk == target.pk:
+            return redirect('nation:main')
+        try:
+            atwar = True
+            war = War.objects.filter(Q(attacker=nation, defender=target, over=False)|Q(defender=nation, attacker=target, over=False)).get()
+        except:
+            atwar = False
+            war = False
+        warrable, reason = utils.can_attack(nation, target)
 
-    #set up for the wars display
-    wars = {}
-    try:
-        warattacking = target.offensives.all().filter(over=False).get().defender
-        wars.update({'attacking': warattacking})
-    except:
-        pass
-    try:
-        wardefending = target.defensives.all().filter(over=False).get().attacker
-        wars.update({'defending': wardefending})
-    except:
-        pass
+        #set up for the wars display
+        wars = {}
+        try:
+            warattacking = target.offensives.all().filter(over=False).get().defender
+            wars.update({'attacking': warattacking})
+        except:
+            pass
+        try:
+            wardefending = target.defensives.all().filter(over=False).get().attacker
+            wars.update({'defending': wardefending})
+        except:
+            pass
 
-    #set up spy display
-    if nation.spies.filter(location=target).count() > 0:
-        context.update({'spies': nation.spies.filter(location=target), 'check': True})
-        if nation.spies.filter(location=target, specialty='Intelligence').exists():
-            context.update({
-                'intel': True,
-                'chemical_progress': target.military.chems * 10,
-                'reactor_progress': target.military.reactor * 5,
-                })
-    context.update({'wars': wars})
+        #set up spy display
+        if nation.spies.filter(location=target).count() > 0:
+            context.update({'spies': nation.spies.filter(location=target), 'check': True})
+            if nation.spies.filter(location=target, specialty='Intelligence').exists():
+                context.update({
+                    'intel': True,
+                    'chemical_progress': target.military.chems * 10,
+                    'reactor_progress': target.military.reactor * 5,
+                    })
+        context.update({'wars': wars})
 
     #POST handling
     result = ''
-    if request.method == "POST":
+    if request.method == "POST" and nation:
         actions = {}
         if 'aid' in request.POST and not nation.vacation:
             form = aidform(nation, request.POST)
@@ -634,17 +636,20 @@ def nationpage(request, idnumber):
     context.update({
         'target': target,
         'targetmilitary': target.military,
-        'aidform': aidform(nation),
-        'commform': commform(),
-        'warrable': warrable,
-        'reason': reason,
-        'atwar': atwar,
         'flag': target.settings.showflag(),
         'avatar': target.settings.showportrait(),
-        'spycount': nation.spies.all().filter(location=nation).count(),
-        'spyselectform': spyselectform(nation),
     })
-    request.user.nation = nation #rebind original nation instance
+    if nation:
+        context.update({
+            'aidform': aidform(nation),
+            'commform': commform(),
+            'warrable': warrable,
+            'reason': reason,
+            'atwar': atwar,
+            'spycount': nation.spies.all().filter(location=nation).count(),
+            'spyselectform': spyselectform(nation),
+        })
+        request.user.nation = nation #rebind original nation instance
     return render(request, 'nation/nation.html', context)
 
 

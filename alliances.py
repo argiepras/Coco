@@ -157,7 +157,8 @@ def main(request):
     return render(request, 'alliance/main.html', context)
 
 
-
+@login_required
+@nation_required
 def alliancepage(request, alliancepk, msg=False):
     nation = request.user.nation
     result = False

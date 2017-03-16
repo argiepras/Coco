@@ -28,7 +28,7 @@ def nation_required(f):
         try:
             request.user.nation
         except:
-            return redirect('nations:new')
+            return redirect('index')
         return f(request, *args, **kwargs)
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__

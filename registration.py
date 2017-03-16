@@ -114,10 +114,8 @@ def log_out(request):
     logout(request)
     return redirect('index')
 
-
+@nologin_required
 def log_in(request):
-    if request.user.is_authenticated():
-        return redirect('nation:main')
     if request.method == 'POST':
         form = loginform(request.POST)
         if form.is_valid():
