@@ -368,7 +368,8 @@
          </table>
         </div></div></div>
 		
-<hr />
+        {% if nation %}
+    <hr />
             
             <center> Communique:<div id="communique">
                 <form method="POST">{% csrf_token %}
@@ -378,6 +379,8 @@
                 <button type="submit" class="btn btn-inverse" name="comm" type="submit">send</button>
                 </div>
                 </form><br /><br />
+
+        {% endif %}
 {% if not nation.vacation %}
 
     {% if atwar %}
@@ -548,7 +551,7 @@
 
     {% endif %}
     
-{% if not nation.vacation %}
+{% if not nation.vacation and nation %}
         <hr />            
             Diplomacy
         <br />
@@ -680,6 +683,4 @@
     </table>
 </form>
 {% endif %}
-</center>
-
 {% endblock %}

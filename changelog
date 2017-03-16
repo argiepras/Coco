@@ -1,2 +1,1 @@
- - made nations browsable when not logged in
- - fixed error 500 when browsing anything (fucking duh)
+ - fixed nation page html when not logged in
