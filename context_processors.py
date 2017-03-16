@@ -1,5 +1,5 @@
 from .models import *
-from registration.forms import loginform
+from .registrationforms import loginform
 from . import variables as v
 
 

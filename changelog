@@ -1,10 +1,16 @@
 Changelog:
 
- - arrested spies are now released on war loss
- - fixed news items being inserted into the wrong nation upon successful spy action
- - fixed executing spy resulting in 500 server error
- - fixed error when withdrawing spies
- - fixed missing csrf token for searching nations in rankings
- - fixed error in market portion of turn code
- - optimized military portion of turn code
- - optimized policy resetting portion of turn code
+ - implemented search for ranking pages
+ - implemented dynamic market price thresholds
+	ie. the amount of a given resource buy/sells required to changed a price is based on conditions in the game and not a fixed value
+ - market changes are now actually changes in the market
+ - forced collectivization now alters the turnly output and not the actual tech
+ - spy actions and chemical attacks also alter the turnly output and not technology
+ - added % to qol tooltip
+ - fixed problem where universities didn't consume mg
+ - universities consumes 1 mg per turn instead of 2
+ - switched to yyy/mm/dd h:s timestamps
+ - removed the wiki and reddit links under the community tab
+ - made regional rankings browsable when not logged in
+ - password recovery was implemented and linked to
+ - registration was shuffled around, done away with temp passwords

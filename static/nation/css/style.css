@@ -81,7 +81,168 @@ body {
    z-index:1;
 }
 
+.red {
+  color: red;
+}
+.green {
+  color: green;
+}
 
+.result {
+  background-color: rgba(62, 62, 62, 0.3);
+  color: red;
+  padding: 20px;
+  margin: 20px;
+  border-color: black;
+  width: 40%;
+}
+
+
+
+.warresult  {
+  background-color: rgba(42, 42, 42, 0.3);
+  color: red;
+  padding: 20px;
+  margin: 20px;
+  border-color: black;
+  width: 70%;
+}
+
+.attackgroup {
+    margin: 20px;
+    width: 250px;
+}
+
+.attackgroup-land {
+    width: 250px;
+}
+
+.airgroup {
+    margin: 20px;
+    width: 210px;
+}
+
+.peace {
+  margin: 40px;
+}
+
+.declaration {
+  border: solid rgba(62, 62, 62, 0.9) 3px;
+  border-radius: 2px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.dec-content {
+  border-top: solid rgba(42, 42, 42, 0.9);
+  border-width: 8px;
+  min-height: 70px;
+  text-align: left;
+  padding: 20px;
+}
+
+.sflag {
+  max-width: 150px;
+  max-height: 100px;
+}
+
+.anthem {
+  margin: 20px;
+}
+
+.allbtn {
+  width: 170px;
+}
+
+.btn-collapse {
+  background-color: rgba(52, 52, 52, 0.4);
+  border: none;
+  margin-top: 50px; 
+  margin-bottom: 10px
+}
+
+.search {
+  margin: 40px;
+}
+
+.spacer {
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+
+.spacer-small {
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+
+.news {
+  border: solid rgba(92, 92, 92, 0.5) 1px;
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+
+.news-content {
+  border-top: solid rgba(92, 92, 92, 0.5);
+  min-height: 70px;
+  text-align: left;
+  padding: 20px;
+}
+
+.templating {
+  text-align: right;
+}
+
+.spacer-top {
+  margin-top: 5em;
+}
+
+.spacer-big {
+  margin: 5em;
+}
+
+.bigspacer {
+  margin-bottom: 5em;
+  margin-top: 5em;
+}
+
+.leftie {
+  text-align: left;
+}
+
+
+.rightie {
+  text-align: right;
+}
+
+.announce {
+  color: red;
+  padding-top: 40px;
+  padding-bottom: 40px;
+  background-color: rgba(40, 40, 40, 0.5);
+  border-bottom: 1px solid grey;
+  border-radius: 10px;
+}
+
+.newsbadge {
+  background-color: red;
+}
+
+.neutralbutton {
+    color: inherit;
+    
+    background:none!important;
+    border:none; 
+    padding:0!important;
+}
+
+.neutralbutton:hover {
+    color: inherit;
+    text-decoration-line: underline;
+    background:none!important;
+    border:none; 
+    padding:0!important;
+}
 
 #navigation a {
     color: white;

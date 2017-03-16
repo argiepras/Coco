@@ -3,21 +3,15 @@
     <head>
         <title>Cold Conflict - a multiplayer political simulation game</title>
         {% load staticfiles %}
-        <link href="{% static 'nation/css/style.css' %}" rel="stylesheet" type="text/css"/>
         <link rel="shortcut icon" href="/static/favicon.ico" type="image/ico">
         {% load static %}
         <link rel="shortcut icon" type="image/ico" href="{% static 'favicon.ico' %}">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <script src="{% static 'nation/js/policyjsdomestic.js' %}"></script>
-         <script src="'{% static 'nation/js/policyjseconomic.js' %}"></script>
-          <script src="{% static 'nation/js/policyjsmarket.js' %}"></script>
-           <script src="'{% static 'nation/js/policyjsmilitary.js' %}"></script>
         
         <!-- Bootstrap -->
+        <link href="{% static 'nation/css/style.css' %}" rel="stylesheet" type="text/css"/>
         <link href="{% static 'nation/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
         <script src="http://code.jquery.com/jquery.js"></script>
-        
-        
         <script src="{% static 'nation/js/bootstrap.min.js' %}"></script>
 
         <script>
@@ -35,6 +29,10 @@
     position: static;
 }
 
+.form-control{
+    color: black;
+}
+
 .navbar .navbar-nav {
   display: inline-block;
   float: none;
@@ -43,165 +41,6 @@
 
 .navbar .navbar-collapse {
   text-align: center;
-}
-
-.red {
-  color: red;
-}
-.green {
-  color: green;
-}
-
-.result {
-  background-color: rgba(62, 62, 62, 0.3);
-  color: red;
-  padding: 20px;
-  margin: 20px;
-  border-color: black;
-  width: 40%;
-}
-
-.warresult  {
-  background-color: rgba(42, 42, 42, 0.3);
-  color: red;
-  padding: 20px;
-  margin: 20px;
-  border-color: black;
-  width: 70%;
-}
-
-.attackgroup {
-    margin: 20px;
-    width: 250px;
-}
-
-.attackgroup-land {
-    width: 250px;
-}
-
-.airgroup {
-    margin: 20px;
-    width: 210px;
-}
-
-.peace {
-  margin: 40px;
-}
-
-.declaration {
-  border: solid rgba(62, 62, 62, 0.5) 1px;
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-
-.dec-content {
-  border-top: solid rgba(42, 42, 42, 0.5);
-  min-height: 70px;
-  text-align: left;
-  padding: 20px;
-}
-
-.sflag {
-  max-width: 150px;
-  max-height: 100px;
-}
-
-.anthem {
-  margin: 20px;
-}
-
-.allbtn {
-  width: 170px;
-}
-
-.btn-collapse {
-  background-color: rgba(52, 52, 52, 0.4);
-  border: none;
-  margin-top: 50px; 
-  margin-bottom: 10px
-}
-
-.search {
-  margin: 40px;
-}
-
-.spacer {
-  margin-top: 20px;
-  margin-bottom: 20px;
-}
-
-.spacer-small {
-  margin-top: 10px;
-  margin-bottom: 10px;
-}
-
-
-.news {
-  border: solid rgba(92, 92, 92, 0.5) 1px;
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-
-.news-content {
-  border-top: solid rgba(92, 92, 92, 0.5);
-  min-height: 70px;
-  text-align: left;
-  padding: 20px;
-}
-
-.templating {
-  text-align: right;
-}
-
-.spacer-top {
-  margin-top: 5em;
-}
-
-.spacer-big {
-  margin: 5em;
-}
-
-.bigspacer {
-  margin-bottom: 5em;
-  margin-top: 5em;
-}
-
-.leftie {
-  text-align: left;
-}
-
-
-.rightie {
-  text-align: right;
-}
-
-.announce {
-  color: red;
-  padding-top: 40px;
-  padding-bottom: 40px;
-  background-color: rgba(40, 40, 40, 0.5);
-  border-bottom: 1px solid grey;
-  border-radius: 10px;
-}
-
-.newsbadge {
-  background-color: red;
-}
-
-.neutralbutton {
-    color: inherit;
-    
-    background:none!important;
-    border:none; 
-    padding:0!important;
-}
-
-.neutralbutton:hover {
-    color: inherit;
-    text-decoration-line: underline;
-    background:none!important;
-    border:none; 
-    padding:0!important;
 }
 
 </style>
@@ -356,22 +195,20 @@
     </ul>
      
     <ul class="nav navbar-nav navbar-right">
-    <li><a href=""><button class="btn btn-default">Recover Password</button></a></li>
+    <li><a href="{% url 'recover' %}"><button class="btn btn-default">Recover Password</button></a></li>
      <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default">Community <b class="caret"></b></button></a>
         <ul class="dropdown-menu">
           <li><a href="{% url 'forum' %}"><button class="btn btn-default">Forum</button></a></li>
           <li><a href="{% url 'chat' %}"><button class="btn btn-default">Chat</button></a></li>
-          <li><a href=""><button class="btn btn-default">Reddit</button></a></li>
-          <li><a href="">Wiki</a></li>
           
         </ul>
       </li>
       <li class="dropdown"><a href="{% url 'map' %}" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default btn-sm"><img  src="{% static 'main/globe.png' %}" width="18">  The World <b class="caret"></b></button></a>
       <ul class="dropdown-menu">
-      <li><a href="">World Map</a></li>
-      <li><a href="">World Rankings</a></li>
-      <li><a href="">World News</a></li>
+      <li><a href="{% url 'map' %}">World Map</a></li>
+      <li><a href="{% url 'rankings' 1 %}">World Rankings</a></li>
+      <li><a href="{% url 'news' 1 %}">World News</a></li>
       </ul>
       </li>
     </ul>
@@ -392,7 +229,7 @@
 {% endblock %}
 
 <div style="font-size:15; background-color: rgba(0, 0, 0, 0.93); color:grey"><br />
-(inspirational quotes, for some reason)
+<!-- quotes -->
 <br /><br />
  
  <table style="background: transparent;"><tr><td style="padding: 10px;">

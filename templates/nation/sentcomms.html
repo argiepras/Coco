@@ -74,7 +74,7 @@ pre {
             <p style="text-align: left;">
                 You sent <b><a href="{{ element.recipient.get_absolute_url  }}">
                     {{ element.recipient }}</a></b>
-                    a message {{ element.timestamp|naturaltime }}
+                    a message {{ element.timestamp|date:"o/m/d G:i" }}
             </p>
             
             <pre class="comm">{{ element.message }}</pre>

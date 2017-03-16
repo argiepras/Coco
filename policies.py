@@ -556,18 +556,17 @@ def domesticpolicycosts(nation, initiatives):
         'medical': {'research': nation.healthcare/10, 'money': nation.gdp/2},
         'food': ((nation.qol/10)*(nation.approval/10)*(nation.gdp/200)/4),
     }
-    total = nation.factories + nation.universities
     if nation.region() != "Asia":
         data.update({'university': {
-            'rm': total*100+50,
-            'oil': total*50+25,
-            'mg': total*2,
+            'rm': nation.universities*100+50,
+            'oil': nation.universities*50+25,
+            'mg': nation.universities*2,
             }})
     else:
         data.update({'university': {
-            'rm': total*75+38,
-            'oil': total*38+19,
-            'mg': int(total*2*0.75),
+            'rm': nation.universities*75+38,
+            'oil': nation.universities*38+19,
+            'mg': int(nation.universities*2*0.75),
             }})
     if initiatives:
         if initiatives.literacy:
@@ -1011,15 +1010,15 @@ def economicpolicies(request):
                 })
                 img = ""
                 if chance > 79:
-                    research.foodtech += 1
+                    policyactions.foodproduction += 100
                     img += "collectivization.jpg"
                     result = 'The grains have never been grainer!'
                 elif chance < 11:
-                    research.foodtech -= (1 if research.foodtech > 0 else 0)
+                    policyactions.foodproduction -= 100
                     result = 'Your forced collectivization is an utter disaster, reducing your agricultural output, reducing approval and quality of life.'
                 else:
                     result = "Your forced collectivization is a failure, reducing approval and quality of life."
-                research.save(update_fields=['foodtech'])
+                policyactions.save(update_fields=['foodproduction'])
 
         elif 'labordiscipline' in request.POST:
             cost = nation.factories * 2 * policyactions.labor
@@ -1366,18 +1365,17 @@ def econpolicycosts(nation):
         'sez': (1 if nation.growth/4 < 1 else nation.growth/4),
         'FI': (nation.growth/6 if nation.growth > 2 else 1),
         }
-    total = nation.factories + nation.universities
     if nation.region() != 'Asia':
         data.update({'industry': {
-            'rm': total * 100 + 50,
-            'oil': total * 50 + 25,
-            'mg': total*2,
+            'rm': nation.factories * 100 + 50,
+            'oil': nation.factories * 50 + 25,
+            'mg': nation.factories*2,
             }})            
     else:
         data.update({'industry': {
-            'rm': total * 75 + 38,
-            'oil': total * 38 + 19,
-            'mg': int(total*2*0.75),
+            'rm': nation.factories * 75 + 38,
+            'oil': nation.factories * 38 + 19,
+            'mg': int(nation.factories*2*0.75),
             }})
     if nation.region() != 'Middle East':
         data.update({'prospect': ((nation.econdata.prospects**2)*1000)+500})

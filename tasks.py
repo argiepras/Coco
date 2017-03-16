@@ -233,8 +233,65 @@ def warcleanup(debug=False):
 def marketturn(debug=False):
     market = Market.objects.latest('pk')
     new_market = Market()
-    for field in Market._meta.fields[1:]:
-        new_market.__dict__[field.name] = market.__dict__[field.name]
+    for field in v.resources[1:]: #inheriting the counters
+        new_market.__dict__['%s_counter' % field] = market.__dict__['%s_counter' % field]
+    if new_market.pk < 5:
+        new_market.change = random.randint(-2, 2)
+    else: #calculating the changes in market
+        lastbought = Marketlog.objects.filter(turn=market.pk-1, cost__gt=0).aggregate(Sum('cost'))['cost__sum']
+        lastsold = Marketlog.objects.filter(turn=market.pk-1, cost__lt=0).aggregate(Sum('cost'))['cost__sum']
+        bought = Marketlog.objects.filter(turn=market.pk, cost__gt=0).aggregate(Sum('cost'))['cost__sum']
+        sold = Marketlog.objects.filter(turn=market.pk, cost__lt=0).aggregate(Sum('cost'))['cost__sum']
+    #setting new thresholds
+    count = Nation.objects.filter(vacation=False, deleted=False).count()
+
+    stats = Nation.objects.filter(vacation=False, deleted=False).aggregate(
+        Sum('rm'), 
+        Sum('mines'),
+        Sum('oil'), 
+        Sum('wells'),
+        Sum('mg'), 
+        Sum('factories'),
+        Sum('food'),
+        Sum('universities'), 
+        Sum('land'), #food is more complicated than the rest
+        Avg('researchdata__foodtech'),
+        Avg('researchdata__urbantech'),
+        Avg('econdata__foodproduction'),
+    )
+    print stats
+    for field in stats:
+        stats[field] = (stats[field] if stats[field] != None else 1)
+    #accurate food production calculations
+    available_land = stats['land__sum']
+    multiplier = (1 - v.researchbonus['urbantech'])**stats['researchdata__urbantech__avg']
+    for field in v.landcosts:
+        available_land -= stats['%s__sum' % field] * int(v.landcosts[field] * multiplier)
+
+    for field in v.foodproduction:
+        land = field
+        gain = v.foodproduction[field]
+
+    food_prod = int((available_land / land) * gain) * stats['researchdata__foodtech__avg']
+    food_prod = int(food_prod * stats['econdata__foodproduction__avg'])
+
+    new_market.rm_threshold = (stats['rm__sum'] / float(stats['mines__sum'])) * sqrt(count/2)
+    new_market.mg_threshold = (stats['mg__sum'] / float(stats['factories__sum'])) * sqrt(count/2)
+    new_market.oil_threshold = (stats['oil__sum'] / float(stats['wells__sum'])) * sqrt(count/2)
+    new_market.food_threshold = (stats['food__sum'] / float(food_prod)) * sqrt(count/2)
+    print new_market.rm_threshold 
+    print new_market.mg_threshold 
+    print new_market.oil_threshold 
+    print new_market.food_threshold
+    #now double check if the threshold is greater than the lower limit
+    #standard is 20
+    for field in v.resources[1:]:
+        print field
+        new_market.__dict__['%s_threshold' % field]
+        if new_market.__dict__['%s_threshold' % field] < v.min_threshold:
+            print market.__dict__['%s_threshold' % field]
+            new_market.__dict__['%s_threshold' % field] = v.min_threshold
+
     new_market.save()
     return infilgain()
 

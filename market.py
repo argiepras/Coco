@@ -4,7 +4,7 @@ from .forms import *
 from django.contrib.auth.decorators import login_required
 from .decorators import nation_required
 from . import utilities as utils
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.core.paginator import *
 from django.db import transaction
 import datetime as time
@@ -20,31 +20,29 @@ def free_market(request):
     econ = (2 if econ > 2 else econ)
     context = {}
     result = False
-    if request.method == 'POST':
+    if request.method == 'POST' and not nation.vacation:
         post = request.POST.dict()
         actions = {}
         with transaction.atomic():
-            market = Market.objects.select_for_update().latest('pk')
+            market = Market.objects.select_for_update(nowait=True).latest('pk')
             for field in post:
                 if len(field.split('_')) == 2:
                     action, resource = field.split('_')
                     amount = post[field]
             amount = int(amount)
+            amount = (amount if amount == 20 or amount == 10 or amount == 1 else 20)
             pricevar = '%sprice' % resource
             price = market.__dict__[pricevar]
             countervar = '%s_counter' % resource
             counter = market.__dict__[countervar]
-            threshold = market.threshold
-            try:
-                log = Marketlog.objects.get(nation=nation, turn=market.pk, resource=resource)
-            except:
-                log = Marketlog.objects.create(nation=nation, turn=market.pk, resource=resource)
+            threshold = market.__dict__['%s_threshold' % resource]
+            log = Marketlog.objects.get_or_create(nation=nation, turn=market.pk, resource=resource)[0]
             if action == 'buy':
                 cost = int(price * v.marketbuy[econ]) * amount
                 if nation.budget < cost:
                     result = "You cannot afford this! You need $%sk more!" % (cost - nation.budget)
                 else:
-                    if amount + counter < market.threshold : #doesn't move price
+                    if amount + counter < threshold : #doesn't move price
                         counter += amount
                     else:
                         counter = amount + counter - threshold

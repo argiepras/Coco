@@ -70,15 +70,17 @@ pre {
 	<ul class="list-group">
 	{% for element in comms %}
 		<li class="list-group-item" id="commtainer">
-			{{ element|commlabels }}
 			<p style="text-align: left;">
 			{% if element.sender == None %}
-				The following was recieved {{ element.timestamp|naturaltime }}
+				The following was recieved at
 			{% else %}
 				<b><a href="{{ element.sender.get_absolute_url }}">
 					{{ element.sender }}</a></b>
-					sent you a message {{ element.timestamp|naturaltime }}
+					sent you a message
 			{% endif %}
+				<span style="float: right; font-size: 75%">
+					{{ element|commlabels }} {{ element.timestamp|date:"o/m/d G:i" }}
+				</span>
 			</p>
 			
 			<pre class="comm">{{ element.message }}</pre>

@@ -319,6 +319,7 @@ def rmgain_tech(nation):
 def mggain(nation, rm, oil):
     mg = mgbase(nation, rm, oil)
     mg += mgbonus(nation, mg)
+    mg -= mgunidecay(nation)
     return mg
 
 def mgdisplaywrapper(nation):
@@ -340,7 +341,11 @@ def mgbonus(nation, mg):
 
 
 def mgunidecay(nation):
-    pass
+    gain = mgdisplaywrapper(nation)
+    gain += mgbonus(nation, gain)
+    if nation.mg + gain > nation.universities:
+        return nation.universities * -1
+    return (nation.mg + gain) * -1
 
 
 

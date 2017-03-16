@@ -324,9 +324,10 @@ def mgchange(nation):
             gain += '<p><span class="green">+%s tons from technological improvements<span></p>' % techbonus
 
     if nation.universities > 0:
-        if nation.mg + mg > nation.universities * 2:
-            txt = '%s tons' % (nation.universities*2)
-            uni = '<p><span class="red">-%s from universities<span></p>' % txt
+        uniloss = changes.mgunidecay(nation)
+        if uniloss < 0:
+            txt = '%s tons' % uniloss
+            uni = '<p><span class="red">%s from universities<span></p>' % txt
             gain += uni
 
     if not gain:
@@ -377,7 +378,7 @@ def qolchange(nation, gaintype):
         return mark_safe('<p>No change from %s</p>' % gaintype)
     color = ('green' if gain[0] == '+' else 'red')
     adj = ('high' if gain[0] == '+' else 'low')
-    txt = "%s from %s %s" % (gain, adj, gaintype)
+    txt = "%s%% from %s %s" % (gain, adj, gaintype)
     lit = '<p><span class="%s">%s</span></p>' % (color, txt)
     return mark_safe(lit)
 
@@ -542,10 +543,10 @@ def soviet_relations(nation):
 
     try:
         if nation.alliance.initiatives.alignment == 'Soviet Union':
-            txt = "+1 due to your alliance's alignment with the Soviet Union"
+            txt = "+1 due to your alliances alignment with the Soviet Union"
             alliance_align = '<p><span class="green">%s</span></p>' % txt
         elif nation.alliance.initiatives.alignment == 'United States':
-            txt = "-1 due to your alliance's alignment with the United States"
+            txt = "-1 due to your alliances alignment with the United States"
             alliance_align = '<p><span class="red">%s</span></p>' % txt
     except:
         pass

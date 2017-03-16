@@ -37,6 +37,8 @@ foodproduction = {
 faminecost = -10
 
 regions = ['Africa', 'South America', 'Arabia', 'Asia']
+
+min_threshold = 20
  
 #Flavor text for sending aid and market
 _pretty = {
@@ -108,6 +110,8 @@ agencies = {
     2: 'ISI',
     3: 'CIA',
 }
+
+landmin = 10000
 
 unicost = 2 #mg per turn per uni
 researchperuni = 4

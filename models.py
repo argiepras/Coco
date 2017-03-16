@@ -8,6 +8,10 @@ from django.db import models
 from django.db.models import F, Avg
 from django.utils import timezone
 
+def latestmarket():
+    return Market.objects.latest('pk').pk
+
+
 # Create your models here.
 #alliance first because it goes top to bottom and cries if a model refers to another model declared later
 class Alliance(models.Model):
@@ -67,6 +71,7 @@ class Alliance(models.Model):
 
 class ID(models.Model):
     index = models.IntegerField(default=1) #used to assign IDs
+    turn = models.IntegerField(default=1)
     #because overriding primary key values pose all sorts of problems
     #so nation IDs will be simple int fields
 
@@ -79,6 +84,7 @@ class Nation(models.Model):
     last_seen = models.DateTimeField(default=v.now)
     vacation = models.BooleanField(default=False) #here and not settings to avoid multiple queries
     deleted = models.BooleanField(default=False) #mod deletion makes nation appear as deleted
+    reset = models.BooleanField(default=False)
     descriptor = models.CharField(max_length=100, default="")
     description = models.CharField(max_length=500)
     title = models.CharField(max_length=100, default="")
@@ -521,20 +527,24 @@ class Ban(models.Model):
 ###################
 
 class Market(models.Model):
-    threshold = models.IntegerField(default=30)
+    rm_threshold = models.IntegerField(default=30)
     rm_counter = models.IntegerField(default=15)
     rmprice = models.IntegerField(default=50)
+    oil_threshold = models.IntegerField(default=30)
     oil_counter = models.IntegerField(default=15)
     oilprice = models.IntegerField(default=60)
+    mg_threshold = models.IntegerField(default=30)
     mg_counter = models.IntegerField(default=51)
     mgprice = models.IntegerField(default=300)
+    food_threshold = models.IntegerField(default=30)
     food_counter = models.IntegerField(default=15)
     foodprice = models.IntegerField(default=30)
-    totalsold = models.IntegerField(default=0)
-    totalbought = models.IntegerField(default=0)
     change = models.IntegerField(default=0) #change in market activity
     def __unicode__(self):
         return u'Market data for turn %s' % self.pk
+
+def marketpk():
+    return ID.objects.get().turn
 
 #to preventing gaming the market by buying and selling to increase the sold/bought volumes
 class Marketlog(models.Model):
@@ -542,7 +552,7 @@ class Marketlog(models.Model):
     resource = models.CharField(max_length=4) #mg rm oil food
     volume = models.IntegerField(default=0)
     cost = models.IntegerField(default=0) #positive for buys negative for sells
-    turn = models.IntegerField(default=Market.objects.latest('pk').pk) #set to market.pk
+    turn = models.IntegerField(default=latestmarket) #set to market.pk
     def __unicode__(self):
         'Turn %s market log for %s' % (self.turn, self.nation.name)
 
@@ -550,11 +560,37 @@ class Marketlog(models.Model):
 class Marketoffer(models.Model):
     nation = models.ForeignKey(Nation, related_name="offers", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=v.now)
-    content = models.CharField(max_length=300)
-    alignment = models.IntegerField(default=1) #1 2 3 sov neu us
+    offer = models.CharField(max_length=10)
+    offer_amount = models.IntegerField(default=0)
+    request = models.CharField(max_length=10)
+    request_amount = models.IntegerField(default=0)
     deleted = models.BooleanField(default=False)
     deleter = models.ForeignKey(Nation, related_name="deleted_offers", on_delete=models.SET_NULL, null=True, blank=True)
     deleted_timestamp = models.DateTimeField(default=v.now)
+
+
+class Marketofferlog(models.Model):
+    buyer = models.ForeignKey(
+        Nation, 
+        related_name="market_buys", 
+        on_delete=models.SET_NULL, 
+        null=True,
+        blank=True)
+    sellser = models.ForeignKey(
+        Nation, 
+        related_name="market_sells", 
+        on_delete=models.SET_NULL, 
+        null=True,
+        blank=True)
+    sold = models.CharField(max_length=10)
+    bought = models.CharField(max_length=10)
+    sold_amount = models.IntegerField(default=0)
+    bought_amount = models.IntegerField(default=0)
+    posted = models.DateTimeField(default=v.now) #when the offer was posted
+    timestamp = models.DateTimeField(default=v.now) #and when it was accepted
+    def __unicode__(self):
+        return u"%s bought from %s" % (self.buyer.name, self.seller.name)
+
 
 
 
@@ -640,7 +676,7 @@ class Banklog(models.Model):
 
 class Bankstats(models.Model):
     alliance = models.ForeignKey(Alliance, on_delete=models.CASCADE, related_name="bankstats")
-    turn = models.IntegerField(default=Market.objects.latest('pk').pk)
+    turn = models.IntegerField(default=marketpk)
     wealthy_tax = models.IntegerField(default=0)
     uppermiddle_tax = models.IntegerField(default=0)
     lowermiddle_tax = models.IntegerField(default=0)
@@ -682,7 +718,7 @@ class Invite(models.Model):
 
 class Alliancedeclaration(models.Model):
     nation = models.ForeignKey(Nation, related_name="alliance_declarations")
-    alliance = models.ForeignKey(Alliance, related_name="declarations")
+    alliance = models.ForeignKey(Alliance, related_name="declarations", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=v.now)
     content = models.CharField(max_length=500)
     deleted = models.BooleanField(default=False)
@@ -973,3 +1009,37 @@ class Extradition_request(models.Model):
     timestamp = models.DateTimeField(default=v.now)
     def __unicode__(self):
         return "Extradition request for agent %s, from %s to %s" % (self.spy.name, self.nation.name, self.target.name)
+
+
+
+
+
+
+
+
+
+
+#############################33
+######## registration stuff
+########################################
+
+
+def reg_generator():
+    import random
+    import string
+    return ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(50))
+
+
+class Confirm(models.Model):
+    code = models.CharField(max_length=50, default=reg_generator)
+    email = models.EmailField()
+    regtime = models.DateTimeField(auto_now_add=True)
+
+    def get_absolute_url(self):
+        from django.core.urlresolvers import reverse
+        return reverse('registration_activation_complete', kwargs={'reg_id': (str(self.code))})
+
+class Recovery(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    code = models.CharField(max_length=50, default=reg_generator)
+    regtime = models.DateTimeField(auto_now_add=True)

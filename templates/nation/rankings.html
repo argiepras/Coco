@@ -13,13 +13,23 @@
             <div class="input-group">
                 {{ searchform.nation }}
                 <span class="input-group-btn">
-                    <button class="btn btn-default" type="submit">Search </button>
+                    <button class="btn btn-default" type="submit">Search</button>
                 </span>
             </div>
         </div>
     </div>
 </form>
 </div>
+
+{% if results %}
+    {% for player in results %}
+        {% if forloop.last %}
+             <a href="{{ player.get_absolute_url }}">{{ player.name }}</a>
+        {% else %}
+             <a href="{{ player.get_absolute_url }}">{{ player.name }}</a>, 
+        {% endif %}
+    {% endfor %}
+{% endif %}
 
 <div> 
 <ul class="pagination">
@@ -37,14 +47,16 @@
         <td><b>Region</b></td>
         <td><b>Alignment</b></td>
         <td><b>Alliance</b></td>
+        {% if nation %}
         <td><b>War</b></td>
+        {% endif %}
     </tr>
     {% for player in nations %}
     <tr>
         <td>
             <a href="{{ player.get_absolute_url }}">
                 <img src="{{ player.settings.showflag }}" height="40">
-            {{ player.name }}
+            <b>{{ player.name }}</b>
             </a>
         </td>
         <td>{{ player.user.username }}</td>
@@ -60,7 +72,9 @@
     {% else %}
         <td>None</td>
     {% endif %}
+    {% if nation %}
         <td>{{ player|warstatus:nation }}</td>
+    {% endif %}
     </tr>
     {% endfor %}
 </table>

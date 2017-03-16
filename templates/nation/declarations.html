@@ -1,24 +1,47 @@
 {% extends 'nation/base.html' %}
 {% block content %}
+<div class="container">
 <h2 style="margin: 50px">World Declarations</h2>
-{% load humanize %}
 {% if declarations %}
 
-<div>pagination</div>
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+<div> 
+<ul class="pagination">
+{% for page in pages %}
+    <li><a href="{% url 'declarations' page.page %}">{{ page.page }}</a></li>
+{% endfor %}
+</ul> 
+</div>
+
 <div class="declarations">
+    <form method="POST">{% csrf_token %}
     {% for declaration in declarations %}
         <div class="declaration">
             <div class="row">
-                <div class="col-sm-10">
+                <div class="col-sm-6">
                     <div style="text-align: left; padding-left: 10px">
-                    <a href="{{ declaration.nation.get_absolute_url }}">
-                    <img src="{{ declaration.nation.settings.showflag }}" height="20">
-                    <b>{{ declaration.nation.name }}</b>
-                    </a> declared the following
+                    <h4>
+                        <a href="{{ declaration.nation.get_absolute_url }}">
+                            <img src="{{ declaration.nation.settings.showflag }}" height="20">
+                            <b>{{ declaration.nation.name }}</b>
+                            </a> declared the following
+                        </h4>
                     </div>
                 </div>
-                <div class="col-sm-2">
-                    {{ declaration.timestamp|naturaltime }}
+                <div class="col-sm-6">
+                    <h5 style="float: right; margin-right: 10px">
+                    {% if mod %}
+                            <button type="submit" name="delete" value="{{ declaration.pk }}" class="btn-sm btn-danger">
+                                Delete
+                            </button>
+                    {% endif %}
+                        {{ declaration.timestamp|date:"o/m/d G:i" }}
+                    </h5>
                 </div>
             </div>
             <div class="row">
@@ -37,8 +60,7 @@
 <p>There are no global declarations yet! Be the first to make one!</p>
 
 {% endif %}
-
-<form method="POST">{% csrf_token %}
+<p><h5>Declarations costs ${{ deccost }}k each</h5></p>
 <div class="row">
     <div class="col-sm-4 col-sm-offset-4">
         {{ decform.message }}
@@ -46,5 +68,5 @@
 </div>
     <div><button type="submit" class="btn" style="margin: 20px" name="declare">Declare</button></div>
 </form>
-
+</div>
 {% endblock %}

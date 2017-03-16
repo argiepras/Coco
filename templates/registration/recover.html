@@ -1,0 +1,24 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+
+    {% if result %}
+        <p style="margin-top: 5em; margin-bottom: 5em;">{{ result }}</p>
+    {% else %} 
+        <p>Enter new password below</p>
+        <form method="POST"> {% csrf_token %}
+        <div class="row">
+            <div class="col-xs-4 col-xs-offset-4">
+                {{ form.password }}
+            </div>
+        </div>
+        <button class="btn btn-default" type="submit" name="reset">
+            Submit
+        </button>
+        </form>
+
+
+    {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "nation/base.html" %}
+
+{% block content %}
+
+<center>
+
+{% if account %}
+
+<h1>Activation Complete!</h1>
+
+Thanks {{ account }}, activation complete!
+You may now proceed to create your nation.
+
+{% else %}
+
+<h1>Activation Problem</h1>
+
+Oops &ndash; it seems that your activation key is invalid.  Please check the url again.
+{% endif %}
+
+</center>
+
+{% endblock %}

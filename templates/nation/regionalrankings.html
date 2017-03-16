@@ -39,7 +39,9 @@
         <td><b>GDP (millions)</b></td>
         <td><b>Alignment</b></td>
         <td><b>Alliance</b></td>
-        <td><b>War</b></td>
+        {% if nation %}
+            <td><b>War</b></td>
+        {% endif %}
     </tr>
     {% for player in nations %}
     <tr>
@@ -61,7 +63,9 @@
     {% else %}
         <td>None</td>
     {% endif %}
-        <td>{{ player|warstatus:nation }}</td>
+        {% if nation %}
+            <td>{{ player|warstatus:nation }}</td>
+        {% endif %}
     </tr>
     {% endfor %}
 </table>

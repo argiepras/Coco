@@ -12,45 +12,21 @@ class aidform(forms.Form):
                     widget=forms.NumberInput(attrs={'size': '4', 'placeholder': '0'}))
 
 class searchform(forms.Form):
-    nation = forms.CharField(max_length=30, min_length=1, widget=forms.TextInput(attrs={
+    nation = forms.CharField(max_length=50, min_length=1, widget=forms.TextInput(attrs={
         'placeholder': 'Search for nation...', 'class': 'form-control'
         }))
 
 class commform(forms.Form):
     message = forms.CharField(max_length=1000, widget=forms.Textarea(attrs={'placeholder': 'Enter your message...', 'class': 'id_message'}))
 
-class newnationform(forms.Form):
-    def __init__(self, *args, **kwargs):
-        super(newnationform, self).__init__(*args, **kwargs)
-        regions = []
-        governments = []
-        economy = []
-        #this is a hack of sorts, I'm too lazy to type out all dis shit again
-        #plus this makes it so changing the structure in variables
-        #means you don't have to change this
-        for region in v.regions:
-            for subregion in v.regions[region]:
-                regions.append((subregion, subregion))
-        for key in v.government:
-            governments.append(((key*20)+10, v.government[key]))
-        for markettype in v.economy:
-            economy.append(((markettype+1)*25, v.economy[markettype]))
-
-        economy = tuple(economy)
-        governments = tuple(governments)
-        regions = tuple(regions)
-        self.fields['government'] = forms.ChoiceField(choices=governments, label="Government Type")
-        self.fields['subregion'] = forms.ChoiceField(choices=regions, label="Region")
-        self.fields['economy'] = forms.ChoiceField(choices=economy, label="Economy Type")
-
-    name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={'placeholder': 'Nation name'}))
-    password = forms.CharField(max_length=40, widget=forms.PasswordInput(attrs={'placeholder': 'Password'}))
-    password2 = forms.CharField(max_length=40, widget=forms.PasswordInput(attrs={'placeholder': 'Password again'}))
-
 
 class declarationform(forms.Form):
     message = forms.CharField(max_length=500, min_length=1, widget=forms.Textarea(
-        attrs={'style': 'height: 150px', 'placeholder': 'Enter your declaration', 'class': 'form-control'}))
+        attrs={
+        'style': 'height: 150px', 
+        'placeholder': 'Enter your declaration', 
+        'class': 'form-control',
+    }))
 
 
 

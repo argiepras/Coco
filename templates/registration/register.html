@@ -1,0 +1,29 @@
+{% extends 'nation/base.html' %}
+
+{% block content %}
+<div class="container">
+    <h3>Sign up for Cold Conflict</h3>
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+    <p style="margin-top: 2em;">To sign up, enter your email</p>
+    <form method="POST">{% csrf_token %}
+        <div class="row">
+            <div class="col-xs-6 col-xs-offset-3">
+                <div style="margin: 10px">{{ form.email }}</div>
+            </div>
+        </div>
+        <button class="btn btn-default" type="submit" name="submit">
+            Submit
+        </button>
+
+    <p style="margin: 100px">If your confirmation email hasn't arrived yet, fill out the email field and 
+        <button type="submit" class="btn btn-default" name="retry">
+            resend email
+        </button>
+    </p>
+    </form>
+</div>  
+{% endblock %}

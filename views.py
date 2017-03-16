@@ -10,7 +10,7 @@ from django.utils import timezone
 #then other stuff
 from .models import *
 from .forms import *
-from .decorators import nation_required
+from .decorators import nation_required, novacation
 from . import utilities as utils
 import news
 import intelligence
@@ -85,43 +85,36 @@ def main(request, msg=False):
     })
     return render(request, 'nation/main.html', context)
 
-@login_required
-def newnation(request):
-    if Nation.objects.filter(user=request.user).exists():
-        return redirect('nation:main')
-    if request.method == 'POST':
-        nationid = ID.objects.get(pk=1)
-        form = newnationform(request.POST)
-        if form.is_valid():
-            while True:
-                if Nation.objects.filter(index=nationid.index).exists():
-                    nationid.index += 1
-                else:
-                    break
-            request.user.set_password(form.cleaned_data['password'])
-            request.user.save()
-            update_session_auth_hash(request, request.user)
-            nation = Nation.objects.create(user=request.user, index=nationid.index,
-                name=form.cleaned_data['name'],
-                creationip=request.META.get('REMOTE_ADDR'),
-                government=form.cleaned_data['government'],
-                economy=form.cleaned_data['economy'],
-                subregion=form.cleaned_data['subregion'])
-            Settings.objects.create(nation=nation)
-            IP.objects.create(nation=nation, IP=request.META.get('REMOTE_ADDR'))
-            Military.objects.create(nation=nation)
-            Econdata.objects.create(nation=nation)
-            Researchdata.objects.create(nation=nation)
-            return redirect('nation:main')
+
+def create_nation(request):
+    nationid = ID.objects.get(pk=1)
+    while True:
+        if Nation.objects.filter(index=nationid.index).exists():
+            nationid.index += 1
         else:
-            return render(request, 'nation/newnation.html', {'form': form})
-    return render(request, 'nation/newnation.html', {'form': newnationform()})
+            break
+    nation = Nation.objects.create(user=request.user, 
+        index=nationid.index,
+        name=form.cleaned_data['name'],
+        creationip=request.META.get('REMOTE_ADDR'),
+        government=form.cleaned_data['government'],
+        economy=form.cleaned_data['economy'],
+        subregion=form.cleaned_data['subregion'])
+    set_nation(request, nation)
+    Settings.objects.create(nation=nation)
+    IP.objects.create(nation=nation, IP=request.META.get('REMOTE_ADDR'))
+    Military.objects.create(nation=nation)
+    Econdata.objects.create(nation=nation)
+    Researchdata.objects.create(nation=nation)
+    nationid.save()
+
 
 
 def declarations(request, page):
     context = {}
+    nation = request.user.nation
+    result = ''
     if request.method == 'POST':
-        nation = request.user.nation
         if 'declare' in request.POST:
             form = declarationform(request.POST)
             if form.is_valid():
@@ -131,11 +124,23 @@ def declarations(request, page):
                     actions = {'budget': {'action': 'subtract', 'amount': v.declarationcost}}
                     nation.declarations.create(region="none", content=form.cleaned_data['message'])
                     utils.atomic_transaction(Nation, nation.pk, actions)
+                    request.user.nation.budget -= v.declarationcost
                     result = "Declaration made!"
             else:
                 result = form.errors
-            context.update({'result': result})
-    declarations = Declaration.objects.select_related('nation', 'nation__settings').filter(region='none').order_by('-pk')
+
+        if 'delete' in request.POST and nation.settings.mod:
+            if deldec(nation, request.POST['delete']) > 0:
+                result = "Declaration deleted!"
+            else:
+                result = "Declaration not found"
+
+    declarations = Declaration.objects.select_related(
+        'nation', 
+        'nation__settings').filter(
+            region='none',
+            deleted=False,
+            ).order_by('-pk')
     paginator = Paginator(declarations, 10)
     page = int(page)
     try:
@@ -147,9 +152,12 @@ def declarations(request, page):
         # If page is out of range (e.g. 9999), deliver last page of results.
         declist = paginator.page(paginator.num_pages)
     context.update({
+        'mod': nation.settings.mod,
         'declarations': declist, 
         'decform': declarationform(),
+        'deccost': v.declarationcost,
         'pages': utils.pagination(paginator, declist),
+        'result': result,
         })
     return render(request, 'nation/declarations.html', context)
 
@@ -171,6 +179,13 @@ def regionaldeclarations(request, page):
             else:
                 result = form.errors
             context.update({'result': result})
+
+        elif 'delete' in request.POST and nation.settings.mod:
+            if deldec(nation, request.POST['delete']) > 0:
+                result = "Declaration deleted!"
+            else:
+                result = "Declaration not found"
+
     declarations = Declaration.objects.select_related('nation', 'nation__settings').filter(region=nation.region()).order_by('-pk')
     paginator = Paginator(declarations, 10)
     page = int(page)
@@ -183,12 +198,26 @@ def regionaldeclarations(request, page):
         # If page is out of range (e.g. 9999), deliver last page of results.
         declist = paginator.page(paginator.num_pages)
     context.update({
+        'mod': nation.settings.mod,
         'declarations': declist, 
         'decform': declarationform(),
         'pages': utils.pagination(paginator, declist)
         })
     return render(request, 'nation/regionaldiscussion.html', context)
 
+def deldec(nation, decpk):
+    if Declaration.objects.filter(pk=decpk).exists():
+        nation.mod_actions.create(
+            action="Deleted declaration",
+            reason="",
+            reversible=True,
+            reverse=decpk,
+            )
+    return Declaration.objects.filter(pk=decpk).update(
+        deleted=True,
+        deleter=nation,
+        deleted_timestamp=v.now()
+        )
 
 @nation_required
 @login_required
@@ -352,7 +381,7 @@ def nationpage(request, idnumber):
     result = ''
     if request.method == "POST":
         actions = {}
-        if 'aid' in request.POST:
+        if 'aid' in request.POST and not nation.vacation:
             form = aidform(nation, request.POST)
             if form.is_valid():
                 resource = request.POST['aid']
@@ -391,7 +420,7 @@ def nationpage(request, idnumber):
                         result += " But the differences between our systems resulted in $%sk in tariffs!" % tariff
                         utils.atomic_transaction(Nation, nation.pk, {'budget': {'action': 'subtract', 'amount': tariff}})
 
-        elif 'expeditionary' in request.POST:
+        elif 'expeditionary' in request.POST and not nation.vacation:
             if nation.econdata.expedition:
                 result = "You have already sent an expeditionary force this turn!"
             elif nation.military.army < 10:
@@ -404,8 +433,8 @@ def nationpage(request, idnumber):
                 nation.outgoing_aid.create(reciever=target, resource='troops', amount=10)
                 result = "10k of our active personnel are shipped off to %s" % target.name
 
-        elif 'cede' in request.POST:
-            if nation.farmland() < 100:
+        elif 'cede' in request.POST and not nation.vacation:
+            if nation.land < 10100:
                 result = "You do not have enough land to cede!"
             elif nation.region() != target.region():
                 result = "We cannot cede land to a country in a different part of the world!"
@@ -424,7 +453,7 @@ def nationpage(request, idnumber):
                 utils.atomic_transaction(Nation, target.pk, tgtaction)
                 result = "We cede the land and lose respect of the people!"
 
-        elif 'giveweapons' in request.POST:
+        elif 'giveweapons' in request.POST and not nation.vacation:
             if nation.military.weapons < 15:
                 result = "We barely have any weapons as it is! We can't give any away!"
             elif nation.military.weapons < 100 and target.military.weapons > 300:
@@ -456,7 +485,7 @@ def nationpage(request, idnumber):
             else:
                 result = "%s" % form.errors
 
-        elif 'research' in request.POST:
+        elif 'research' in request.POST and not nation.vacation:
             if nation.research < 50:
                 result = "stop it"
             else:
@@ -465,7 +494,7 @@ def nationpage(request, idnumber):
                 news.aidnews(nation, target, 'research', 50)
                 result = "50 research gets transferred to %s!" % target.name
 
-        elif 'infiltrate' in request.POST:
+        elif 'infiltrate' in request.POST and not nation.vacation:
             form = spyselectform(nation, request.POST)
             if form.is_valid():
                 spy = form.cleaned_data['spy']
@@ -473,8 +502,7 @@ def nationpage(request, idnumber):
             else:
                 result = "Invalid spy selected!"
 
-
-        elif 'war' in request.POST and warrable:
+        elif 'war' in request.POST and warrable and not nation.vacation:
             if nation.military.weapons < nation.military.army/10:
                 result = "You do not have the weaponry to attack!"
             else:
@@ -486,7 +514,7 @@ def nationpage(request, idnumber):
                 atwar = True
                 result = "Foreign nationals from %s are rounded up and put into internment camps as the war declaration gets drafted and delivered!" % target.name
 
-        elif 'attack' in request.POST and atwar:
+        elif 'attack' in request.POST and atwar and not nation.vacation:
             if (nation == war.attacker and war.attacked) or (nation == war.defender and war.defended):
                 result = "Your troops need time to reorganize!"
             elif nation.military.army == 0:
@@ -501,7 +529,7 @@ def nationpage(request, idnumber):
                 else:
                     return render(request, 'nation/battle.html', battle(nation, target, war))
 
-        elif 'air' in request.POST and atwar:
+        elif 'air' in request.POST and atwar and not nation.vacation:
             action = request.POST['air']
             if (nation == war.attacker and war.airattacked) or (nation == war.defender and war.airdefended):
                 result = "Your aircraft must refuel before their next attack!"
@@ -549,7 +577,7 @@ def nationpage(request, idnumber):
                     else:
                         return render(request, 'nation/air.html', agentorange(nation, target, war, wartype))
 
-        elif 'chem' in request.POST and atwar:
+        elif 'chem' in request.POST and atwar and not nation.vacation:
             if nation.military.chems < 10:
                 result = "You do not have chemical weapons!"
             elif nation.reputation < 10:
@@ -557,7 +585,7 @@ def nationpage(request, idnumber):
             else:
                 return render(request, 'nation/chems.html', chems(nation, target, war))
 
-        elif 'peace' in request.POST and atwar:
+        elif 'peace' in request.POST and atwar and not nation.vacation:
             if nation == war.attacker and war.attackerpeace:
                 result = "You have already offered peace!"
             elif nation == war.defender and war.defenderpeace:
@@ -583,7 +611,7 @@ def nationpage(request, idnumber):
                 else:
                     news.peace(nation, target)
 
-        elif 'naval' in request.POST and atwar:
+        elif 'naval' in request.POST and atwar and not nation.vacation:
             if nation == war.attacker and war.navyattacked:
                 result = "Your fleet must reorganize before it can launch another attack!"
             elif nation == war.defender and war.navydefended:
@@ -593,7 +621,7 @@ def nationpage(request, idnumber):
             else:
                 return render(request, 'nation/naval.html', navalstrike(nation, target, war))
 
-        elif 'nuke' in request.POST and atwar:
+        elif 'nuke' in request.POST and atwar and not nation.vacation:
             if nation.military.nukes == 0:
                 result = "You do not have any nukes!"
             else:
@@ -657,11 +685,8 @@ def newspage(request):
 
 
 
-@nation_required
-@login_required
 def rankings(request, page):
     context = {}
-    nation = request.user.nation
     nations = Nation.objects.select_related('settings').filter(vacation=False, deleted=False).order_by('-gdp')
     paginator = Paginator(nations, 15)
     page = int(page)
@@ -673,6 +698,9 @@ def rankings(request, page):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         nationlist = paginator.page(paginator.num_pages)
+
+    if request.method == "POST": #only POST on this page is search
+        context.update(rankingsearch(request))
     context.update({
         'pages': utils.pagination(paginator, nationlist),
         'nations': nationlist,
@@ -681,15 +709,12 @@ def rankings(request, page):
     return render(request, 'nation/rankings.html', context)
 
 
-@nation_required
-@login_required
 def regionalrankings(request, region, page):
     try:
         bigregion = v.regionshort[region]
     except:
         return render(request, 'nation/notfound.html', {'result': region})
     context = {}
-    nation = request.user.nation
     nations = Nation.objects.filter(subregion=bigregion, vacation=False, deleted=False).order_by('-gdp')
     paginator = Paginator(nations, 15)
     page = int(page)
@@ -702,7 +727,6 @@ def regionalrankings(request, region, page):
         # If page is out of range (e.g. 9999), deliver last page of results.
         nationlist = paginator.page(paginator.num_pages)
     context.update({
-        'nation': nation,
         'nations': nationlist,
         'region': bigregion,
         'shortregion': region,
@@ -710,6 +734,25 @@ def regionalrankings(request, region, page):
         'searchform': searchform(),
         })
     return render(request, 'nation/regionalrankings.html', context)
+
+def rankingsearch(request):
+    form = searchform(request.POST)
+    if form.is_valid():
+        query = Nation.objects.filter(
+            deleted=False, 
+            vacation=False, 
+            name__icontains=form.cleaned_data['nation']
+        )
+        if query.count() == 0:
+            query = [{'name': 'No nations found matching "%s"' % form.cleaned_data['nation']}]
+        result = {'results': query}
+    else:
+        #this may seem retarded
+        #but this means there's no need to alter the html template
+        #a "list" of dictionary (ies) in lieu of actual objects
+        test = Nation(name='No nations found matching "%s"' % form.cleaned_data['nation'])
+        result = {'results': [test]}
+    return result
 
 
 @nation_required
@@ -720,6 +763,7 @@ def nation404(request):
 
 @nation_required
 @login_required
+@novacation
 def research(request):
     nation = Nation.objects.select_related('researchdata').get(user=request.user)
     context = {}
@@ -1126,7 +1170,8 @@ def battle(attacker, defender, war):
 
 @transaction.atomic
 def war_win(attacker, defender, war):
-    land = 
+    landgain = defender.land/6
+    landwin = (landgain if defender.land - landwin > v.minland else defender.land - v.minland)
     atkactions = {
         'land': {'action': 'add', 'amount': defender.land/6},
         'gdp': {'action': 'add', 'amount': defender.gdp/5},

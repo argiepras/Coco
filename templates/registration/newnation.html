@@ -1,0 +1,135 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<div class="container">
+<style>
+
+.multiwarning {
+    background-color: rgb(209, 43, 16);
+    padding: 20px;
+    margin-top: 30px;
+    border-radius: 5px;
+}
+</style>
+{% if result %}
+    <p class="bigspacer">{{ result }}</p>
+{% else %}
+<div class="spacer">
+    <h3>New nation</h3>
+</div>
+<p>Now it's time for details!</p>
+<p>Dear leader needs a name</p>
+<form method="POST">{% csrf_token %}
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            <div class="form-group">
+                {{ form.username }}
+            </div>
+        </div>
+        {% if form.username.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.username.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+    <div class="spacer"></div>
+    <p>and a password</p>
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            <div class="form-group">
+                {{ form.password }}
+            </div>
+        </div>
+        {% if form.password.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.password.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            <div class="form-group">
+                {{ form.password2 }}
+            </div>
+        </div>
+    </div>
+    <div class="row spacer">
+        <div class="col-xs-8 col-xs-offset-2">
+            <p>
+                <h4 class="multiwarning">
+                    Creating multiple accounts is against the rules and WILL result in a permanent ban
+                </h4>
+            </p>
+        </div>
+    </div>
+    <p style="">Who will be leading the great nation of</p>
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            <div class="form-group">
+                {{ form.name }}
+            </div>
+        </div>
+        {% if form.name.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.name.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <p>Before you choose where you want to locate, you should check out the 
+        <a href="{% url 'map' %}">world map 
+            {% load static %}
+            <img  src="{% static 'main/globe.png' %}" width="20">
+        </a>
+    </p>
+        <div class="row">
+        <div class="col-xs-2 col-xs-offset-3 right spacer">
+            <div class="form-group">
+                <label>{{ form.subregion.label }}: </label>
+            </div>
+        </div>
+        <div class="col-xs-3 left">
+            {{ form.subregion }}
+        </div>
+        {% if form.subregion.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.subregion.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-3 right spacer">
+            <div class="form-group">
+                <label>{{ form.government.label }}: </label>
+            </div>
+        </div>
+        <div class="col-xs-3 left">
+            {{ form.government }}
+        </div>
+        {% if form.government.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.government.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-3 right spacer">
+            <div class="form-group">
+                <label>{{ form.economy.label }}: </label>
+            </div>
+        </div>
+        <div class="col-xs-3 left">
+            {{ form.economy }}
+        </div>
+        {% if form.economy.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.economy.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <button type="submit" class="btn btn-default btn-lg">Create nation</button>
+
+</form>
+{% endif %}
+</div>
+{% endblock %}

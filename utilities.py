@@ -163,6 +163,92 @@ def firstsetup(testing=False):
             Researchdata.objects.create(nation=testey)
 
 
+
+def reset():
+    #this one resets all nation related attributes
+    #and deletes non-log stuff
+    Nation.objects.all().update(
+        gdp=300,
+        budget=600,
+        trade_balance=0,
+        approval=50,
+        stability=50,
+        literacy=50,
+        healthcare=50,
+        qol=50,
+        growth=5,
+        rebels=0,
+        reputation=50,
+        government=50,
+        economy=50,
+        land=30000,
+        oil=15,
+        rm=30,
+        mg=0,
+        FI=0,
+        food=100,
+        uranium=0,
+        oilreserves=0,
+        soviet_points=0,
+        us_points=0,
+        mines=3,
+        closed_mines=0,
+        wells=0,
+        closed_wells=0,
+        factories=0,
+        closed_factories=0,
+        manpower=100,
+        alignment=2,
+        research=0,
+        universities=0,
+        reset=True,
+        alliance=None,
+        )
+    Military.objects.all().update(
+        army=20,
+        navy=0,
+        planes=0,
+        training=30,
+        weapons=10,
+        chems=0,
+        reactor=0,
+        nukes=0,
+        )
+    Researchdata.objects.all().update(
+        miningtech=0,
+        oiltech=0,
+        foodtech=1,
+        urbantech=0,
+        industrialtech=0,
+        prospecttech=0,
+        )
+    Econdata.objects.all().update(
+        prospects=0,
+        labor=1,
+        nationalize=False,
+        diamonds=1,
+        drugs=1,
+        expedition=False,
+        cedes=0,
+        foodproduction=100,
+        )
+    ID.objects.all().update(turn=1)
+    War.objects.all().delete()
+    Alliance.objects.all().delete() #alliance related objects automatically deletes themselves
+    Event.objects.all().delete()
+    Eventhistory.objects.all().delete()
+    Declaration.objects.all().delete()
+    Market.objects.all.delete()
+    Marketlog.objects.all().delete()
+    Market.objects.create()
+    Marketoffer.objects.all().delete()
+    Marketofferlog.objects.all().delete()
+    Spy.objects.all().delete()
+    Extradition_request.objects.all().delete()
+
+
+
+
 def landcheck(nation, loss):
     close = {}
     closables = ['mines', 'wells', 'factories', 'universities']
