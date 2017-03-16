@@ -1,12 +1,22 @@
 {% extends 'nation/base.html' %}
 
 {% block content %}
+<div class="container-fluid">
+{% load static %}
+<img src="{% static 'assets/logo.png' %}">
 
-
-<h1>LOGO</h1>
-
-<br> <br>
-{% lorem 3 p random %}
+<br /><br />
+<p>Cold Conflict is an MMO nation simulation game placed at the height of the cold war.</p>
+<br />
+<p>Oppress your populace as a dictator, or rule with a velvet glove in a free democracy.</p>
+<br />
+<p>Free the proletariat from the bourgeoisie as a communist, or fight back against the red menace as a capitalist.</p>
+<br />
+<p>Develop peacefully through resource production and technological breakthroughs, or plunder the riches of other nations for yourself.</p>
+<br />
+<p>Ally or conspire against hundreds of other nations, each led by a player like you, in a sandbox political world driven by the players.</p>
+<br />
+<br />
 
 <a href="{% url 'register' %}">
     <button class="btn btn-default btn-lg">Register here</button>
@@ -21,5 +31,7 @@
         <span color="blue">{{ donor.name }}</span>
     </div>
 {% endfor %}
+</div>
+</div>
 
 {% endblock %}

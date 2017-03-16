@@ -370,8 +370,8 @@ def nuked(nation, nuker):
 
 
 def global_nuked(nation, region):
-    "A nuclear weapon has been detonated in %s! Economic development in %s is \
+    txt = "A nuclear weapon has been detonated in %s! Economic development in %s is \
     hampered from the shock of such a weapon being unleashed, and the radioactive \
     fallout spreads across the planet, impacting the quality of life of billions!" % \
     (region, region)
-    nation.news.create(context=txt)
+    nation.news.create(content=txt)

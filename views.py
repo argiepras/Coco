@@ -627,7 +627,7 @@ def nationpage(request, idnumber):
             if nation.military.nukes == 0:
                 result = "You do not have any nukes!"
             else:
-                return render(request, 'nation/nuked.html', nuked())
+                return render(request, 'nation/nuked.html', nuked(nation, target))
     init = {}
     if result:
         context.update({'result': result})
@@ -1620,6 +1620,7 @@ def nuked(nation, target):
     actions = {
         'gdp': {'action': 'set', 'amount': target.gdp/2},
         'growth': {'action': 'subtract', 'amount': 100},
+        'factories': {'action': 'set', 'amount': target.factories/2},
 
     }
     reactor = target.military.reactor
@@ -1639,7 +1640,10 @@ def nuked(nation, target):
         'reactor': {'action': 'set', 'amount': reactor},
         'nukes': {'action': 'set', 'amount': nukes},
     }
-
+    result = "A nuclear weapon has been detonated in %s! Economic development \
+    in %s is hampered from the shock of such a weapon being unleashed, and the\
+    radioactive fallout spreads across the planet, impacting the quality of life of billions!" \
+    % (target.subregion, target.subregion)
     #global effects
     base_query = Nation.objects.filter(vacation=False, deleted=False).exclude(pk=nation.pk)
     growth_query = base_query.filter(subregion=target.subregion).exclude(pk=target.pk)
@@ -1652,10 +1656,10 @@ def nuked(nation, target):
     for n in base_query.iterator():
         news.global_nuked(n, target.subregion)
 
-    utils.atomic_transaction(Nation, nation, nukeractions)
-    utils.atomic_transaction(Military, nation.military, nukermilactions)
+    utils.atomic_transaction(Nation, nation.pk, nukeractions)
+    utils.atomic_transaction(Military, nation.military.pk, nukermilactions)
 
-    utils.atomic_transaction(Nation, target, actions)
-    utils.atomic_transaction(Military, target.military, milactions)
+    utils.atomic_transaction(Nation, target.pk, actions)
+    utils.atomic_transaction(Military, target.military.pk, milactions)
 
-    return {'img': 'war/nuke.jpg', 'result': result}
+    return {'region': target.subregion, 'target': target.name}

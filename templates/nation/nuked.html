@@ -1,0 +1,11 @@
+{% extends 'nation/base.html' %}
+{% block content %}
+<center>
+<div class="warresult">
+    <p style="margin: 40px">You unleash the power of atom on {{ target }}</p>
+    {% load static %}
+    <img src="{% static 'war/nuke.jpg' %}">
+    <p style="margin: 40px">Your nuclear bomb explodes over their capital, obliterating the city and killing hundreds of thousands of innocents. Though you are condemned throughout the world, the enemy is greatly wounded from this attack. Their military is nearly totally obliterated, their manpower is wiped out, and their economy is halved.</p>
+    <a href=""><button class="btn">Return</button></a>
+</div>
+{% endblock %}
