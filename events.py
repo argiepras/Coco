@@ -435,7 +435,7 @@ class RebelsEvent(Event_base):
     }
     
     result = {
-        'givein': 'he rebels celebrate their victory.',
+        'givein': 'The rebels celebrate their victory.',
         'dont': 'The rebels refuse, and more join their cause against your tyrannical demands.',
     }
     

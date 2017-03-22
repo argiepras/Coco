@@ -45,7 +45,7 @@ def militarypolicies(request):
                     'manpower': {'action': 'add', 'amount': utils.attrchange(nation.manpower, -4)}
                     })
                 milactions = {
-                    'training': {'action': 'add', 'amount': utils.attrchange(mildata.training, -(200/mildata.army))},
+                    'training': {'action': 'add', 'amount': utils.attrchange(mildata.training, -(200/(mildata.army if mildata.army > 0 else 1)))},
                     'army': {'action': 'add', 'amount': 2},
                     }
                 utils.atomic_transaction(Military, mildata.pk, milactions)

@@ -377,7 +377,7 @@ class Econdata(models.Model):
     labor = models.IntegerField(default=1)
     nationalize = models.BooleanField(default=False)
     diamonds = models.IntegerField(default=1)
-    drugs = models.BooleanField(default=1)
+    drugs = models.IntegerField(default=1)
     expedition = models.BooleanField(default=False)
     cedes = models.IntegerField(default=0)
     foodproduction = models.IntegerField(default=100) #percentage of production
@@ -561,13 +561,29 @@ class Marketoffer(models.Model):
     nation = models.ForeignKey(Nation, related_name="offers", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=v.now)
     offer = models.CharField(max_length=10)
-    offer_amount = models.IntegerField(default=0)
+    offer_amount = models.IntegerField(default=1)
     request = models.CharField(max_length=10)
-    request_amount = models.IntegerField(default=0)
-    deleted = models.BooleanField(default=False)
-    deleter = models.ForeignKey(Nation, related_name="deleted_offers", on_delete=models.SET_NULL, null=True, blank=True)
-    deleted_timestamp = models.DateTimeField(default=v.now)
+    request_amount = models.IntegerField(default=1)
+    allow_tariff = models.BooleanField(default=False)
 
+    def __unicode__(self):
+        return u"%s is selling %s %s" % (self.nation.name, self.offer_amount, self.offer)
+
+    def from_form(self, form):
+        for field in form:
+            self.__dict__[field] = form[field]
+
+    def approved(self, buyer):
+        if self.offer in self.nation.__dict__:
+            seller = (True if self.offer_amount < self.nation.__dict__[self.offer] else False)
+        else: #weapons are contained in the military model
+            seller = (True if self.offer_amount < self.nation.military.__dict__[self.offer] - 10 else False)
+
+        if self.offer in self.nation.__dict__:
+            buyer = (True if self.request_amount < buyer.__dict__[self.request] else False)
+        else: #weapons are contained in the military model
+            buyer = (True if self.request_amount < buyer.military.__dict__[self.request] - 10 else False)
+        return buyer, seller
 
 class Marketofferlog(models.Model):
     buyer = models.ForeignKey(
@@ -576,7 +592,7 @@ class Marketofferlog(models.Model):
         on_delete=models.SET_NULL, 
         null=True,
         blank=True)
-    sellser = models.ForeignKey(
+    seller = models.ForeignKey(
         Nation, 
         related_name="market_sells", 
         on_delete=models.SET_NULL, 
@@ -590,7 +606,6 @@ class Marketofferlog(models.Model):
     timestamp = models.DateTimeField(default=v.now) #and when it was accepted
     def __unicode__(self):
         return u"%s bought from %s" % (self.buyer.name, self.seller.name)
-
 
 
 

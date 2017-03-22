@@ -38,9 +38,13 @@ faminecost = -10
 
 regions = ['Africa', 'South America', 'Arabia', 'Asia']
 
+#minimum buys/sells to move price at the global market
 min_threshold = 20
  
-#Flavor text for sending aid and market
+#the minimum amount of land a nation can have
+minland = 10000
+
+#Flavor text for sending aid
 _pretty = {
     'budget': "money",
     'rm': 'Tons of raw materials',
@@ -50,13 +54,36 @@ _pretty = {
     'troops': 'of our most average servicemen',
     'research': 'units of research',
 }
-def pretty(amount, resource):
+
+units = {
+    'rm': 'tons',
+    'oil': 'mbbls',
+    'mg': 'tons',
+    'food': 'tons',
+    'research': 'units',
+}
+
+#for free market offers
+_marketpretty = {
+    'budget': 'money',
+    'rm': 'of raw materials',
+    'oil': 'of oil',
+    'mg': 'of manufactured goods',
+    'food': 'of food',
+    'army': 'troops',
+    'weapons': 'weapons',
+    'research': 'of research',
+}
+
+def pretty(amount, resource, trade=False):
     if resource == 'budget':
         return "$%sk" % amount
     elif resource == 'troops':
-        return "%sk %s" % (amount, _pretty[resource])
+        return "%sk %s" % (amount, (_marketpretty[resource] if trade else _pretty[resource]))
     else:
-        return "%s %s" % (amount, _pretty[resource])
+        unit = ('' if not resource in units else units[resource])
+        unit = (unit if amount > 1 else unit[:-1])
+        return "%s %s %s" % (amount, unit, (_marketpretty[resource] if trade else _pretty[resource]))
 
 
 def market(amount, resource):

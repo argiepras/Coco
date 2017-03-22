@@ -1,1 +1,11 @@
- - fixed registration
+ - expeditionary forces and weapons can no longer be sent to opposing alignments
+ - fixed zero division error when conscripting at 0 army
+ - fixed not being able to finish a war
+ - fixed bug when applying for membership to an alliance
+ - replaced the declaration style free market with an actual market
+   - the new market charges same tariffs as aid does
+   - troop trades share the 10k per turn cap as expeditions
+   - players are limited to 10 open trades
+   - the player that offers the trade can refuse other players from accepting if tariffs would incur
+ - index page got a touch up
+ - added the hierachy fist for alliance officers

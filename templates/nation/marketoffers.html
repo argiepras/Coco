@@ -1,61 +1,168 @@
 {% extends 'nation/base.html' %}
 {% block content %}
-<h2 style="margin: 50px">Free Market Offers</h2>
+{% load markettags %}
 
-{% if result %}
-    <div class="result">
-        {{ result }}
+<div class="container">
+
+    <h2 style="margin: 50px">Free Market</h2>
+    {% if result %}
+        <div class="result">
+            {{ result }}
+        </div>
+    {% endif %}
+    {% if error %}
+        <div class="result">
+            {% for error in errors %}
+                {{ error }}
+            {% endfor %}
+        </div>
+    {% endif %}
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-2">
+            <button class="btn btn-default" data-toggle="collapse" data-target="#offer">
+                Post new offer
+            </button>
+        </div>
+        <div class="col-xs-4">
+            <button class="btn btn-default" data-toggle="collapse" data-target="#ownoffer">
+                Manage your offers
+            </button>
+        </div>
     </div>
-{% endif %}
-{% load humanize %}
-{% if offers %}
 
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'market:offers' page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-<div class="declarations">
-    {% for offer in offers %}
-        <div class="declaration">
-            <div class="row">
-                <div class="col-sm-10">
-                    <div style="text-align: left; padding-left: 10px">
-                    <a href="{{ offer.nation.get_absolute_url }}">
-                    <img src="{{ offer.nation.settings.showflag }}" height="20">
-                    <b>{{ offer.nation.name }}</b></a> 
-                    has offered the following
-                    </div>
-                </div>
-                <div class="col-sm-2">
-                    {{ offer.timestamp|date:"o/m/d G:i" }}
-                </div>
+    <div id="offer" class="collapse quick"><form method="POST">{% csrf_token %}
+        <p><h5>You are limited to 10 open trade offers. {{ remaining }} left.</h5></p>
+        <p>Your offer</p>
+        <div class="row">
+            <div class="col-xs-3 col-xs-offset-3">
+                {{ offerform.offer_amount }}
             </div>
-            <div class="row">
-                <div class="col-sm-12">
-                    <div class="dec-content">
-                        {{ offer.content }}
-                    </div>
+            <div class="col-xs-3">
+                {{ offerform.offer }}
+            </div>
+        </div>
+        <p class="spacer">In exchange for</p>
+        <div class="row">
+            <div class="col-xs-3 col-xs-offset-3">
+                {{ offerform.request_amount }}
+            </div>
+            <div class="col-xs-3">
+                {{ offerform.request }}
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-4 col-xs-offset-4">
+                <div class="checkbox">
+                        Allow trade when tariffs will be inccured
+                   {{ offerform.allow_tariff }}
                 </div>
             </div>
         </div>
-    {% endfor %}
-</div>
+        <button type="submit" class="btn btn-default" name="postoffer">
+            Post offer
+        </button>
+    </form></div>
 
-{% else %}
+    <!-- the div element for managing own offers -->
 
-<p>There are no offers made yet! Be the first to make one!</p>
-
-{% endif %}
-
-<form method="POST">{% csrf_token %}
-<div class="row">
-    <div class="col-sm-4 col-sm-offset-4">
-        {{ offerform.offer }}
+    <div id="ownoffer" class="collapse quick"><form method="POST">{% csrf_token %}
+        <p>Your offers</p>
+        <div class="row">
+            <div class="col-xs-8 col-xs-offset-2">
+                <table class="table table-hover">
+                    <thead>
+                        <td>Offer</td>
+                        <td>Posted</td>
+                    </thead>
+                    <tbody>
+                        {% for offer in own_offers %}
+                            <tr>
+                                <td>
+                                    {{ offer.offer_amount|offerformat:offer.offer }} for
+                                    {{ offer.request_amount|offerformat:offer.request }}
+                                </td>
+                                <td>{{ offer.timestamp|date:"o/m/d G:i" }}</td>
+                                <td>
+                                    <button type="submit" class="btn btn-danger" name="revoke_offer" value="{{ offer.pk }}">
+                                        Revoke
+                                    </button>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </form>
     </div>
+
+    <form method="POST">{% csrf_token %}
+    <div>
+        <p>filter options</p>
+        <div class="row">
+            <div class="col-xs-3 col-xs-offset-3">
+                {{ filterform.offer }}
+            </div>
+            <div class="col-xs-2">
+                <button type="submit" class="btn btn-default" name="filter">
+                    filter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if offers and not filtered %}{% load static %}
+    {% if not filtered %}
+    <ul class="pagination">
+        {% for page in pages %}
+            <li><a href="{% url 'market:offers' page.page %}">{{ page.page }}</a></li>
+        {% endfor %}
+    </ul> 
+    {% endif %}
+    <div class="row">
+        <div class="col-xs-10 col-xs-offset-1">
+            <table class="table table-hover">
+                <tbody>
+                {% for offer in offers %}
+                    <tr>
+                        <td>
+                            <p>
+                                <img src="{% static 'assets/'|align:offer.nation %}">
+                                    <a href="{{ offer.nation.get_absolute_url }}">
+                                        <b>{{ offer.nation.name }}</b>
+                                    </a>
+                                    is offering 
+                                    {{ offer.offer_amount|offerformat:offer.offer }} for
+                                    {{ offer.request_amount|offerformat:offer.request }}
+                            </p>
+                            <p>
+                                <h6>
+                                    {% if offer.tariff %}
+                                        This offer has a ${{ offer|tariff:nation }}k tariff
+                                    {% else %}
+                                        This offer has no tariff
+                                    {% endif %}
+                                </h6>
+                            </p>
+                        </td>
+                        <td>
+                            <button type="submit" class="btn btn-default" name="accept_offer" value="{{ offer.pk }}">
+                                Accept
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    </form>
+    {% elif filtered %}
+        <p class="bigspacer">{{ filtered }}</p>
+    {% else %}
+        <p class="bigspacer">There are no offers made yet. Be the first to make one!</p>
+    {% endif %}
+
 </div>
-    <div><button type="submit" class="btn" style="margin: 20px" name="postoffer">Place Offer</button></div>
-</form>
 
 {% endblock %}

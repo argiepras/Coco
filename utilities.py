@@ -67,10 +67,7 @@ def atomic_transaction(modeltype, pk, actions, targetpk=False):
 
 
 def research(rtype, tier):
-    if tier == 0:
-        return 1
-    else:
-        return 1 + tier * v.researchbonus[rtype]
+    return float(tier) * v.researchbonus[rtype]
 
 
 def can_attack(nation, target):
@@ -318,3 +315,10 @@ def paginate_me(query, count, page):
         listofstuff = paginator.page(paginator.num_pages)
 
     return paginator, listofstuff
+
+
+def opposing_alignments(nation1, nation2):
+    if nation1.aligment + 2 == nation2.alignment or nation1.alignment - 2 == nation2.alignment:
+        return True
+    return False
+

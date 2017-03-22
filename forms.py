@@ -28,11 +28,53 @@ class declarationform(forms.Form):
         'class': 'form-control',
     }))
 
-
+class filterform(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(filterform, self). __init__(*args, **kwargs)
+        choices = []
+        for resource in v.depositchoices:
+            choices.append((resource, v.depositchoices[resource]))
+        choices.append(('army', 'Troops'))
+        self.fields['offer'] = forms.ChoiceField(choices=choices, widget=forms.Select(
+            attrs={
+                'class': 'form-control',
+            }))
 
 class offerform(forms.Form):
-    offer = forms.CharField(max_length=300, min_length=1, widget=forms.Textarea(
-        attrs={'style': 'height: 150px', 'placeholder': 'Enter your offer', 'class': 'form-control'}))
+    def __init__(self, *args, **kwargs):
+        super(offerform, self).__init__(*args, **kwargs)
+        choices = []
+        for resource in v.depositchoices:
+            choices.append((resource, v.depositchoices[resource]))
+        choices.append(('army', 'Troops'))
+        self.fields['offer'] = forms.ChoiceField(choices=choices, widget=forms.Select(
+            attrs={
+                'class': 'form-control',
+            }))
+        self.fields['request'] = forms.ChoiceField(choices=choices, widget=forms.Select(
+                attrs={
+                    'class': 'form-control',
+                }))
+    allow_tariff = forms.BooleanField(required=False)
+    offer_amount = forms.IntegerField(min_value=1, widget=forms.NumberInput(
+        attrs={
+            'class': 'form-control',
+            'placeholder': 'Offer amount',
+        }))
+    request_amount = forms.IntegerField(min_value=1, widget=forms.NumberInput(
+        attrs={
+            'class': 'form-control',
+            'placeholder': 'Offer amount',
+        }))
+
+    def clean(self):
+        cleaned_data = super(offerform, self).clean()
+        if cleaned_data.get("offer") == cleaned_data.get("request"):
+            self.add_error('offer', 'You cannot trade %(offer)s for %(offer)s!' % {'offer': cleaned_data.get("offer")})
+        if cleaned_data['offer'] == 'army':
+            cleaned_data['offer_amount'] = 10
+        elif cleaned_data['request'] == 'army':
+            cleaned_data['request_amount'] = 10
 
 
 class descriptionform(forms.Form):
@@ -138,9 +180,8 @@ class portraitform(forms.Form):
 
 
 class anthemform(forms.Form):
-    anthem = forms.CharField(max_length=20, min_length=1, widget=forms.TextInput(attrs={
-        'placeholder': 'Enter anthem', 'class': 'form-control', 'style': 'color: black;',
-        }))
+    anthem = forms.CharField(max_length=20, min_length=1, widget=forms.TextInput(attrs={ 
+       }))
 
 #for both custom flag and custom avatar
 class customavatarform(forms.Form):

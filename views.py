@@ -329,7 +329,7 @@ def about(request):
 def nation_page(request, url):
     try:
         idnumber = Donorurl.objects.get(url=url).index
-    except:
+    except: 
         if Nation.objects.filter(deleted=False, index=int(url)).exists():
             return nationpage(request, int(url))
         else:
@@ -425,6 +425,8 @@ def nationpage(request, idnumber):
         elif 'expeditionary' in request.POST and not nation.vacation:
             if nation.econdata.expedition:
                 result = "You have already sent an expeditionary force this turn!"
+            elif utils.opposing_alignments(nation, target):
+                result = "We cannot send troops to nations aligned with the %s!" % v.alignment
             elif nation.military.army < 10:
                 result = "You do not have enough active personnel for this!"
             else:
@@ -458,6 +460,8 @@ def nationpage(request, idnumber):
         elif 'giveweapons' in request.POST and not nation.vacation:
             if nation.military.weapons < 15:
                 result = "We barely have any weapons as it is! We can't give any away!"
+            elif utils.opposing_alignments(nation, target):
+                result = "We cannot give weapons to nations aligned with the %s!" % v.alignment
             elif nation.military.weapons < 100 and target.military.weapons > 300:
                 result = "Our equipment is worthless compared to what they have!"
             else:
@@ -1176,7 +1180,7 @@ def battle(attacker, defender, war):
 @transaction.atomic
 def war_win(attacker, defender, war):
     landgain = defender.land/6
-    landwin = (landgain if defender.land - landwin > v.minland else defender.land - v.minland)
+    landwin = (landgain if defender.land - landgain > v.minland else defender.land - v.minland)
     atkactions = {
         'land': {'action': 'add', 'amount': defender.land/6},
         'gdp': {'action': 'add', 'amount': defender.gdp/5},

@@ -199,7 +199,7 @@ def alliancepage(request, alliancepk, msg=False):
             else:
                 alliance.applications.create(nation=nation)
                 if alliance.comm_on_applicants:
-                    for officer in alliance.members.filter(Q(founder=True)|Q(applicants=True)):
+                    for officer in alliance.members.filter(Q(permissions__template__founder=True)|Q(permissions__template__applicants=True)):
                         news.newapplicant(nation, alliance)
                 result = "Your application has been sent! Now we wait and see if they will accept it."
 

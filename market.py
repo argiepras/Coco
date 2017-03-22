@@ -2,9 +2,9 @@ from django.shortcuts import render, redirect
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
-from .decorators import nation_required
+from .decorators import nation_required, novacation
 from . import utilities as utils
-from django.db.models import Q, Sum
+from django.db.models import Q, Sum, Case, When, F, Value, IntegerField, BooleanField
 from django.core.paginator import *
 from django.db import transaction
 import datetime as time
@@ -13,6 +13,7 @@ import datetime as time
 
 @login_required
 @nation_required
+@novacation
 def free_market(request):
     nation = request.user.nation
     econ = nation.economy
@@ -103,33 +104,156 @@ def free_market(request):
     return render(request, 'nation/market.html', context)
 
 
-
+@login_required
+@nation_required
+@novacation
 def offers(request, page):
     context = {}
+    filtered = False
     nation = request.user.nation
+    econ = (nation.economy / 33 if nation.economy < 98 else 2)
+    offers = Marketoffer.objects.annotate(econ=
+        Case(
+            When(nation__economy__gt=98, then=Value(2)), 
+            When(nation__economy__lt=98, then=F('nation__economy')/33),
+            output_field=IntegerField()
+                ) #end case
+            ).annotate(
+                opposite=Case(
+                When(Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2), then=True),
+                default=False,
+                output_field=BooleanField(),
+                    ) #end case
+                ).annotate(tariff=Case(
+                    When((Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2))&(Q(econ=econ + 2)|Q(econ=econ - 2)), then=Value(20)),
+                    When((Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2))|(Q(econ=econ + 2)|Q(econ=econ - 2)), then=Value(10)),
+                    default=0,
+                    output_field=IntegerField(),
+                        ) #end case
+                    ).exclude(
+                        allow_tariff=False, 
+                        tariff__gt=0
+                            ).exclude(
+                                offer='army',
+                                opposite=True,
+                                    ).exclude(
+                                        nation__econdata__expedition=True,
+                                        offer='army',
+                                            )
     if request.method == 'POST':
         if 'postoffer' in request.POST:
-            form = offerform(request.POST)
-            if form.is_valid():
-                nation.offers.create(content=form.cleaned_data['offer'])
-                result = "Offer made!"
+            if nation.offers.all().count() < 10:
+                context.update(make_offer(request, nation))
             else:
-                result = form.errors
-            context.update({'result': result})
-    offers = Marketoffer.objects.select_related('nation', 'nation__settings').all().order_by('-pk')
-    paginator = Paginator(offers, 10)
-    page = int(page)
-    try:
-        offerlist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        offerlist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        offerlist = paginator.page(paginator.num_pages)
+                context.update({'result': 'You can only have 10 open trades!'})
+        elif 'accept_offer' in request.POST:
+            context.update(accept_offer(offers, request.POST['accept_offer'], nation))
+
+        elif 'revoke_offer' in request.POST:
+            if nation.offers.filter(pk=request.POST['revoke_offer']).delete()[0] > 0:
+                context.update({'result': 'Trade has been revoked!'})
+            else:
+                context.update({'result': 'That trade does not exist!'})
+
+        elif 'filter' in request.POST:
+            form = filterform(request.POST)
+            if form.is_valid():
+                offerlist = offers.filter(**form.cleaned_data)
+                filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
+
+
+    paginator = Paginator(offers, 30)
+    if not filtered:
+        page = int(page)
+        try:
+            offerlist = paginator.page(page)
+        except PageNotAnInteger:
+            # If page is not an integer, deliver first page.
+            offerlist = paginator.page(1)
+        except EmptyPage:
+            # If page is out of range (e.g. 9999), deliver last page of results.
+            offerlist = paginator.page(paginator.num_pages)
+    else:
+        context.update({'filtered': filtered})
     context.update({
-        'offers': offerlist, 
+        'offers': offerlist,
+        'own_offers': nation.offers.all(),
         'offerform': offerform(),
-        'pages': utils.pagination(paginator, offerlist)
+        'remaining': 10 - nation.offers.all().count(),
+        'pages': utils.pagination(paginator, offerlist),
+        'filterform': filterform(),
         })
     return render(request, 'nation/marketoffers.html', context)
+
+
+def make_offer(request, nation):
+    form = offerform(request.POST)
+    if form.is_valid():
+        nation.offers.create(**form.cleaned_data)
+        return {'result': 'Offer has been posted!'}
+    return {'error': form.errors}
+
+
+def accept_offer(offer, offerpk, nation):
+    result = ''
+    try:
+        with transaction.atomic():
+            offer = offer.select_for_update().get(pk=offerpk)
+            buyer, seller = offer.approved(nation)
+            if buyer and seller: #if both have the necessary resources for a transfer
+                #transfer the offer stuff first
+                action = {offer.offer: {'action': 'subtract', 'amount': offer.offer_amount}}
+                if offer.offer in nation.__dict__:
+                    utils.atomic_transaction(Nation, offer.nation.pk, action)
+                    action[offer.offer]['action'] = 'add'
+                    utils.atomic_transaction(Nation, nation.pk, action)
+                else:
+                    utils.atomic_transaction(Military, offer.nation.military.pk, action)
+                    action[offer.offer]['action'] = 'add'
+                    utils.atomic_transaction(Military, nation.military.pk, action)
+                #transfer request stuff
+                action = {offer.request: {'action': 'subtract', 'amount': offer.request_amount}}
+                if offer.request in nation.__dict__:
+                    utils.atomic_transaction(Nation, nation.pk, action)
+                    action[offer.request]['action'] = 'add'
+                    utils.atomic_transaction(Nation, offer.nation.pk, action)
+                else:
+                    utils.atomic_transaction(Military, nation.military.pk, action)
+                    action[offer.request]['action'] = 'add'
+                    utils.atomic_transaction(Military, offer.nation.military.pk, action)
+                
+                if offer.tariff > 0:
+                    selleraction = {
+                        'budget': {'action': 'subtract', 'amount': (offer.tariff * offer.offer_amount if offer.offer != 'army' else 10)}
+                    }
+                    buyeraction = {
+                        'budget': {'action': 'subtract', 'amount': (offer.tariff * offer.request_amount if offer.request != 'army' else 10)}
+                    }
+                    utils.atomic_transaction(Nation, offer.nation.pk, selleraction)
+                    utils.atomic_transaction(Nation, nation.pk, buyeraction)
+                offer.delete()
+                Marketofferlog.objects.create(
+                    buyer=nation,
+                    seller=offer.nation,
+                    sold=offer.offer,
+                    bought=offer.request,
+                    sold_amount=offer.offer_amount,
+                    bought_amount=offer.request_amount,
+                    posted=offer.timestamp)
+            else:
+                if not buyer:
+                    result = "You do not have the necessary resources to accept this trade!"
+                else:
+                    result = "The seller doesn't have the necessary resources to fulfill this offer!\
+                                Seller has been fined."
+                    utils.atomic_transaction(Nation, offer.nation.pk, {'budget': {'action': 'subtract', 'amount': 50}})
+                    offer.delete()
+
+    except Marketoffer.DoesNotExist:
+        result = 'This trade is not available!'
+    else:
+        if not result:
+            result = "Trade has been accepted!"
+            if offer.tariff > 0:
+                result += " $%sk in tariffs has been paid" % (offer.tariff * offer.offer_amount)
+    return {'result': result}
