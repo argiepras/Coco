@@ -605,8 +605,8 @@ def poison(nation, target, spy):
         result = "We do not have enough funds for this!"
     elif nation.military.weapons < 20:
         result = "We do not have the weapons to do this!"
-    elif target.mines == 0:
-        result = "They have no mines!"
+    elif target.econdata.foodproduction == 0:
+        result = "Their food production has already been decimated!"
     else:
         strength = spy.experience + spy.infiltration - target.approval
         spyactions = {

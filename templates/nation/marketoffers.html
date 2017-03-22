@@ -10,11 +10,9 @@
             {{ result }}
         </div>
     {% endif %}
-    {% if error %}
+    {% if errors %}
         <div class="result">
-            {% for error in errors %}
-                {{ error }}
-            {% endfor %}
+            {{ errors.offer }}
         </div>
     {% endif %}
     <div class="row spacer">

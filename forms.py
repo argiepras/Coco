@@ -69,12 +69,15 @@ class offerform(forms.Form):
 
     def clean(self):
         cleaned_data = super(offerform, self).clean()
+        print cleaned_data
+
         if cleaned_data.get("offer") == cleaned_data.get("request"):
             self.add_error('offer', 'You cannot trade %(offer)s for %(offer)s!' % {'offer': cleaned_data.get("offer")})
-        if cleaned_data['offer'] == 'army':
+        if cleaned_data.get("offer") == 'army':
             cleaned_data['offer_amount'] = 10
-        elif cleaned_data['request'] == 'army':
+        elif cleaned_data.get("request") == 'army':
             cleaned_data['request_amount'] = 10
+        return cleaned_data
 
 
 class descriptionform(forms.Form):

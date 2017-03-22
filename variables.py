@@ -83,6 +83,8 @@ def pretty(amount, resource, trade=False):
     else:
         unit = ('' if not resource in units else units[resource])
         unit = (unit if amount > 1 else unit[:-1])
+        if resource == 'army,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,':
+            amount = '%sk' % amount
         return "%s %s %s" % (amount, unit, (_marketpretty[resource] if trade else _pretty[resource]))
 
 

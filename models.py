@@ -579,7 +579,7 @@ class Marketoffer(models.Model):
         else: #weapons are contained in the military model
             seller = (True if self.offer_amount < self.nation.military.__dict__[self.offer] - 10 else False)
 
-        if self.offer in self.nation.__dict__:
+        if self.request in self.nation.__dict__:
             buyer = (True if self.request_amount < buyer.__dict__[self.request] else False)
         else: #weapons are contained in the military model
             buyer = (True if self.request_amount < buyer.military.__dict__[self.request] - 10 else False)

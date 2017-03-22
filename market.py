@@ -139,7 +139,8 @@ def offers(request, page):
                                     ).exclude(
                                         nation__econdata__expedition=True,
                                         offer='army',
-                                            )
+                                            ).exclude(
+                                                nation=nation)
     if request.method == 'POST':
         if 'postoffer' in request.POST:
             if nation.offers.all().count() < 10:
@@ -147,7 +148,13 @@ def offers(request, page):
             else:
                 context.update({'result': 'You can only have 10 open trades!'})
         elif 'accept_offer' in request.POST:
-            context.update(accept_offer(offers, request.POST['accept_offer'], nation))
+            if offers.filter(pk=request.POST['accept_offer']).exists():
+                context.update(accept_offer(offers, request.POST['accept_offer'], nation))
+            else:
+                if Marketoffer.objects.filter(pk=request.POST['accept_offer']).exists():
+                    context.update({'result': 'That trade is not available to you!'})
+                else:
+                    context.update({'result': "That trade doesn't exist"})
 
         elif 'revoke_offer' in request.POST:
             if nation.offers.filter(pk=request.POST['revoke_offer']).delete()[0] > 0:
@@ -191,14 +198,15 @@ def make_offer(request, nation):
     if form.is_valid():
         nation.offers.create(**form.cleaned_data)
         return {'result': 'Offer has been posted!'}
-    return {'error': form.errors}
+    print form.errors
+    return {'errors': form.errors}
 
 
 def accept_offer(offer, offerpk, nation):
     result = ''
     try:
         with transaction.atomic():
-            offer = offer.select_for_update().get(pk=offerpk)
+            offer = Marketoffer.objects.select_for_update().get(pk=offerpk)
             buyer, seller = offer.approved(nation)
             if buyer and seller: #if both have the necessary resources for a transfer
                 #transfer the offer stuff first
