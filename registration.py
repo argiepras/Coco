@@ -77,18 +77,25 @@ def newuser(request, regid):
         nationid = ID.objects.get(pk=1)
         form = newuserform(request.POST)
         if form.is_valid():
-            while True:
-                if Nation.objects.filter(index=nationid.index).exists():
-                    nationid.index += 1
-                else:
-                    break
+            if 'id' in form.cleaned_data:
+                index = form.cleaned_data['id']
+            try:
+                index = int(index)
+            except:
+                while True:
+                    if Nation.objects.filter(index=nationid.index).exists():
+                        nationid.index += 1
+                    else:
+                        index = nationid.index
+                        nationid.save(update_fields=['index'])
+                        break
             user = User.objects.create(
                 username=form.cleaned_data['username'],
                 email=con.email)
             user.set_password(form.cleaned_data['password'])
             user.save()
             nation = Nation.objects.create(user=user, 
-                index=nationid.index,
+                index=index,
                 name=form.cleaned_data['name'],
                 creationip=request.META.get('REMOTE_ADDR'),
                 government=form.cleaned_data['government'],
@@ -99,6 +106,7 @@ def newuser(request, regid):
             Military.objects.create(nation=nation)
             Econdata.objects.create(nation=nation)
             Researchdata.objects.create(nation=nation)
+            nation.news.create(content='newbie_event', event=True)
             context.update({'result': "Your nation has been successfully created!"})
             #now we log the user in ;)
             user = authenticate(username=user.username, 

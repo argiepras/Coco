@@ -278,7 +278,7 @@ def longtimeformat(delta):
 @vaccheck
 def oilchange(nation):
     loss = gain = ''
-    if nation.factories > 0:
+    if nation.factories > 0 and changes.mgdisplaywrapper(nation) > 0:
         loss = '<p><span class="red">-%s<span> mbbls from factories</p>' % changes.mgdisplaywrapper(nation)
     oilgain = changes.oilbase(nation)
     if oilgain > 0:
@@ -400,55 +400,58 @@ def inttostr(var):
 #clusterfuck of a function
 @vaccheck
 def growthchange(nation):
-    fac = uni = stab = ob = mil = redis = rec = unsust = ''
-    faccount = changes.growthchanges_industry(nation)
-    if faccount > 0:
-        fac = '+%s million from industry' % faccount
-        fac = '<p><span class="green">%s</span></p>' % fac
+    if changes.faminecheck(nation):
+        ret = '<p><span class="red">$%s million from famine!</span></p>' % v.faminecost
+    else:
+        fac = uni = stab = ob = mil = redis = rec = unsust = ''
+        faccount = changes.growthchanges_industry(nation)
+        if faccount > 0:
+            fac = '+%s million from industry' % faccount
+            fac = '<p><span class="green">%s</span></p>' % fac
 
-    unic = changes.growthchanges_unis(nation)
-    if unic > 0:
-        txt = '+%s million from universities' % unic
-        uni = '<p><span class="green">%s</span></p>' % txt
-
-
-    gain = inttostr(changes.growthchanges_stab(nation))
-    if gain:
-        color = ('green' if gain[0] == '+' else 'red')
-        txt = '%s million from stability' % gain
-        stab = '<p><span class="%s">%s</span></p>' % (color, txt)
+        unic = changes.growthchanges_unis(nation)
+        if unic > 0:
+            txt = '+%s million from universities' % unic
+            uni = '<p><span class="green">%s</span></p>' % txt
 
 
-    obgain = changes.growthchanges_openborders(nation)
-    if obgain > 0:
-        ob = '<p><span class="green">+2 million due to open borders within your alliance</span></p>'
+        gain = inttostr(changes.growthchanges_stab(nation))
+        if gain:
+            color = ('green' if gain[0] == '+' else 'red')
+            txt = '%s million from stability' % gain
+            stab = '<p><span class="%s">%s</span></p>' % (color, txt)
+
+
+        obgain = changes.growthchanges_openborders(nation)
+        if obgain > 0:
+            ob = '<p><span class="green">+2 million due to open borders within your alliance</span></p>'
 
 
 
-    if changes.growthchanges_military(nation):
-        txt = "-%s million from military upkeep" % changes.growthchanges_military(nation)
-        mil = '<p><span class="red">%s</span></p>' % txt
+        if changes.growthchanges_military(nation):
+            txt = "-%s million from military upkeep" % changes.growthchanges_military(nation)
+            mil = '<p><span class="red">%s</span></p>' % txt
 
-    redisgain = changes.growthchanges_redistribution(nation)
-    if redisgain:
-        redisgain = inttostr(redisgain)
-        txt = "%s million due to redistribution of wealth policy in your alliance" % redisgain
-        color = ('green' if redisgain[0] == '+' else 'red')
-        redis = '<p><span class="%s">%s</span></p>' % (color, txt)
+        redisgain = changes.growthchanges_redistribution(nation)
+        if redisgain:
+            redisgain = inttostr(redisgain)
+            txt = "%s million due to redistribution of wealth policy in your alliance" % redisgain
+            color = ('green' if redisgain[0] == '+' else 'red')
+            redis = '<p><span class="%s">%s</span></p>' % (color, txt)
 
-    recover = changes.growthrecovery(nation)
-    if recover > 0:
-        txt = "+%s million from economic recovery" % recover
-        rec = '<p><span class="green">%s</span></p>' % txt
+        recover = changes.growthrecovery(nation)
+        if recover > 0:
+            txt = "+%s million from economic recovery" % recover
+            rec = '<p><span class="green">%s</span></p>' % txt
 
 
-    if changes.growthchanges_unsustainable(nation) < 0:
-        txt = "%s million from unsustainable growth" % changes.growthchanges_unsustainable(nation)
-        unsust = '<p><span class="red">%s</span></p>' % txt
+        if changes.growthchanges_unsustainable(nation) < 0:
+            txt = "%s million from unsustainable growth" % changes.growthchanges_unsustainable(nation)
+            unsust = '<p><span class="red">%s</span></p>' % txt
 
-    ret = fac + uni + stab + ob + mil + redis + rec + unsust
-    if ret == '':
-        return mark_safe('<p>No change</p>')
+        ret = fac + uni + stab + ob + mil + redis + rec + unsust
+        if ret == '':
+            return mark_safe('<p>No change</p>')
     return mark_safe(ret)
 
 register.filter('growthchange', growthchange)
@@ -472,38 +475,41 @@ register.filter('landuse', landuse)
 
 @vaccheck
 def stabilitychange(nation):
-    appr = demappr = qol = borders = rebs = coll = ''
-    gain = False
-    gain = inttostr(changes.stabilitygain_democracy(nation)) 
-    if gain:
-        color = ('green' if gain[0] == '+' else 'red')
-        adj = ('high' if gain[0] == '+' else 'low')
-        txt = "%s%% stability from %s approval in a democracy" % (gain, adj)
-        demappr = '<p><span class="%s">%s</span></p>' % (color, txt)
+    if changes.faminecheck(nation):
+        tot = '<p><span class="red">%s%% from famine!</span></p>' % v.faminecost
+    else:
+        appr = demappr = qol = borders = rebs = coll = ''
         gain = False
+        gain = inttostr(changes.stabilitygain_democracy(nation)) 
+        if gain:
+            color = ('green' if gain[0] == '+' else 'red')
+            adj = ('high' if gain[0] == '+' else 'low')
+            txt = "%s%% stability from %s approval in a democracy" % (gain, adj)
+            demappr = '<p><span class="%s">%s</span></p>' % (color, txt)
+            gain = False
 
-    if changes.stabilitygain_growthloss(nation):
-        txt = "%s stability due to economic collapse" % inttostr(changes.stabilitygain_growthloss(nation))
-        coll = '<p><span class="red">%s</span></p>' % txt
+        if changes.stabilitygain_growthloss(nation):
+            txt = "%s stability due to economic collapse" % inttostr(changes.stabilitygain_growthloss(nation))
+            coll = '<p><span class="red">%s</span></p>' % txt
 
-    appr = stability_alt(nation, 'approval', 'approval')
-    qol = stability_alt(nation, 'qol', 'quality of life')
-    
-    opbo = changes.stabilitygain_openborders(nation)
-    if opbo:
-        txt = '%s stability due to open borders within your alliance' % opbo
-        borders = '<p><span class="red">%s</span></p>' % txt
+        appr = stability_alt(nation, 'approval', 'approval')
+        qol = stability_alt(nation, 'qol', 'quality of life')
+        
+        opbo = changes.stabilitygain_openborders(nation)
+        if opbo:
+            txt = '%s stability due to open borders within your alliance' % opbo
+            borders = '<p><span class="red">%s</span></p>' % txt
 
 
-    rebeloss = changes.stabilitygain_rebels(nation)
-    if rebeloss:
-        txt = "%s stability due to rebels" % rebeloss
-        rebs = '<p><span class="red">%s</span></p>' % txt
-        gain = False
+        rebeloss = changes.stabilitygain_rebels(nation)
+        if rebeloss:
+            txt = "%s stability due to rebels" % rebeloss
+            rebs = '<p><span class="red">%s</span></p>' % txt
+            gain = False
 
-    tot = appr + demappr + qol + borders + rebs + coll
-    if tot == '':
-        return mark_safe('<p>No change</p>')
+        tot = appr + demappr + qol + borders + rebs + coll
+        if tot == '':
+            return mark_safe('<p>No change</p>')
     return mark_safe(tot)
 
 register.filter('stabilitychange', stabilitychange)
@@ -618,22 +624,26 @@ register.filter('us_relations', us_relations)
 @vaccheck
 def manpowerchanges(nation):
     txt = ''
-    basemp = changes.manpowergain_default(nation)
-    txt = '<p style="color: green">+%sk men from population growth</p>' % basemp
-    asiamp = changes.manpowergain_bonus(nation)
-    if asiamp:
-        txt += '<p style="color: green">+%sk men from Asian population</p>' % asiamp
-    borders = changes.manpowergain_borders(nation)
-    if borders:
-        txt += '<p style="color: green">+%sk men from open borders</p>' % borders
-    hc = changes.manpowergain_healthcare(nation)
-    if hc:
-        if hc > 0:
-            txt += '<p style="color: green">+%sk men from great healthcare</p>' % hc
-        else:
-            txt += '<p style="color: red">%sk men from bad healthcare</p>' % hc
-    if txt == '':
-        return mark_safe('<p>No change</p>')
+    if changes.faminecheck(nation):
+        txt = '<p style="color: red">%sk men from the famine!</p>' % v.faminecost
+    else:
+        basemp = changes.manpowergain_default(nation)
+        txt = '<p style="color: green">+%sk men from population growth</p>' % basemp
+        asiamp = changes.manpowergain_bonus(nation)
+        if asiamp:
+            txt += '<p style="color: green">+%sk men from Asian population</p>' % asiamp
+        borders = changes.manpowergain_borders(nation)
+        if borders:
+            txt += '<p style="color: green">+%sk men from open borders</p>' % borders
+        hc = changes.manpowergain_healthcare(nation)
+        if hc:
+            if hc > 0:
+                txt += '<p style="color: green">+%sk men from great healthcare</p>' % hc
+            else:
+                txt += '<p style="color: red">%sk men from bad healthcare</p>' % hc
+        if txt == '':
+            return mark_safe('<p>No change</p>')
+
     return mark_safe(txt)
 
 register.filter('manpowerchanges', manpowerchanges)
@@ -683,7 +693,7 @@ def FIchanges(nation):
     txt = "No change"
     gain = changes.FIchanges(nation)
     if gain > 0:
-        txt = '<span style="color: green;">+$%sk from growth!</span>' % inttostr(gain)
+        txt = '<span style="color: green;">+$%sk from growth!</span>' % gain
     elif gain < 0:
         txt = '<span style="color: red;">-$%sk from growth!</span>' % inttostr(gain)
     return mark_safe('<p>%s</p>' % txt)

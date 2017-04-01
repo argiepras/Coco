@@ -11,6 +11,8 @@ class aidform(forms.Form):
                 self.fields[resource] = forms.IntegerField(min_value=1, max_value=nation.__dict__[resource], required=False, 
                     widget=forms.NumberInput(attrs={'size': '4', 'placeholder': '0'}))
 
+
+
 class searchform(forms.Form):
     nation = forms.CharField(max_length=50, min_length=1, widget=forms.TextInput(attrs={
         'placeholder': 'Search for nation...', 'class': 'form-control'
@@ -222,3 +224,71 @@ class spyselectform(forms.Form):
         super(spyselectform, self).__init__(*args, **kwargs)
         spies = nation.spies.all().filter(location=nation, actioned=False)
         self.fields['spy'] = forms.ModelChoiceField(queryset=spies, widget=forms.Select(attrs={'class': 'form-control', 'style': 'color: black;'}))
+
+
+
+class newnationform(forms.Form):
+    def __init__(self, *args, **kwargs):
+        super(newnationform, self).__init__(*args, **kwargs)
+        regions = []
+        governments = []
+        economy = []
+        #this is a hack of sorts, I'm too lazy to type out all dis shit again
+        #plus this makes it so changing the structure in variables
+        #means you don't have to change this
+        for region in v.regions:
+            for subregion in v.regions[region]:
+                regions.append((subregion, subregion))
+        for key in v.government:
+            governments.append(((key*20)+10, v.government[key]))
+        for markettype in v.economy:
+            economy.append(((markettype+1)*25, v.economy[markettype]))
+
+        if ID.objects.get().freeIDs > 0:
+            self.fields['id'] = forms.IntegerField(
+                min_value=-2147483648, 
+                max_value=2147483647,
+                required=False,
+                widget=forms.NumberInput(attrs={
+                        'class': 'form-control',
+                    }))
+
+        economy = tuple(economy)
+        governments = tuple(governments)
+        regions = tuple(regions)
+        self.fields['government'] = forms.ChoiceField(
+            choices=governments, 
+            label="Government Type",
+            widget=forms.Select(attrs={'class': 'form-control'}))
+        self.fields['subregion'] = forms.ChoiceField(
+            choices=regions, 
+            label="Region",
+            widget=forms.Select(attrs={'class': 'form-control'}))
+        self.fields['economy'] = forms.ChoiceField(
+            choices=economy, 
+            label="Economy Type",
+            widget=forms.Select(attrs={'class': 'form-control'}))
+
+
+    name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={
+        'placeholder': 'Nation name',
+        'class': 'form-control',
+        }))
+
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if Nation.objects.filter(name__iexact=name).exists():
+            raise forms.ValidationError('Nation name is taken!')
+        return name
+
+    def clean_id(self):
+        index = self.cleaned_data['id']
+        if Nation.objects.filter(index=index).exists():
+            raise forms.ValidationError('ID is taken!')
+        return index
+
+
+class autoplayform(forms.Form):
+    choices = (('off', 'no'), ('on', 'yes'))
+    autoplay = forms.ChoiceField(choices=choices, widget=forms.RadioSelect())

@@ -33,7 +33,7 @@ foodproduction = {
     500: 1,
 }
 
-#decay of approval, stability, manpower and growth
+#decay of approval, stability*, manpower* and growth*
 faminecost = -10
 
 regions = ['Africa', 'South America', 'Arabia', 'Asia']
@@ -83,7 +83,7 @@ def pretty(amount, resource, trade=False):
     else:
         unit = ('' if not resource in units else units[resource])
         unit = (unit if amount > 1 else unit[:-1])
-        if resource == 'army,0,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,':
+        if resource == 'army':
             amount = '%sk' % amount
         return "%s %s %s" % (amount, unit, (_marketpretty[resource] if trade else _pretty[resource]))
 

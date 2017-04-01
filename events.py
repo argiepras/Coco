@@ -25,7 +25,7 @@ import nation.utilities as utils
 class Newbie_event(Event_base):
     def __init__(self, nation):
         super(Newbie_event, self).__init__(nation)
-        self.choices['military']['actions']['training']['amount'] = utils.attrchange(nation.military.training, 25)
+        self.choices['military']['actions']['training']['amount'] = utils.attrchange(nation.military.training, 50)
         
         self.choices['qol']['actions']['qol']['amount'] = utils.attrchange(nation.qol, 15)
         self.choices['qol']['actions']['approval']['amount'] = utils.attrchange(nation.approval, 15)
@@ -38,8 +38,9 @@ class Newbie_event(Event_base):
         'military': {
             'model': Military, 
             'actions': {
-                    'army': {'action': 'add', 'amount': 10},
+                    'army': {'action': 'add', 'amount': 5},
                     'training': {'action': 'add', 'amount': 0},
+                    'weapons': {'action': 'add', 'amount': 2},
                 },
             },
         'economy': { 
@@ -108,7 +109,7 @@ class RefugeeEvent(Event_base):
         self.choices['reputation']['actions']['reputation']['amount'] = utils.attrchange(nation.reputation, -15)
         self.description = "%s " % nation.name + self.description
         
-    img = 'refugee_boat.jpg'
+    img = 'boatpeople.jpg'
     
     choices = {
         'qol': {
@@ -182,7 +183,9 @@ class UraniumEvent(Event_base):
         'natactions': 'Awesome!',
     }
     
-    tooltips = {}
+    tooltips = {
+        'natactions': 'Gives you 1-7 tons of uranium',
+    }
     
     result = {
         'natactions': "It's soo glowy."
@@ -202,6 +205,132 @@ class UraniumEvent(Event_base):
         return ['natactions']
         
 eventhandler.register_event('uranium_event', UraniumEvent)
+
+
+class StabilityReset(Event_base):
+    def __init__(self, nation):
+        super(StabilityReset, self).__init__(nation)
+        self.choices['milactions']['actions']['army']['amount'] = (nation.military.army/2 if nation.military.army/2 > 10 else 10)
+    apply_instantly = True
+    
+    img = 'revolution.png'
+    
+    choices = {
+        'nationactions': {
+            'model': Nation,
+            'actions': {
+                'growth': {'action': 'subtract', 'amount': 2},
+                'reputation': {'action': 'set', 'amount': 51},
+                'stability':  {'action': 'set', 'amount': 51},
+                'approval': {'action': 'set', 'amount': 51},
+            },
+        },
+        'milactions': {
+            'model': Military,
+            'actions': {
+                'army': {'action': 'set', 'amount': 10},
+            },
+        'setactions': {
+            'model': Settings,
+            'actions': {
+                'flag': {'action': 'set', 'amount': 'revolutionflag.png'},
+                'donatorflag': {'action': 'set', 'amount': 'none'},
+                'portrait': {'action': 'set', 'amount': 'revolutionportrait.jpg'},
+                'donatoravatar': {'action': 'set', 'amount': 'none'},
+                'anthem': {'action': 'set', 'amount': 'GBQPmSZr1QY'},
+            }
+        }
+        },
+    }
+
+    buttons = {}
+    tooltips = {}
+    result = {}
+    
+    description = "Recent instability in your country has led to a revolution! You managed \
+        to stay in power, but half of the military has deserted"
+                
+    def conditions(self, nation):
+        if random.randint(1, 100) < (50 if nation.stability <= 10 else 0):
+            return True
+        return False
+                
+    def fields(self):
+        return []
+
+eventhandler.register_event('stability_reset', StabilityReset)
+
+
+class GDP_Reset(Event_base):
+    def __init__(self, nation):
+        super(GDP_Reset, self).__init__(nation)
+        stealables = ['oilreserves', 'rm', 'mg', 'oil']
+        stolen = False
+        for resource in stealables:
+            if self.nation.__dict__[resource] > 0:
+                stolen = True
+                self.choices['reset']['actions'][resource]['amount'] = self.nation.__dict__[resource]/2
+        if stolen:
+            self.description += " and helped themselves to our assets."
+
+    apply_instantly = True
+
+    img = ''
+    choices = {
+        'reset': {
+            'model': Nation,
+            'actions': {
+                'gdp': {'action': 'set', 'amount': 250},
+                'growth': {'action': 'set', 'amount': 10},
+                'qol': {'action': 'set', 'amount': 51},
+                'healthcare': {'action': 'set', 'amount': 51},
+                'stability': {'action': 'set', 'amount': 51},
+                'reputation': {'action': 'set', 'amount': 40},
+                'approval': {'action': 'set', 'amount': 51},
+                'maxgdp': {'action': 'set', 'amount': 250},
+                'budget': {'action': 'set', 'amount': 300},
+                'literacy': {'action': 'set', 'amount': 51},
+                'food': {'action': 'add', 'amount': 200},
+                'uranium': {'action': 'set', 'amount': 0},
+                'oilreserves': {'action': 'subtract', 'amount': 0},
+                'rm': {'action': 'subtract', 'amount': 0},
+                'mg': {'action': 'subtract', 'amount': 0},
+                'oil': {'action': 'subtract', 'amount': 0},
+            }
+        },
+        'milactions': {
+            'model': Military,
+            'actions': {
+                'chems': {'action': 'set', 'amount': 0},
+                'army': {'action': 'set', 'amount': 10},
+                'training': {'action': 'set', 'amount': 100},
+                'planes': {'action': 'set', 'amount': 0},
+                'navy': {'action': 'subtract', 'amount': 0},
+                'reactor': {'action': 'set', 'amount': 0},
+                'nukes': {'action': 'set', 'amount': 0},
+            },
+        }
+    }
+
+    buttons = {}
+    tooltips = {}
+    result = {}
+
+    description = "The United Nations decided to intervene in our downward spiraling economy \
+        and set us on the right track again. Unfortunately they also dismantled our military"
+
+    def conditions(self, nation):
+        if nation.gdp <= 200:
+            return True
+        return False
+
+    def fields(self):
+        return []
+
+
+
+eventhandler.register_event('low_gdp_reset', GDP_Reset)
+
     
 class FactoryEvent(Event_base):
     def __init__(self, nation):
@@ -210,7 +339,7 @@ class FactoryEvent(Event_base):
         self.choices['USpoints']['actions']['us_points']['amount'] = utils.attrchange(nation.us_points, -30)
 
        
-    img = 'nike_factory.jpg'
+    img = 'nike.jpg'
     
     choices = {
         'FI': {
@@ -248,7 +377,7 @@ class FactoryEvent(Event_base):
                 
     def conditions(self, nation):
         chance = 0
-        if (nation.factories+1)*1000 >= nation.FI:
+        if (nation.factories+1)*1000 >= nation.FI and nation.farmland() > nation.landcost('factories'):
             chance = 5
         if random.randint(1, 100) <= chance:
             return True
@@ -286,7 +415,7 @@ class AsteroidEvent(Event_base):
         'keepit': {
             'model': Military,
             'actions': {
-                'weapons': {'action': 'add', 'amount': 25},
+                'weapons': {'action': 'add', 'amount': 50},
             },
         },
     }
@@ -328,12 +457,12 @@ class JuntaEvent(Event_base):
     def __init__(self, nation):
         super(JuntaEvent, self).__init__(nation)
         self.choices['army']['actions']['training']['amount'] = utils.attrchange(nation.military.training, 25)
-        self.choices['airforce']['actions']['planes']['amount'] = utils.attrchange(nation.military.planes, 2)
-        self.choices['special']['actions']['chems']['amount'] = utils.attrchange(nation.military.chems, 20)
+        self.choices['airforce']['actions']['planes']['amount'] = utils.attrchange(nation.military.planes, 2, upper=10)
+        self.choices['special']['actions']['chems']['amount'] = utils.attrchange(nation.military.chems, 1, upper=10)
         self.choices['navy']['actions']['navy']['amount'] = utils.attrchange(nation.military.navy, 1)
         self.description = "%s " % nation.name + self.description
        
-    img = 'military_junta.jpg'
+    img = 'junta.jpg'
     
     choices = {
         'army': {
@@ -388,10 +517,12 @@ class JuntaEvent(Event_base):
                 
     def conditions(self, nation):
         #must be junta political system and has a 5% chance to trigger.
-        if random.randint(1, 100) <= 5:
+        gov = (nation.government if nation.government > 0 else 1)
+        gov = (gov/20 if gov % 20 != 0 else (gov/20)-1)
+        chance = (5 if gov == 1 else 0)
+        if random.randint(1, 100) <= chance:
             return True
-        else:
-            return False
+        return False
                 
     def fields(self):
         return ['army', 'airforce', 'special', 'navy']
@@ -593,13 +724,14 @@ class EArtistEvent(Event_base):
                 
     def fields(self):
         return ['labor', 'slap', 'apologize']
-        
+
 eventhandler.register_event('eartist_event', EArtistEvent)
-    
+
+
 class RiotsEvent(Event_base):
     def __init__(self, nation):
         super(RiotsEvent, self).__init__(nation)
-        self.choices['crush']['actions']['stability']['amount'] = utils.attrchange(nation.stability, 10)
+        self.choices['crush']['actions']['stability']['amount'] = utils.attrchange(nation.stability, 20)
         self.choices['crush']['actions']['reputation']['amount'] = utils.attrchange(nation.reputation, -20)
         self.choices['crush']['actions']['government']['amount'] = utils.attrchange(nation.government, -10)
         self.choices['promise']['actions']['approval']['amount'] = utils.attrchange(nation.approval, 5)
@@ -684,6 +816,15 @@ class UNInterventionEvent(Event_base):
                 'reactor': {'action': 'set', 'amount': 0},
                 'nukes': {'action': 'set', 'amount': 0},
             },
+        'setactions': {
+            'model': Settings,
+            'actions': {
+                'flag': {'action': 'set', 'amount': 'interventionflag.png'},
+                'donatorflag': {'action': 'set', 'amount': 'none'},
+                'portrait': {'action': 'set', 'amount': 'interventionportrait.jpg'},
+                'donatoravatar': {'action': 'set', 'amount': 'none'},
+            }
+        }
         },
     }
     buttons = {}
@@ -693,7 +834,7 @@ class UNInterventionEvent(Event_base):
     result = {}
     
     description = "The United Nations has arrested you for the atrocities you have committed.\
-                They have dismantled your military and have occupied"
+                They have dismantled your military and have occupied your capital city"
                 
     def conditions(self, nation):
         chance = 0

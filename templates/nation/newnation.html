@@ -14,69 +14,11 @@
     <p class="bigspacer">{{ result }}</p>
 {% else %}
 <div class="spacer">
-    <h3>New nation</h3>
+    <h3>Game has been reset!</h3>
 </div>
-<p>Now it's time for details!</p>
-<p>Dear leader needs a name</p>
+<p>Time for details about your new nation!</p>
 <form method="POST">{% csrf_token %}
-    <div class="row">
-        <div class="col-xs-4 col-xs-offset-4">
-            <div class="form-group">
-                {{ form.username }}
-            </div>
-        </div>
-        {% if form.username.errors %}  
-            <div class="col-xs-4">
-                <p style="float: left">{{ form.username.errors.as_text }}</p>
-            </div>
-        {% endif %}
-    </div>
-    <div class="spacer"></div>
-    <p>and a password</p>
-    <div class="row">
-        <div class="col-xs-4 col-xs-offset-4">
-            <div class="form-group">
-                {{ form.password }}
-            </div>
-        </div>
-        {% if form.password.errors %}  
-            <div class="col-xs-4">
-                <p style="float: left">{{ form.password.errors.as_text }}</p>
-            </div>
-        {% endif %}
-    </div>
-    <div class="row">
-        <div class="col-xs-4 col-xs-offset-4">
-            <div class="form-group">
-                {{ form.password2 }}
-            </div>
-        </div>
-    </div>
-    {% if idform %}
-    <div class="row spacer">
-        <div class="col-xs-4 col-xs-offset-4">
-            <p>You may also pick your own ID number, leave blank if you don't care
-            <div class="form-group">
-                {{ form.id }}
-            </div>
-        </div>
-        {% if form.id.errors %}  
-            <div class="col-xs-4">
-                <p style="float: left">{{ form.id.errors.as_text }}</p>
-            </div>
-        {% endif %}
-    </div>
-    {% endif %}
-    <div class="row spacer">
-        <div class="col-xs-8 col-xs-offset-2">
-            <p>
-                <h4 class="multiwarning">
-                    Creating multiple accounts is against the rules and WILL result in a permanent ban
-                </h4>
-            </p>
-        </div>
-    </div>
-    <p style="">Who will be leading the great nation of</p>
+    <p style="">You will be leading the great nation of</p>
     <div class="row">
         <div class="col-xs-4 col-xs-offset-4">
             <div class="form-group">
@@ -89,6 +31,22 @@
             </div>
         {% endif %}
     </div>
+
+    {% if form.id %}
+    <div class="row spacer">
+        <p>You may also pick your own ID number, leave blank if you don't care</p>
+        <div class="col-xs-4 col-xs-offset-4">
+            <div class="form-group">
+                {{ form.id }}
+            </div>
+        </div>
+        {% if form.id.errors %}  
+            <div class="col-xs-4">
+                <p style="float: left">{{ form.id.errors.as_text }}</p>
+            </div>
+        {% endif %}
+    </div>
+    {% endif %}
 
     <p>Before you choose where you want to locate, you should check out the 
         <a href="{% url 'map' %}">world map 

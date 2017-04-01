@@ -2,6 +2,8 @@ from nation.models import *
 import nation.utilities as utils
 import nation.variables as v
 
+from django.db import IntegrityError, OperationalError
+
 
 class EventHandler(object):
     events = {}
@@ -16,7 +18,7 @@ class EventHandler(object):
     def assign_event(self, nation, event):
         if not event in self.events:
             return False
-        nation.news.create(content=event, event=True)
+        nation.news.create(content=event, event=True, deletable=self.events[event].instant_apply)
 
 
     def process_event(self, nation, eventname, choice):
@@ -41,7 +43,15 @@ class EventHandler(object):
             if eventtype.conditions(nation):
                 nation.news.create(event=True, content=event)
                 if eventtype.apply_instantly:
-                    eventtype.instant_apply()
+                    while True:
+                        try:
+                            eventtype.instant_apply()
+                        except IntegrityError, OperationalError:
+                            #row is likely locked, meaning something has changed
+                            #reinitialize the event and try again
+                            eventtype = self.events[event](nation)
+                            continue
+                        break
 
 
 eventhandler = EventHandler()

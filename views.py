@@ -10,7 +10,8 @@ from django.utils import timezone
 #then other stuff
 from .models import *
 from .forms import *
-from .decorators import nation_required, novacation
+from .decorators import nation_required, novacation, nonation_required
+from .turnchange import nation_income
 from . import utilities as utils
 import news
 import intelligence
@@ -78,36 +79,65 @@ def main(request, msg=False):
         context.update({'chems_progress': nation.military.chems*10})
     context.update({
         'military': nation.military,
-        'budgetgain': budgetgain,
-        'tax': tax,
+        'budgetgain': nation_income(nation),
         'flag': nation.settings.showflag(),
         'avatar': nation.settings.showportrait(),
+        'reactor_progress': nation.military.reactor * 5,
     })
     return render(request, 'nation/main.html', context)
 
-
-def create_nation(request):
-    nationid = ID.objects.get(pk=1)
-    while True:
-        if Nation.objects.filter(index=nationid.index).exists():
-            nationid.index += 1
+@login_required
+@nonation_required
+def new_nation(request):
+    context = {'form': newnationform()}
+    if request.method == "POST":
+        form = newnationform(request.POST)
+        if form.is_valid():
+            if 'id' in form.cleaned_data:
+                index = form.cleaned_data['id']
+            try:
+                index = int(index)
+            except:
+                nationid = ID.objects.get(pk=1)
+                while True:
+                    if Nation.objects.filter(index=nationid.index).exists():
+                        nationid.index += 1
+                    else:
+                        index = nationid.index
+                        nationid.save(update_fields=['index'])
+                        break
+            nation = Nation.objects.create(user=request.user, 
+                index=index,
+                name=form.cleaned_data['name'],
+                creationip=request.META.get('REMOTE_ADDR'),
+                government=form.cleaned_data['government'],
+                economy=form.cleaned_data['economy'],
+                subregion=form.cleaned_data['subregion'])
+            Settings.objects.create(nation=nation)
+            IP.objects.create(nation=nation, IP=request.META.get('REMOTE_ADDR'))
+            Military.objects.create(nation=nation)
+            Econdata.objects.create(nation=nation)
+            Researchdata.objects.create(nation=nation)
+            nation.news.create(event=True, content='newbie_event')
+            context.update({'result': "Your nation has been successfully created!"})
         else:
-            break
-    nation = Nation.objects.create(user=request.user, 
-        index=nationid.index,
-        name=form.cleaned_data['name'],
-        creationip=request.META.get('REMOTE_ADDR'),
-        government=form.cleaned_data['government'],
-        economy=form.cleaned_data['economy'],
-        subregion=form.cleaned_data['subregion'])
-    set_nation(request, nation)
-    Settings.objects.create(nation=nation)
-    IP.objects.create(nation=nation, IP=request.META.get('REMOTE_ADDR'))
-    Military.objects.create(nation=nation)
-    Econdata.objects.create(nation=nation)
-    Researchdata.objects.create(nation=nation)
-    nationid.save()
+            return render(request, 'nation/newnation.html', {'form': form})
+    return render(request, 'nation/newnation.html', context)
 
+
+@login_required
+@nonation_required
+def reset_nation(request):
+    context = {'form': newnationform()}
+    if request.method == "POST":
+        form = newnationform(request.POST)
+        if form.is_valid():
+            for field in form.cleaned_data:
+                nation.__dict__[field] = form.cleaned_data[field]
+            context.update({'result': "Your nation has been successfully created!"})
+        else:
+            return render(request, 'nation/newnation.html', {'form': form})
+    return render(request, 'nation/newnation.html', context)
 
 
 def declarations(request, page):
@@ -333,7 +363,7 @@ def nation_page(request, url):
         if Nation.objects.filter(deleted=False, index=int(url)).exists():
             return nationpage(request, int(url))
         else:
-            return render(request, 'notfound.html', {'item': 'nation'})
+            return render(request, 'nation/notfound.html', {'item': 'nation'})
     return nationpage(request, idnumber)
 
 
@@ -387,14 +417,14 @@ def nationpage(request, idnumber):
             form = aidform(nation, request.POST)
             if form.is_valid():
                 resource = request.POST['aid']
-                if resource in v.resources:
+                if resource in v.resources and type(form.cleaned_data[resource]) == type(int()):
                     market = Market.objects.latest('pk')
                     tariff = 0
                     if (nation.economy < 33 and target.economy > 66) or (target.economy < 33 and nation.economy > 66):
                         tariff += 10
                     if (nation.alignment == 3 and target.alignment == 1) or (target.alignment == 3 and nation.alignment  == 1):
                         tariff += 10
-                    aid_amount = form.cleaned_data[request.POST['aid']]
+                    aid_amount = form.cleaned_data[resource]
                     nation.__dict__[resource] -= aid_amount
                     actions.update({resource: {'action': 'add', 'amount': aid_amount}})
                     if resource != 'budget':
@@ -417,7 +447,6 @@ def nationpage(request, idnumber):
                         nation.outgoing_aid.create(reciever=target, resource=resource, amount=aid_amount)
                     result = "%s has recieved %s!" % (target.name, v.pretty(aid_amount, request.POST['aid']))
                     #feeeeees :D
-                    print tariff
                     if tariff > 0:
                         result += " But the differences between our systems resulted in $%sk in tariffs!" % tariff
                         utils.atomic_transaction(Nation, nation.pk, {'budget': {'action': 'subtract', 'amount': tariff}})
@@ -426,7 +455,7 @@ def nationpage(request, idnumber):
             if nation.econdata.expedition:
                 result = "You have already sent an expeditionary force this turn!"
             elif utils.opposing_alignments(nation, target):
-                result = "We cannot send troops to nations aligned with the %s!" % v.alignment
+                result = "We cannot send troops to nations aligned with the %s!" % v.alignment[target.alignment]
             elif nation.military.army < 10:
                 result = "You do not have enough active personnel for this!"
             else:
@@ -537,7 +566,9 @@ def nationpage(request, idnumber):
 
         elif 'air' in request.POST and atwar and not nation.vacation:
             action = request.POST['air']
-            if (nation == war.attacker and war.airattacked) or (nation == war.defender and war.airdefended):
+            if nation.military.planes == 0:
+                result = "You do not have an air force!"
+            elif (nation == war.attacker and war.airattacked) or (nation == war.defender and war.airdefended):
                 result = "Your aircraft must refuel before their next attack!"
             elif nation.oil < 1:
                 result = "You do not have enough fuel for an air attack!"
@@ -665,13 +696,13 @@ def newspage(request):
     result = ""
     if request.method == "POST":
         if 'delete' in request.POST:
-            if nation.news.filter(event=False).filter(pk=request.POST['delete']).exists():
-                nation.news.filter(event=False).filter(pk=request.POST['delete']).delete()
+            if nation.news.filter(deletable=True).filter(pk=request.POST['delete']).exists():
+                nation.news.filter(deletable=True).filter(pk=request.POST['delete']).delete()
                 result = "News item deleted!"
             else:
                 result = "That news item doesn't exist!"
         elif 'deleteall' in request.POST:
-            nation.news.filter(event=False).delete()
+            nation.news.filter(deletable=True).delete()
             result = "All news items deleted!"
         elif 'event' in request.POST:
             from nation.events import eventhandler
@@ -722,7 +753,7 @@ def regionalrankings(request, region, page):
     try:
         bigregion = v.regionshort[region]
     except:
-        return render(request, 'nation/notfound.html', {'result': region})
+        return render(request, 'nation/notfound.html', {'item': region})
     context = {}
     nations = Nation.objects.filter(subregion=bigregion, vacation=False, deleted=False).order_by('-gdp')
     paginator = Paginator(nations, 15)
@@ -1003,6 +1034,25 @@ def settings(request):
                     result = "Descriptor has been reset to default!"   
                 nation.save(update_fields=['descriptor'])
 
+        elif 'set_autoplay' in request.POST:
+            form = autoplayform(request.POST)
+            if form.is_valid():
+                print form.cleaned_data['autoplay']
+                print nation.settings.autoplay
+                if form.cleaned_data['autoplay'] == 'on':
+                    print "turning on"
+                    nation.settings.autoplay = True
+                else:
+                    print "turning off"
+                    nation.settings.autoplay = False
+                print nation.settings.autoplay
+                nation.settings.save()
+                print nation.settings.autoplay
+                nation.settings.refresh_from_db()
+                print "refreshed"
+                print nation.settings.autoplay
+                result = "Autoplay setting has been updated"
+
     if nation.settings.donor:
         donorurl = nation.donorurl.url
         context.update({'donorurlform': donorurlform(initial={'url': donorurl})})
@@ -1017,6 +1067,7 @@ def settings(request):
         'customflagform': customavatarform(),
         'customavatarform': customavatarform(),
         'passwordform': passwordform(),
+        'autoplayform': autoplayform(initial={'autoplay': ('on' if nation.settings.autoplay else 'off')}),
         'descriptorform': descriptorform(initial={'desc': nation.descriptor}),
         'titleform': titleform(initial={'desc': nation.title}),
         })
@@ -1235,7 +1286,7 @@ def war_win(attacker, defender, war):
     utils.atomic_transaction(Military, defender.military.pk, defmilactions)
     utils.atomic_transaction(War, war.pk, waractions)
     utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
-
+    news.defeated(defender, attacker, defactions)
     return atkactions
 
 
@@ -1665,5 +1716,5 @@ def nuked(nation, target):
 
     utils.atomic_transaction(Nation, target.pk, actions)
     utils.atomic_transaction(Military, target.military.pk, milactions)
-
+    news.nuked(target, nation)
     return {'region': target.subregion, 'target': target.name}

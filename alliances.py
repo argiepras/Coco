@@ -454,7 +454,7 @@ def control_panel(request):
             if form.is_valid():
                 officer = form.cleaned_data['officer']
                 membertemplate = alliance.templates.all().get(rank=5)
-                officer.permissions.template = template
+                officer.permissions.template = membertemplate
                 officer.permissions.save(update_fields=['template'])
                 result = "%s has been demoted!" % officer.name
             else:

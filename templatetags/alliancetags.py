@@ -13,7 +13,7 @@ def kick(permissions, member):
 register.filter('kick', kick)
 
 def iconsize(permissions):
-	return mark_safe(20-permissions.template.rank)
+	return mark_safe(30-permissions.template.rank*2)
 
 register.filter('iconsize', iconsize)
 

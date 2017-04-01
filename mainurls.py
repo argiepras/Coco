@@ -17,5 +17,5 @@ urlpatterns = [
     url(r'^research/$', views.research, name='research'),
     url(r'^settings/$', views.settings, name='settings'),
     url(r'^news/$', views.newspage, name='news'),
-
+    url(r'^reset/$', views.new_nation, name='new'),
 ]

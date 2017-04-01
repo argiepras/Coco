@@ -16,7 +16,7 @@ def militarypolicies(request):
     result = False
     nation = Nation.objects.select_related('military').get(user=request.user) #1 instead of 2
     mildata = nation.military
-    trainingcost = (mildata.army**2/100)*(mildata.training**2/50)
+    trainingcost = (mildata.army**2 * mildata.training**2) / 20000
     trainingcost = (trainingcost if mildata.army < trainingcost else mildata.army)
     if request.method == 'POST':
         actions = {}
@@ -30,6 +30,9 @@ def militarypolicies(request):
             else:
                 actions.update({'budget': {'action': 'subtract', 'amount': trainingcost}})
                 mildata.training += utils.attrchange(mildata.training, 5)
+                #update training cost
+                trainingcost = (mildata.army**2 * mildata.training**2) / 20000
+                trainingcost = (trainingcost if mildata.army < trainingcost else mildata.army)
                 mildata.save(update_fields=['training'])
                 img += "train.jpg"
                 result = "Your men are drilled in the latest bayoneting techniques. 10,000 straw dummies sacrifice their lives for the cause."
@@ -108,7 +111,9 @@ def militarypolicies(request):
         elif 'migs' in request.POST:
             cost = 11 + ((mildata.planes**2)-10)
             oilcost = mildata.planes + 5
-            if nation.oil < oilcost:
+            if nation.alignment == 3:
+                result = "The soviet union doesn't deal with the likes of you"
+            elif nation.oil < oilcost:
                 result = "You do not have enough oil!"
             elif nation.soviet_points < cost:
                 result = "You do not have a good enough relationship with the Soviets!"
@@ -148,7 +153,9 @@ def militarypolicies(request):
         elif 'f8' in request.POST:
             cost = 11 + ((mildata.planes**2)-10)
             oilcost = mildata.planes + 5
-            if nation.oil < oilcost:
+            if nation.alignment == 1:
+                result = "The united states refuses to respond"
+            elif nation.oil < oilcost:
                 result = "You do not have enough oil!"
             elif nation.us_points < cost:
                 result = "You do not have a good enough relationship with the USA!"
@@ -193,29 +200,6 @@ def militarypolicies(request):
                 img = ""
                 mildata.save(update_fields=['chems'])
 
-        elif 'reactor' in request.POST:
-            if nation.budget < 5000:
-                result = "You do not have enough money!"
-            elif mildata.reactor >= 20:
-                result = "You already have a reactor!"
-            elif nation.uranium == 0:
-                result = "You do not have the necessary uranium!"
-            else:
-                chance = random.randint(1, 10)
-                actions.update(
-                    {
-                    'budget': {'action': 'subtract', 'amount': 5000},
-                    'uranium': {'action': 'subtract', 'amount': 1},
-                    })
-                img = ""
-                if chance > 4:
-                    mildata.reactor += 1
-                    result = "Progress continues toward a working reactor!"
-                elif chance < 2:
-                    mildata.reactor -= 1
-                    result = "A stealth bomber has struck your reactor in the middle of construction! Someone doesn't want you getting nuclear weapons... Progress is set back."
-                else:
-                    result = "Your nuclear scientists unfortunately fail to make progress..."
 
         elif 'nuke' in request.POST:
             if nation.budget < 100000:
@@ -230,11 +214,14 @@ def militarypolicies(request):
                     'budget': {'action': 'subtract', 'amount': 100000},
                     'uranium': {'action': 'subtract', 'amount': 20},
                     })
+                Military.objects.filter(nation__pk=nation.pk).update(nukes=F('nukes') + 1)
                 img = "http://i.imgur.com/wLtwYXi.jpg"
                 result = 'You have a nuke.'
 
         elif 'aks' in request.POST:
-            if nation.soviet_points < 5:
+            if nation.alignment == 3:
+                result = "The soviet union doesn't deal with the likes of you"
+            elif nation.soviet_points < 5:
                 result = "You do not have close enough relations with the Soviets!"
             elif mildata.weapons > 500:
                 result = "You have better equipment! These are worthless!"
@@ -246,7 +233,9 @@ def militarypolicies(request):
                 result = "Thousands of AKMs are airlifted straight to you from Moscow."
 
         elif 'm14' in request.POST:
-            if nation.us_points < 5:
+            if nation.alignment == 1:
+                result = "The united states refuses to respond"
+            elif nation.us_points < 5:
                 result = "You do not have close enough relations with the US!"
             elif mildata.weapons > 500:
                 result = "You have better equipment! These are worthless!"
@@ -275,7 +264,9 @@ def militarypolicies(request):
         elif 't62' in request.POST:
             cost = 13
             oilcost = 3
-            if nation.soviet_points < cost:
+            if nation.alignment == 3:
+                result = "The soviet union doesn't deal with the likes of you"
+            elif nation.soviet_points < cost:
                 result = "You do not have enough soviet relations!"
             elif nation.oil < oilcost:
                 result = "You do not have enough oil!"
@@ -294,8 +285,10 @@ def militarypolicies(request):
         elif 'm60' in request.POST:
             cost = 13
             oilcost = 3
-            if nation.us_points < cost:
-                result = "You do not have enough You do not have enough relationship points with the United States!"
+            if nation.alignment == 1:
+                result = "The united states refuses to respond"
+            elif nation.us_points < cost:
+                result = "You do not have enough relationship points with the United States!"
             elif nation.oil < oilcost:
                 result = "You do not have enough oil!"
             elif mildata.weapons <= 500 and mildata.weapons > 2000:
@@ -334,7 +327,9 @@ def militarypolicies(request):
         elif 't90' in request.POST:
             cost = 20
             oilcost = 10
-            if nation.soviet_points < cost:
+            if nation.alignment == 3:
+                result = "The soviet union doesn't deal with the likes of you"
+            elif nation.soviet_points < cost:
                 result = "You do not have enough relationship points with the Soviet Union!"
             elif nation.oil < oilcost:
                 result = "You do not have enough oil!"
@@ -353,7 +348,9 @@ def militarypolicies(request):
         elif 'm1' in request.POST:
             cost = 20
             oilcost = 10
-            if nation.us_points < cost:
+            if nation.alignment == 1:
+                result = "The united states refuses to respond"
+            elif nation.us_points < cost:
                 result = "You do not have enough relationship points with the United States!"
             elif nation.oil < oilcost:
                 result = "You do not have enough oil!"
@@ -418,7 +415,7 @@ def militarypolicies(request):
     if result:
         context.update({'result': result})
     context.update({
-            'trainingcost': (mildata.army**2/100)*(mildata.training**2/50),
+            'trainingcost': trainingcost,
             'migcost': {'oil': mildata.planes + 5, 'points': 11 + ((mildata.planes**2)-10)},
             'planecost': {'mg': 11 + ((mildata.planes**2)/2), 'oil': mildata.planes + 5},
             'shipcost': {'mg': 10+mildata.navy, 'oil': 10+mildata.navy/2},  
@@ -952,6 +949,35 @@ def economicpolicies(request):
                 else:
                     result = 'Mediocre pig iron! You have failed to improve economic growth!'
 
+        elif 'reactor' in request.POST:
+            if nation.budget < 5000:
+                result = "You do not have enough money!"
+            elif mildata.reactor >= 20:
+                result = "You already have a reactor!"
+            elif nation.uranium == 0:
+                result = "You do not have the necessary uranium!"
+            elif nation.research < 50:
+                result = "You do not have enough research!"
+            else:
+                chance = random.randint(1, 10)
+                actions.update(
+                    {
+                    'budget': {'action': 'subtract', 'amount': 5000},
+                    'uranium': {'action': 'subtract', 'amount': 1},
+                    'research': {'action': 'subtract', 'amount': 50},
+                    })
+                img = ""
+                if chance > 4:
+                    mildata.reactor += 1
+                    mildata.save()
+                    result = "Progress continues toward a working reactor!"
+                elif chance < 2 and mildata.reactor > 1:
+                    mildata.reactor -= 1
+                    mildata.save()
+                    result = "A stealth bomber has struck your reactor in the middle of construction! Someone doesn't want you getting nuclear weapons... Progress is set back."
+                else:
+                    result = "Your nuclear scientists unfortunately fail to make progress..."
+
         elif 'blood' in request.POST:
             if nation.region() != 'Africa':
                 result = "Only African nations can sell blood diaminds to De Beers!"
@@ -1030,6 +1056,7 @@ def economicpolicies(request):
                 result = "Your approval is too low! The workers go on strike."
             else:
                 appr = utils.attrchange(nation.approval, -10)
+                Econdata.objects.filter(pk=nation.econdata.pk).update(labor=F('labor') + 1)
                 actions.update({
                     'mg': {'action': 'add', 'amount': nation.factories},
                     'rm': {'action': 'subtract', 'amount': cost},
@@ -1120,7 +1147,7 @@ def economicpolicies(request):
             if nation.region() == "Middle East":
                 cost /= 2
             discovery = (random.randint(1000, 5000) if nation.region() == "Middle East" else random.randint(50, 500))
-            discovery *= utils.research('prospect', research.prospecttech)
+            discovery += int(discovery * utils.research('prospect', research.prospecttech))
             if nation.budget < cost:
                 result = "You do not have enough money!"
             else:
@@ -1384,7 +1411,7 @@ def econpolicycosts(nation):
         data.update({'prospect': (((nation.econdata.prospects**2)*1000)+500)/2})
         data.update({'wellcost': int((500+(100*nation.wells))/1.5)})
 
-    if nation.region() == 'Latin America' or 'African':
+    if nation.region() == 'Latin America' or  nation.region() == 'Africa':
         data.update({'minecost': int((250+50*nation.mines)/1.5)})
     else:
         data.update({'minecost': 250+50*nation.mines})

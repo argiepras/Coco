@@ -31,7 +31,7 @@ def free_market(request):
                     action, resource = field.split('_')
                     amount = post[field]
             amount = int(amount)
-            amount = (amount if amount == 20 or amount == 10 or amount == 1 else 20)
+            amount = (amount if amount == 20 or amount == 5 or amount == 1 else 20)
             pricevar = '%sprice' % resource
             price = market.__dict__[pricevar]
             countervar = '%s_counter' % resource
@@ -149,7 +149,8 @@ def offers(request, page):
                 context.update({'result': 'You can only have 10 open trades!'})
         elif 'accept_offer' in request.POST:
             if offers.filter(pk=request.POST['accept_offer']).exists():
-                context.update(accept_offer(offers, request.POST['accept_offer'], nation))
+                tariff = offers.get(pk=request.POST['accept_offer']).tariff
+                context.update(accept_offer(request.POST['accept_offer'], nation, tariff))
             else:
                 if Marketoffer.objects.filter(pk=request.POST['accept_offer']).exists():
                     context.update({'result': 'That trade is not available to you!'})
@@ -166,7 +167,10 @@ def offers(request, page):
             form = filterform(request.POST)
             if form.is_valid():
                 offerlist = offers.filter(**form.cleaned_data)
-                filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
+                if form.cleaned_data['offer'] == 'army':
+                     filtered = "No trades for troops found"
+                else:
+                    filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
 
 
     paginator = Paginator(offers, 30)
@@ -202,7 +206,7 @@ def make_offer(request, nation):
     return {'errors': form.errors}
 
 
-def accept_offer(offer, offerpk, nation):
+def accept_offer(offerpk, nation, tariff):
     result = ''
     try:
         with transaction.atomic():
@@ -230,12 +234,12 @@ def accept_offer(offer, offerpk, nation):
                     action[offer.request]['action'] = 'add'
                     utils.atomic_transaction(Military, offer.nation.military.pk, action)
                 
-                if offer.tariff > 0:
+                if tariff > 0:
                     selleraction = {
-                        'budget': {'action': 'subtract', 'amount': (offer.tariff * offer.offer_amount if offer.offer != 'army' else 10)}
+                        'budget': {'action': 'subtract', 'amount': (tariff * offer.offer_amount if offer.offer != 'army' else 10)}
                     }
                     buyeraction = {
-                        'budget': {'action': 'subtract', 'amount': (offer.tariff * offer.request_amount if offer.request != 'army' else 10)}
+                        'budget': {'action': 'subtract', 'amount': (tariff * offer.request_amount if offer.request != 'army' else 10)}
                     }
                     utils.atomic_transaction(Nation, offer.nation.pk, selleraction)
                     utils.atomic_transaction(Nation, nation.pk, buyeraction)
@@ -262,6 +266,6 @@ def accept_offer(offer, offerpk, nation):
     else:
         if not result:
             result = "Trade has been accepted!"
-            if offer.tariff > 0:
-                result += " $%sk in tariffs has been paid" % (offer.tariff * offer.offer_amount)
+            if tariff > 0:
+                result += " $%sk in tariffs has been paid" % (tariff * offer.offer_amount)
     return {'result': result}

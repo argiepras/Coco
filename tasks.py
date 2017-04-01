@@ -4,7 +4,7 @@ from celery import shared_task, task
 from celery.task.schedules import crontab
 from celery.decorators import periodic_task
 from django.db.models import Sum, Q, Count, Avg
-from django.db import IntegrityError
+from django.db import IntegrityError, OperationalError
 from django.utils import timezone
 
 import nation.utilities as utils
@@ -21,7 +21,7 @@ from nation.events import *
 @periodic_task(run_every=crontab(minute="0,10,20,30,40,50", hour="*", day_of_week="*"))
 def alliance_gain():
     for alliance in Alliance.objects.select_related('bank', 'initiatives').all().iterator():
-        bankstats = alliance.bankstats.get_or_create(pk=Market.objects.latest('pk').pk)[0]
+        bankstats = alliance.bankstats.get_or_create(turn=ID.objects.get().turn)[0]
         while True:
             try:
                 #first off is all incoming and outgoing
@@ -32,7 +32,8 @@ def alliance_gain():
                 total_out = 0
                 for cost in expenditures:
                     total_out += expenditures[cost]
-                
+                print expenditures
+                print total_out
                 alliance.bank.budget += income['total']
                 if alliance.bank.budget >= total_out:
                     alliance.bank.budget -= total_out
@@ -41,14 +42,14 @@ def alliance_gain():
                     unaffordable = []
                     fields = []
                     for initiative in expenditures:
-                        if alliance.initiatives.__dict__[initiative]:
+                        if alliance.initiatives.__dict__[initiative.split('_')[0]]:
                             if alliance.bank.budget - expenditures[initiative] > 0:
                                 alliance.bank.budget -= expenditures[initiative]
                             else:
-                                alliance.initiatives.__dict__[initiative] = False
+                                alliance.initiatives.__dict__[initiative.split('_')[0]] = False
                                 #collecting fields to update on save()
-                                fields += [initiative, alliance.initiatives.reset_timer(initiative)]
-                                unaffordable.append(v.initiative_loss[initiative])
+                                fields += [initiative, alliance.initiatives.reset_timer(initiative.split('_')[0])]
+                                unaffordable.append(v.initiative_loss[initiative.split('_')[0]])
                     #First we calculated what the alliance in question could afford
                     #now we insert newsitems for the relevant officers
                     #about which initiatives got shut down from lack of funding
@@ -57,7 +58,7 @@ def alliance_gain():
                         txt += "%s, " % init
                     txt = txt[:-2]
                     alliance.initiatives.save()
-                    for officer in alliance.members.filter(Q(permissions__banking=True)|Q(permissions__founder=True)):
+                    for officer in alliance.members.filter(Q(permissions__template__banking=True)|Q(permissions__template__founder=True)):
                         news.initiative_recalled(officer, txt)
                 utils.atomic_transaction(
                     Bank, 
@@ -74,7 +75,7 @@ def alliance_gain():
                     bankstats.__dict__[field] += income[field]
                 bankstats.save()
 
-            except IntegrityError:
+            except IntegrityError, OperationalError:
                 alliance.bank.refresh_from_db()
                 continue
             break
@@ -94,7 +95,7 @@ def add_budget():
                         utils.atomic_transaction(Nation, member.pk, {
                             'budget': {'action': 'add', 'amount': income['income']}
                         })
-                    except IntegrityError: #in case something else is using the member
+                    except IntegrityError, OperationalError: #in case something else is using the member
                         member.refresh_from_db()
                         continue
                 break
@@ -108,15 +109,18 @@ def add_budget():
 
 
 
+
+
 #hourly check for vacation-eligible nations and subsequent placing them in it
 @periodic_task(run_every=crontab(minute="5", hour="*", day_of_week="*"))
 def vaccheck():
-    Nation.objects.filter(last_seen__gt=timezone.now() - inactivedelta())
+    Nation.objects.filter(last_seen__gt=timezone.now() - v.inactivedelta())
 
 
 
-@periodic_task(run_every=crontab(minute="0", hour="0, 12", day_of_week="*"))
+@periodic_task(run_every=crontab(minute="30", hour="*", day_of_week="*"))
 def turnchange(debug=False):
+    ID.objects.all().update(turn=F('turn') + 1)
     for nation in Nation.objects.select_related('alliance__initiatives').filter(deleted=False, vacation=False).iterator():
         while True:
             try:
@@ -169,7 +173,7 @@ def turnchange(debug=False):
                 if nation.gdp + gdpchange > nation.maxgdp:
                     actions.update({'maxgdp': {'action': 'set', 'amount': nation.gdp + gdpchange}})
                 utils.atomic_transaction(Nation, nation.pk, actions)
-            except IntegrityError:
+            except IntegrityError, OperationalError:
                 nation.refresh_from_db()
                 continue
             eventhandler.trigger_events(nation)
@@ -186,7 +190,6 @@ def milturn(debug=False):
 
 
 def econturn(debug=False):
-
     Econdata.objects.filter(
         nation__vacation=False, 
         nation__deleted=False,
@@ -259,7 +262,6 @@ def marketturn(debug=False):
         Avg('researchdata__urbantech'),
         Avg('econdata__foodproduction'),
     )
-    print stats
     for field in stats:
         stats[field] = (stats[field] if stats[field] != None else 1)
     #accurate food production calculations
@@ -279,17 +281,13 @@ def marketturn(debug=False):
     new_market.mg_threshold = (stats['mg__sum'] / float(stats['factories__sum'])) * sqrt(count/2)
     new_market.oil_threshold = (stats['oil__sum'] / float(stats['wells__sum'])) * sqrt(count/2)
     new_market.food_threshold = (stats['food__sum'] / float(food_prod)) * sqrt(count/2)
-    print new_market.rm_threshold 
-    print new_market.mg_threshold 
-    print new_market.oil_threshold 
-    print new_market.food_threshold
     #now double check if the threshold is greater than the lower limit
     #standard is 20
+    #and transfer over the price
     for field in v.resources[1:]:
-        print field
-        new_market.__dict__['%s_threshold' % field]
+        price = "%sprice" % field
+        new_market.__dict__[price] = market.__dict__[price]
         if new_market.__dict__['%s_threshold' % field] < v.min_threshold:
-            print market.__dict__['%s_threshold' % field]
             new_market.__dict__['%s_threshold' % field] = v.min_threshold
 
     new_market.save()
@@ -298,4 +296,4 @@ def marketturn(debug=False):
 
 def infilgain():
     for spy in Spy.objects.filter(nation__vacation=False, nation__deleted=False).select_related('nation', 'location').iterator():
-        Spy.objects.filter(pk=spy.pk).update(infiltration=spy.infiltration + spygain(spy))
+        Spy.objects.filter(pk=spy.pk).update(infiltration=spy.infiltration + spygain(spy), actioned=False)

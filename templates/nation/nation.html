@@ -22,7 +22,7 @@
             <br /><br />{{ target.description }}
                         
             <p>
-        <iframe width="300" height="30" src="https://www.youtube.com/embed/{{ target.settings.anthem }}?rel=0&autoplay=1" frameborder="0"></iframe>
+        <iframe width="300" height="30" src="https://www.youtube.com/embed/{{ target.settings.anthem }}?rel=0&autoplay={% if nation.settings.autoplay %}1{% else %}0{% endif %}" frameborder="0"></iframe>
     </p></center>
     
     <br />

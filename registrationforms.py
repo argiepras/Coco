@@ -1,7 +1,7 @@
 from django import forms
 import nation.variables as v
 from django.contrib.auth.models import User
-from nation.models import Nation
+from nation.models import Nation, ID
 
 class registrationform(forms.Form):
     email = forms.EmailField(widget=forms.EmailInput(attrs={
@@ -45,6 +45,15 @@ class newuserform(forms.Form):
             governments.append(((key*20)+10, v.government[key]))
         for markettype in v.economy:
             economy.append(((markettype+1)*25, v.economy[markettype]))
+
+        if ID.objects.get().freeIDs > 0:
+            self.fields['id'] = forms.IntegerField(
+                min_value=-2147483648, 
+                max_value=2147483647,
+                required=False,
+                widget=forms.NumberInput(attrs={
+                        'class': 'form-control',
+                    }))
 
         economy = tuple(economy)
         governments = tuple(governments)
@@ -95,3 +104,9 @@ class newuserform(forms.Form):
         if Nation.objects.filter(name__iexact=name).exists():
             raise forms.ValidationError('Nation name is taken!')
         return name
+
+    def clean_id(self):
+        index = self.cleaned_data['id']
+        if Nation.objects.filter(index=index).exists():
+            raise forms.ValidationError('ID is taken!')
+        return index

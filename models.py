@@ -72,6 +72,7 @@ class Alliance(models.Model):
 class ID(models.Model):
     index = models.IntegerField(default=1) #used to assign IDs
     turn = models.IntegerField(default=1)
+    freeIDs = models.IntegerField(default=50)
     #because overriding primary key values pose all sorts of problems
     #so nation IDs will be simple int fields
 
@@ -95,14 +96,14 @@ class Nation(models.Model):
     maxgdp = models.IntegerField(default=300)
     budget = models.IntegerField(default=600)
     trade_balance = models.IntegerField(default=0)
-    approval = models.IntegerField(default=50)
-    stability = models.IntegerField(default=50)
-    literacy = models.IntegerField(default=50)
-    healthcare = models.IntegerField(default=50)
-    qol = models.IntegerField(default=50)
+    approval = models.IntegerField(default=51)
+    stability = models.IntegerField(default=51)
+    literacy = models.IntegerField(default=51)
+    healthcare = models.IntegerField(default=51)
+    qol = models.IntegerField(default=51)
     growth = models.IntegerField(default=5)
     rebels = models.IntegerField(default=0)
-    reputation = models.IntegerField(default=50)
+    reputation = models.IntegerField(default=51)
     government = models.IntegerField(default=50)
     economy = models.IntegerField(default=50) #0 = commie 100 = capitalist
     land = models.IntegerField(default=30000)
@@ -163,7 +164,7 @@ class Nation(models.Model):
         return self.military.army / 5
 
     def civfoodconsumption(self):
-        return self.population() / 10000
+        return self.population() / 13321
 
 
     def has_alliance(self):
@@ -290,6 +291,7 @@ class Settings(models.Model):
     donatoravatar = models.CharField(max_length=200, default='none')
     donatorflag = models.CharField(max_length=200, default='none')
     anthem = models.CharField(max_length=20, default='')
+    autoplay = models.BooleanField(default=False)
     def __unicode__(self):
         return u"%s settings" % self.nation.name
 
@@ -330,9 +332,9 @@ class Military(models.Model):
     army = models.IntegerField(default=20)
     navy = models.IntegerField(default=0)
     planes = models.IntegerField(default=0)
-    training = models.IntegerField(default=30)
+    training = models.IntegerField(default=50)
     weapons = models.IntegerField(default=10)
-    chems = models.IntegerField(default=0)
+    chems = models.IntegerField(default=0) #moves from 0-10
     reactor = models.IntegerField(default=0) #moves from 0 to 20 
     nukes = models.IntegerField(default=0)
     def __unicode__(self):
@@ -450,6 +452,7 @@ class Declaration(models.Model):
 class Event(models.Model):
     nation = models.ForeignKey(Nation, related_name='news', on_delete=models.CASCADE)
     event = models.BooleanField(default=False)
+    deletable = models.BooleanField(default=True)
     content = models.TextField()    
     timestamp = models.DateTimeField(default=v.now)
     seen = models.BooleanField(default=False)

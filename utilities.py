@@ -21,9 +21,9 @@ def timedeltadivide(timediff):
 
 def attrchange(current, amount, lower=0, upper=100):
     if current + amount > upper: #return the amount required to reach 100 and lower respectively
-        return amount - (current + amount - upper)
+        return upper - current
     elif current + amount < lower:
-        return amount - (current + amount + lower)
+        return lower - current
     return amount
 
 
@@ -59,6 +59,8 @@ def atomic_transaction(modeltype, pk, actions, targetpk=False):
                     subject.__dict__[field] -= actions[field]['amount']
                 elif actions[field]['action'] is 'add':
                     subject.__dict__[field] += actions[field]['amount']
+                elif actions[field]['action'] is 'call':
+                    subject.__dict__[field]()
                 else:
                     subject.__dict__[field] = actions[field]['amount']
                 #then we assemble a list of fields to update
@@ -168,14 +170,14 @@ def reset():
         gdp=300,
         budget=600,
         trade_balance=0,
-        approval=50,
-        stability=50,
-        literacy=50,
-        healthcare=50,
-        qol=50,
+        approval=51,
+        stability=51,
+        literacy=51,
+        healthcare=51,
+        qol=51,
         growth=5,
         rebels=0,
-        reputation=50,
+        reputation=51,
         government=50,
         economy=50,
         land=30000,
@@ -205,7 +207,7 @@ def reset():
         army=20,
         navy=0,
         planes=0,
-        training=30,
+        training=50,
         weapons=10,
         chems=0,
         reactor=0,
@@ -235,13 +237,15 @@ def reset():
     Event.objects.all().delete()
     Eventhistory.objects.all().delete()
     Declaration.objects.all().delete()
-    Market.objects.all.delete()
+    Market.objects.all().delete()
     Marketlog.objects.all().delete()
     Market.objects.create()
     Marketoffer.objects.all().delete()
     Marketofferlog.objects.all().delete()
     Spy.objects.all().delete()
     Extradition_request.objects.all().delete()
+    for n in Nation.objects.all():
+        n.news.create(event=True, content='newbie_event')
 
 
 
@@ -292,11 +296,11 @@ def get_active_player(ID):
     except:
         pass
     try:
-        nation = query.get(name=ID)
+        nation = query.get(name__iexact=ID)
     except:
         pass
     try:
-        nation = query.get(user__username=ID)
+        nation = query.get(user__username__iexact=ID)
     except:
         pass
     return nation
@@ -318,7 +322,7 @@ def paginate_me(query, count, page):
 
 
 def opposing_alignments(nation1, nation2):
-    if nation1.aligment + 2 == nation2.alignment or nation1.alignment - 2 == nation2.alignment:
+    if nation1.alignment + 2 == nation2.alignment or nation1.alignment - 2 == nation2.alignment:
         return True
     return False
 

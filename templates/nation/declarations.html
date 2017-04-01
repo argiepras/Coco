@@ -53,6 +53,7 @@
             </div>
         </div>
     {% endfor %}
+    </form>
 </div>
 
 {% else %}
@@ -60,6 +61,7 @@
 <p>There are no global declarations yet! Be the first to make one!</p>
 
 {% endif %}
+<form method="POST">{% csrf_token %}
 <p><h5>Declarations costs ${{ deccost }}k each</h5></p>
 <div class="row">
     <div class="col-sm-4 col-sm-offset-4">

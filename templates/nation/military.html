@@ -72,19 +72,23 @@
         </tr>
     
         {% if nation.military.weapons < 500 %} 
+        {% if nation.alignment != 3 %}
+            
         <tr>
             <td><b>AKMs from the Soviets</b></td>
             <td>Ask for a lot of the finest guns ever wielded by everyone ever. Must have good relations with the Soviets. Slight increase in technology.</td>
             <td>5 Soviet relation points</td>
             <td><button type="submit" class="btn btn-default" name="aks" />Ask</button></td>
         </tr>
-    
+        {% endif %}
+        {% if nation.alignment != 1 %}
         <tr>
             <td><b>FALs from the United States</b></td>
             <td>The latest in American-made riflery, only available to good friends of Uncle Sam. Slight increase in technology.</td>
             <td>5 American relation points</td>
             <td><button type="submit" class="btn btn-default" name="m14" />Ask</button></td>
         </tr>
+        {% endif %}
     
     
         <tr>
@@ -96,20 +100,22 @@
         {% endif %}
         
         {% if nation.military.weapons < 2000 and nation.military.weapons > 300 %} 
+        {% if nation.alignment != 3 %}
         <tr>
             <td><b>Buy T-62s from the Soviets</b></td>
             <td>An old but sturdy main battle tank from the Soviet Union. Will blast the bourgeois pigs to hell and back. Increase in technology.</td>
             <td>13 Soviet Relation points & 2 Mbbl oil</td>
             <td><button type="submit" class="btn btn-default" name="t62" />Buy</button></td>
         </tr>
-    
+        {% endif %}
+        {% if nation.alignment != 1 %}
         <tr>
             <td><b>Buy M60 Pattons from the United States</b></td>
             <td>Named after Old Blood and Guts himself, ready to be airlifted straight to friends of freedom. Increase in technology.</td>
             <td>13 US Relation points & 3 Mbbl oil</td>
             <td><button type="submit" class="btn btn-default" name="m60" />Buy</button></td>
         </tr>
-    
+        {% endif %}
         <tr>
             <td><b>Manufacture Istan Main Battle Tanks</b></td>
             <td>A fine tank made right here in the homeland. Must have a completed four factories. Increase in technology.</td>
@@ -118,38 +124,46 @@
         </tr>
 
         {% endif %}
-        {% if nation.military.weapons >= 2000 %} 
-        <tr>
-            <td><b>Buy M1 Abrams from the United States</b></td>
-            <td>A powerful, modern tank. Only available to allies of the United States. Large increase in technology.</td>
-            <td>20 US Alignment & 11 Mbbl oil</td>
-            <td><button type="submit" class="btn btn-default" name="m1" />Buy</button></td>
-        </tr>
+        {% if nation.military.weapons >= 2000 %}
+        {% if nation.alignment != 3 %}
         <tr>
             <td><b>Buy T-90 from the Soviet Union</b></td>
             <td>A powerful, modern tank. Only available to comrades of the Soviet Union. Large increase in technology.</td>
             <td>20 Soviet Alignment & 11 Mbbl oil</td>
             <td><button type="submit" class="btn btn-default" name="t90" />Buy</button></td>
         </tr>
-     <tr>
+        {% endif %}
+        {% if nation.alignment != 1 %}
+        <tr>
+            <td><b>Buy M1 Abrams from the United States</b></td>
+            <td>A powerful, modern tank. Only available to allies of the United States. Large increase in technology.</td>
+            <td>20 US Alignment & 11 Mbbl oil</td>
+            <td><button type="submit" class="btn btn-default" name="m1" />Buy</button></td>
+        </tr>
+        {% endif %}
+        <tr>
             <td><b>Manufacture Despot Main Battle Tank</b></td>
             <td>Oppress the battlefield with this tank of your own make. Must have a completed eight factories.</td>
             <td>18 tons of manufactured goods, 13 Mbbl oil</td>
             <td><button type="submit" class="btn btn-default" name="despot" />Buy</button></td>
         </tr>
         {% endif %}
+        {% if nation.alignment != 3 %}
         <tr>
             <td><b>Buy MiGs</b></td>
             <td>Soviets are willing to offload some of their older model fighter jets to your airforce as long as you're not in bed with the imperialist Americans. Increase in air power.</td>
             <td>{{ migcost.points }} Relation points, {{ migcost.oil }} mbbls</td>
             <td><button type="submit" class="btn btn-default" name="migs" />Buy</button></td>
         </tr>
+        {% endif %}
+        {% if nation.alignment != 1 %}
         <tr>
             <td><b>Buy F-8 Crusaders</b></td>
             <td>America will sell their finest of the last decade only to their closest allies. Increase in air power.</td>
             <td>{{ migcost.points }} Relation points, {{ migcost.oil }} mbbls</td>
             <td><button type="submit" class="btn btn-default" name="f8" />Buy</button></td>
         </tr>
+        {% endif %}
         <tr>
             <td><b>Manufacture Aircraft</b></td>
             <td>If the US and USSR won't let you have their planes, well you can make your own damn planes! Requires at least three factories.</td>

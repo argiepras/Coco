@@ -25,7 +25,7 @@
 
     {% if nation.settings.anthem %}
     <div style="margin: 20px">
-        <iframe width="300" height="30" src="https://www.youtube.com/embed/{{nation.settings.anthem}}?rel=0&autoplay=1" frameborder="0"></iframe>
+        <iframe width="300" height="30" src="https://www.youtube.com/embed/{{nation.settings.anthem}}{% if nation.settings.autoplay %}?rel=0&autoplay=1{% endif %}" frameborder="0"></iframe>
     </div>
     {% endif %}
     
@@ -214,9 +214,9 @@
                  <td>Available Budget:</td>
                  <td><div class="dropdown"><a data-toggle="dropdown" href="#"><img src="{% static 'assets/statsicon.png' %}" height=17px /><i>${{ nation.budget }}k</i></a>
                     <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-                       <p>+<span style="color: green">${{ budgetgain }}k</span> every ten minutes</p>
-                       {% if tax %}
-                       <p>-<span style="color: red">${{ tax }}k</span> every ten minutes from alliance tax</p>
+                       <p>+<span style="color: green">${{ budgetgain.income }}k</span> every ten minutes</p>
+                       {% if budgetgain.tax %}
+                       <p>-<span style="color: red">${{ budgetgain.tax }}k</span> every ten minutes from alliance tax</p>
                        {% endif %}
                        
                        
@@ -296,19 +296,33 @@
         </tr>
              
         <tr>
-             <td>Food Supply:</td>
-             <td><div class="dropdown">
-  <a data-toggle="dropdown" href="#"><i>{{ nation.food|famine }}</i></a>
-             
-             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
-             {% if nation.food == 0 %}
-                "<span style="color: red"><b>Famines reduce approval and quality of life significantly! Buy or produce more food quickly!</b></span>"
-            {% endif %}
-  <p>Next month changes:</p>
-    {{ nation|foodchanges }}
-    </ul></div>
-             
-             </td>
+            <td>Food Supply:</td>
+            <td>
+                <div class="dropdown">
+                    <a data-toggle="dropdown" href="#">
+                    <img src="{% static 'assets/statsicon.png' %}" height=17px />
+                        <i>
+                            {{ nation.food|famine }}
+                        </i>
+                    </a>
+                             
+                    <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+                    <div style="padding: 5px;">
+                        {% if nation.food == 0 %}
+                            <p>
+                                <span style="color: red">
+                                    <b>
+                                        Famines reduce approval and quality of life significantly! Buy or produce more food quickly!
+                                    </b>
+                                </span>
+                            </p>
+                        {% endif %}
+                        <p>Next month changes:</p>
+                            {{ nation|foodchanges }}
+                    </div>
+                    </ul>
+                </div>
+            </td>
         </tr>
 			{% if nation.uranium_mines > 0 %}
             <tr>

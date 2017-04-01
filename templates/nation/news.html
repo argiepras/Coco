@@ -36,7 +36,7 @@
                     </div>
                 </div>
                 <div class="col-sm-2">
-                {% if not newsitem.event %}
+                {% if newsitem.deletable %}
                     <button type="submit" class="btn btn-danger" name="delete" value="{{ newsitem.pk }}" style="margin: 5px;">
                         Delete news
                     </button>

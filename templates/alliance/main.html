@@ -2,7 +2,7 @@
 {% block content %}
 {% load alliancetags %}
 
-{% if permissions.is_officer or permissions.template.founder %}
+{% if permissions.template.officer or permissions.template.founder %}
 
 
 <div class="container">
@@ -229,8 +229,7 @@
 		<tr>
 			<td><a href="{{ member.get_absolute_url }}">
                 {% if member.permissions.template.officer %}
-                    <img src="{{ alliance.icon }}" width="{{ member.permissions|iconsize }}"
-                    height="{{ member.permissions|iconsize }}">
+                    <img src="{{ alliance.icon }}" style="max-width: {{ member.permissions|iconsize }}; max-height:{{ member.permissions|iconsize }}">
                 {% endif %}
                 {{ member.name }}
                 

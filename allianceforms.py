@@ -130,8 +130,9 @@ class changeform(forms.Form):
         if nation.permissions.template.founder:
             query = nation.alliance.members.all().exclude(pk=nation.pk).exclude(permissions__template__rank=5).exclude(permissions__template__rank=0)
         else:
-            query = nation.alliance.members.all().exclude(permissions__rank__gte=nation.permissions.rank).exclude(permissions__rank=5)
-            templatequery = templatequery.filter(rank__lte=nation.permissions.rank)
+            query = nation.alliance.members.all().exclude(
+                permissions__template__rank__gte=nation.permissions.template.rank).exclude(permissions__template__rank=5)
+            templatequery = templatequery.filter(rank__lte=nation.permissions.template.rank)
         self.fields['officer'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black',
             }))
@@ -203,7 +204,7 @@ class templatesform(forms.Form):
         super(templatesform, self).__init__(*args, **kwargs)
         templates = nation.alliance.templates.all().exclude(rank=5).exclude(rank=0)
         if not nation.permissions.template.founder:
-            templates = templates.filter(rank__gte=nation.permissions.rank)
+            templates = templates.filter(rank__gte=nation.permissions.template.rank)
         self.fields['template'] = forms.ModelChoiceField(queryset=templates, widget=forms.Select(
             attrs={'class': 'form-control', 'style': 'color: black'}))
 

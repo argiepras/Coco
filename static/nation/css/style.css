@@ -11,6 +11,12 @@
     right: 0%;
 }
 
+
+.dflag{
+  max-height: 300px;
+  max-width: 300px;
+}
+
 #header {
     
     text-align: center;

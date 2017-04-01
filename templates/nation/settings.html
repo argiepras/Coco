@@ -104,6 +104,26 @@ Set new description
         </div>
     </div>
 </form>
+<form method="POST">{% csrf_token %}
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-3">
+            Specify whether anthems should autoplay
+        </div>
+        <div class="col-xs-1">
+            {{ autoplayform.autoplay.1 }}
+        </div>
+        <div class="col-xs-1">
+            {{ autoplayform.autoplay.0 }}
+        </div>
+        <div class="col-xs-1">
+            <span class="input-group-btn">
+                <button class="btn btn-default" type="submit" name="set_autoplay">
+                    Set
+                </button>
+            </span>
+        </div>
+    </div>
+</form>
 
 
 

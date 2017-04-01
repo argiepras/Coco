@@ -32,10 +32,10 @@ def wardec(declarer, victim):
         and to defend our country and people!" % link
     victim.news.create(content=txt)
 
-def defeated(winner, loser, actions):
+def defeated(loser, winner, actions):
     link = '<a href="%s"><b>%s</b></a>' % (winner.get_absolute_url(), winner.name)
     txt = "%s has crushed the remainders of our armed forces and defeated us! " % link
-    txt += ""
+    loser.news.create(content=txt)
 
 
 def peace(peacer, peacee):

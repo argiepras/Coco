@@ -19,7 +19,10 @@ from math import sqrt
 
 
 def nation_income(nation):
-    income = (nation.gdp/72 if nation.budget < nation.gdp * 2 else 0)
+    income = (round(nation.gdp/72.0) if nation.budget < nation.gdp * 2 else 0)
+    income = int(income)
+    if income == 0 and nation.budget < nation.gdp*2:
+        income = 1
     bracket = None
     tax = 0
     if nation.has_alliance():
@@ -63,6 +66,10 @@ def alliance_income(alliance, display=False):
 
 def alliance_expenditures(alliance):
     count = alliance.members.all().filter(vacation=False, deleted=False).count()
+    if count == None:
+        count = 0
+    if alliance.averagegdp == None:
+        alliance.averagegdp = 0
     return {
         'literacy_cost':  alliance_litcost(alliance, count),
         'healthcare_cost': alliance_healthcost(alliance, count),
@@ -109,7 +116,7 @@ def westerngain(nation):
     rep = westerngain_econ(nation)
     rep += repgain(nation)
     rep += westerngain_alignment(nation) 
-    return rep + repgain(nation)
+    return rep
 
 def westerngain_econ(nation):
     if nation.economy < 33:
@@ -317,9 +324,9 @@ def rmgain_tech(nation):
 
 
 def mggain(nation, rm, oil):
-    mg = mgbase(nation, rm, oil)
+    mg = mgdisplaywrapper(nation)
     mg += mgbonus(nation, mg)
-    mg -= mgunidecay(nation)
+    mg += mgunidecay(nation)
     return mg
 
 def mgdisplaywrapper(nation):
@@ -359,11 +366,11 @@ def faminecheck(nation):
     return False
 
 def foodgain(nation):
-    food = foodgain_agricultureideal(nation)
+    food = foodgain_agriculture(nation)
     food -= foodgain_milcost(nation)
     food -= foodgain_civcost(nation)
     if food + nation.food < 0: #famine!
-        return nation.food
+        return -nation.food
     return food
 
 
@@ -491,10 +498,12 @@ def healthcaredecay(nation):
 
 def FIchanges(nation):
     FI = 0
-    if nation.economy > 33:
+    if nation.economy >= 33:
         FI = nation.growth
         if nation.economy > 66 and nation.growth > 0:
             FI *= 2
+        if nation.growth < 0 and nation.FI + FI < 0:
+            FI = -nation.FI
     else:
         if nation.FI > 0:
             g = nation.growth
@@ -512,6 +521,7 @@ def FIchanges(nation):
                 FI = -nation.FI
             else:
                 FI = -FI
+
     return FI
 
 
@@ -530,7 +540,7 @@ def growthchanges(nation):
     growth += growthchanges_openborders(nation)
     growth += growthchanges_redistribution(nation)
     growth += growthchanges_unis(nation)
-    growth += growthchanges_military(nation)
+    growth -= growthchanges_military(nation)
     return growth
 
 def growthrecovery(nation):
@@ -578,15 +588,16 @@ def growthchanges_openborders(nation):
 def growthchanges_redistribution(nation):
     gain = 0
     if nation.has_alliance():
-        avg = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('gdp'))['gdp__sum']
-        if nation.gdp < avg/2:
-            gain = 5
-        elif nation.gdp < avg:
-            gain = 3
-        elif nation.gdp/2 > avg:
-            gain = -5
-        elif nation.gdp > avg:
-            gain = -3
+        if nation.alliance.initiatives.redistribute:
+            avg = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('gdp'))['gdp__sum']
+            if nation.gdp < avg/2:
+                gain = 5
+            elif nation.gdp < avg:
+                gain = 3
+            elif nation.gdp/2 > avg:
+                gain = -5
+            elif nation.gdp > avg:
+                gain = -3
     return gain
 
 
