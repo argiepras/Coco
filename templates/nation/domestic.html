@@ -93,6 +93,23 @@
             {{ costs.university.mg }} Tons of manufactured goods</td>
             <td><button type="submit" class="btn btn-default" name="university" />Teach</button></td>
         </tr>
+    {% if nation.universities > 0 %}
+        <tr>
+            <td><b>Close down University</b></td>
+            <td>Turns out those fancy buildings filled with so called intellectuals was a bad idea. Shut them down and let the students do real work.</td>
+            <td>Free</td>
+            <td><button type="submit" class="btn btn-default" name="closeuni" />Board up</button></td>
+        </tr>
+    {% endif %}
+    {% if nation.closed_universities > 0 %}
+        <tr>
+            <td><b>Reopen University</b></td>
+            <td>It's time for more eggheads! This reopens a previously closed university and
+            provides the benefits if it again.</td>
+            <td>$1000k</td>
+            <td><button type="submit" class="btn btn-default" name="reopenuni">Renovate</button></td>
+        </tr>
+    {% endif %}
         <tr>
             <td><b>Construct Free Hospital</b></td>
             <td>Provide for all the ability to live past the age of 42. Increases healthcare. Not available to free market economies. Cost is relative to GDP (.05%).</td>

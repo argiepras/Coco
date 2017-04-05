@@ -127,6 +127,7 @@ class Nation(models.Model):
     alignment = models.IntegerField(default=2) #1 2 3 east neu west
     research = models.IntegerField(default=0)
     universities = models.IntegerField(default=0)
+    closed_universities = models.IntegerField(default=0)
     def __unicode__(self):
         return u"%s" % self.name
 

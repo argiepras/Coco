@@ -19,6 +19,10 @@ def aidnews(sender, reciever, resource, amount):
     newsitem = "We have recieved %s from %s! How generous!" % (flavor, link)
     reciever.news.create(content=newsitem)
 
+def uraniumaid(sender, target):
+    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
+    target.news.create(content="We have recieved 1 ton of uranium from %s!" % link)
+
 
 
 ################################

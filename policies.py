@@ -202,17 +202,20 @@ def militarypolicies(request):
 
 
         elif 'nuke' in request.POST:
-            if nation.budget < 100000:
+            if mildata.reactor < 20:
+                result = "You do not have a nuclear reactor!"
+            elif nation.budget < 100000:
                 result = "You do not have enough money!"
             elif nation.uranium < 20:
                 result = "You do not have enough uranium!"
-            elif mildata.reactor < 20:
-                result = "You do not have a nuclear reactor!"
+            elif nation.research < 200:
+                result = "You do not have enough research!"
             else:
                 actions.update(
                     {
                     'budget': {'action': 'subtract', 'amount': 100000},
                     'uranium': {'action': 'subtract', 'amount': 20},
+                    'research': {'action': 'subtract', 'amount': 200},
                     })
                 Military.objects.filter(nation__pk=nation.pk).update(nukes=F('nukes') + 1)
                 img = "http://i.imgur.com/wLtwYXi.jpg"
@@ -595,7 +598,7 @@ def domesticpolicies(request):
     if request.method == 'POST':
         actions = {}
         costs = domesticpolicycosts(nation, initiatives)
-        img = "/static/img/"
+        base = img = "/static/img/"
         if 'arrest' in request.POST:
             cost = 50
             if nation.budget < 50:
@@ -810,6 +813,29 @@ def domesticpolicies(request):
                 img += "university.jpg"
                 result = "Your students take to the classrooms!"
 
+        elif 'closeuni' in request.POST:
+            if nation.universities < 1:
+                result = "You do not have any universities to close!"
+            else:
+                actions.update({
+                    'universities': {'action': 'subtract', 'amount': 1},
+                    'closed_universities': {'action': 'add', 'amount': 1},
+                })
+                result = "Lecture halls get boarded up and students are sent to the fields"
+
+        elif 'reopenuni' in request.POST:
+            if nation.closed_universities < 1:
+                result = "There are no universities to re-open!"
+            elif nation.budget < 1000:
+                result = "You do not have enough money!"
+            else:
+                actions.update({
+                    'universities': {'action': 'add', 'amount': 1},
+                    'closed_universities': {'action': 'subtract', 'amount': 1},
+                    'budget': {'action': 'subtract', 'amount': 1000}
+                })
+                result = "Students pour into the re-opened lecture halls"
+
         elif 'hospital' in request.POST:
             cost = costs['hospital']['money']
             rmcost = costs['hospital']['rm']
@@ -895,7 +921,9 @@ def domesticpolicies(request):
             utils.atomic_transaction(Nation, nation.pk, actions)
             nation.policylogging(request.POST, actions)
             nation.refresh_from_db()
-            context.update({'img': img})
+            request.user.nation = nation
+            if img != base:
+                context.update({'img': img})
         if result:
             context.update({'result': result})
     context.update({
@@ -1098,8 +1126,21 @@ def economicpolicies(request):
                     'factories': {'action': 'subtract', 'amount': 1},
                     'closed_factories': {'action': 'add', 'amount': 1},
                     })
-                img += "http://i.imgur.com/QerllfI.jpg"
+                img = "http://i.imgur.com/QerllfI.jpg"
                 result = "Thousands lose their jobs!"
+
+        elif 'reindustrialize' in request.POST:
+            if nation.closed_factories < 1:
+                result = "All factories are already open for business!"
+            elif nation.budget < 1000:
+                result = "There's not enough money to reopen the factory halls!"
+            else:
+                actions.update({
+                    'factories': {'action': 'add', 'amount': 1},
+                    'closed_factories': {'action': 'subtract', 'amount': 1},
+                    'budget': {'action': 'subtract', 'amount': 1000}
+                    })
+                result = "Thousands rejoice as the factory halls are reopened!"
 
         elif 'nationalize' in request.POST:
             if policyactions.nationalize:
@@ -1137,6 +1178,7 @@ def economicpolicies(request):
                     'budget': {'action': 'add', 'amount': gain},
                     'gdp': {'action': 'subtract', 'amount': 15},
                     'economy': {'action': 'add', 'amount': econ},
+                    'stability': {'action': 'add', 'amount': utils.attrchange(nation.stability, -15)}
                     })
                 Econdata.objects.filter(pk=policyactions.pk).update(nationalize=True)
                 img += "privatization.jpg"
@@ -1248,9 +1290,23 @@ def economicpolicies(request):
                 actions.update({
                     'mines': {'action': 'subtract', 'amount': 1},
                     'closed_mines': {'action': 'add', 'amount': 1},
+                    'approval': {'action': 'add', 'amount': utils.attrchange(nation.approval, -5)},
                     })
-                img = "http://i.imgur.com/QerllfI.jpg"
+                img += "closed_mine.jpg"
                 result = 'Thousands lose their jobs!'
+
+        elif 'openmine' in request.POST:
+            if nation.closed_mines < 1:
+                result = "You do not have any closed mines!"
+            elif nation.budget < 500:
+                result = "You do not have enough money!"
+            else:
+                actions.update({
+                    'mines': {'action': 'add', 'amount': 1},
+                    'closed_mines': {'action': 'subtract', 'amount': 1},
+                    'budget': {'action': 'subtract', 'amount': 500},
+                    'approval': {'action': 'add', 'amount': utils.attrchange(nation.approval, 5)}
+                    })
 
         elif 'privatemine' in request.POST:
             cost = 250+50*nation.mines
@@ -1291,9 +1347,24 @@ def economicpolicies(request):
                 actions.update({
                     'wells': {'action': 'subtract', 'amount': 1},
                     'closed_wells': {'action': 'add', 'amount': 1},
+                    'approval': {'action': 'add', 'amount': utils.attrchange(nation.approval, -5)}
                     })
                 img = "http://i.imgur.com/QerllfI.jpg"
                 result = "Thousands lose their jobs!"
+
+        elif 'openwell' in request.POST:
+            if nation.closed_wells < 1:
+                result = "There are no closed oil wells!"
+            elif nation.budget < 600:
+                result = "You do not have enough money!"
+            else:
+                actions.update({
+                    'wells': {'action': 'add', 'amount': 1},
+                    'closed_wells': {'action': 'subtract', 'amount': 1},
+                    'budget': {'action': 'subtract', 'amount': 600},
+                    'approval': {'action': 'add', 'amount': utils.attrchange(nation.approval, 5)}
+                    })
+
 
         elif 'privatewell' in request.POST:
             cost = 500+(100*nation.wells)

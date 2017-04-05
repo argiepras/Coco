@@ -38,10 +38,16 @@ class EventHandler(object):
         #called at turn change to trigger events
         #iterates over the list of registered events and have them check if eligible
         #if true, create event
+        event_count = 0
         for event in self.events:
             eventtype = self.events[event](nation)
             if eventtype.conditions(nation):
-                nation.news.create(event=True, content=event)
+                if nation.news.filter(content=event).exists() and not eventtype.apply_instantly:
+                    continue
+                elif event_count > 0 and not eventtype.apply_instantly:
+                    if random.randint(1, 10) > 5: #50% chance of getting a second event
+                        continue
+                nation.news.create(event=True, content=event, deletable=eventtype.apply_instantly)
                 if eventtype.apply_instantly:
                     while True:
                         try:
@@ -52,6 +58,8 @@ class EventHandler(object):
                             eventtype = self.events[event](nation)
                             continue
                         break
+                else:
+                    event_count += 1
 
 
 eventhandler = EventHandler()

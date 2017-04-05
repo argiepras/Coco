@@ -106,6 +106,7 @@ class RefugeeEvent(Event_base):
         super(RefugeeEvent, self).__init__(nation)
         self.choices['qol']['actions']['qol']['amount'] = utils.attrchange(nation.qol, -10)
         self.choices['qol']['actions']['approval']['amount'] = utils.attrchange(nation.approval, -20)
+        self.choices['qol']['actions']['manpower']['amount'] = utils.attrchange(nation.manpower, 10)
         self.choices['reputation']['actions']['reputation']['amount'] = utils.attrchange(nation.reputation, -15)
         self.description = "%s " % nation.name + self.description
         
@@ -117,6 +118,7 @@ class RefugeeEvent(Event_base):
             'actions': {
                 'approval': {'action': 'add', 'amount': 0},
                 'qol': {'action': 'add', 'amount': 0},
+                'manpower': {'action': 'add', 'amount': 0},
             },
         },
         'reputation': {
@@ -132,7 +134,7 @@ class RefugeeEvent(Event_base):
     }
     
     tooltips = {
-        'qol': 'Decreases growth and approval slightly.',
+        'qol': 'Decreases growth and approval slightly and increases manpower.',
         'reputation': 'Decreases your international reputation.',
     }
     
@@ -296,6 +298,7 @@ class GDP_Reset(Event_base):
                 'rm': {'action': 'subtract', 'amount': 0},
                 'mg': {'action': 'subtract', 'amount': 0},
                 'oil': {'action': 'subtract', 'amount': 0},
+                'manpower': {'action': 'set', 'amount': 50},
             }
         },
         'milactions': {

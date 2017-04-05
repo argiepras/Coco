@@ -69,6 +69,23 @@
                 {{ industry.mg }} MG {% endif %}</td>
             <td><button type="submit" class="btn btn-default" name="industrialize" />Progress</button></td>
         </tr>
+
+        {% if nation.factories > 0 %}
+        <tr>
+            <td><b>Shut Down Factory</b></td>
+            <td>Well that worker's paradise didn't exactly work out. Removes a factory, costs nothing but decreases approval as unemployment increases.</td>
+            <td>Reduces approval<td><button type="submit" class="btn btn-default" name="deindustrialize" />Fire</button></td>
+        </tr>
+        {% endif %}
+
+        {% if nation.closed_factories > 0 %}
+        <tr>
+            <td><b>Reopen Factory</b></td>
+            <td>Grinding up the assembly lines and using them as fertilizer was a great idea, but
+            now we need news ones! Re-opens a previously closed factory and increases approval</td>
+            <td>$1000k<td><button type="submit" class="btn btn-default" name="reindustrialize" />Renovate</button></td>
+        </tr>
+        {% endif %}
         
         <tr>
             <td><b>Forced Collectivization</b></td>
@@ -111,7 +128,7 @@
             <td>50k, {{ forced_labor }} HTons of raw materials</td>
             <td><button type="submit" class="btn btn-default" name="forced" />Force</button></td>
         </tr>
-        {% if nation.region = 'Asia' %}
+        {% if nation.region == 'Asia' %}
         <tr>
             <td><b>Special Economic Zone</b></td>
             <td>Designate a region of your country where labor laws, minimum wage, and regulations simply do not apply. Increases your growth according the current global market change. Moves you toward the Free Market. Only available in Asia to Mixed or Command economies.</td>
@@ -136,7 +153,7 @@
         {% endif %}
         <tr>
             <td><b>Oil Exploration</b></td>
-            <td>Punch a bunch of holes in the ground looking for crude. Will likely discover more oil in the Middle East.</td>
+            <td>Punch a bunch of holes in the ground looking for crude. Will discover more oil in the Middle East.</td>
             <td>${{ prospect }}k</td>
             <td><button type="submit" class="btn btn-default" name="prospect" >Prospect</button></td>
         </tr>
@@ -146,6 +163,25 @@
             <td>${{ wellcost }}k</td>
             <td><button type="submit" class="btn btn-default" name="well" >Drill</button></td>
         </tr>
+
+        {% if nation.wells > 0 %}
+        <tr>
+            <td><b>Shutdown Well</b></td>
+            <td>Closes down a well. Reduces approval as unemployment increases.</td>
+           <td>Reduces approval</td>
+            <td><button type="submit" class="btn btn-default" name="closewell" >Shutter</button></td>
+        </tr>
+        {% endif %}
+
+        {% if nation.closed_wells > 0 %}
+        <tr>
+            <td><b>Shutdown Well</b></td>
+            <td>Reopens a previously closed well. Increases approval.</td>
+           <td>600k</td>
+            <td><button type="submit" class="btn btn-default" name="openwell" >Restore</button></td>
+        </tr>
+        {% endif %}
+
         {% if nation.economy > 33 %}
         <tr>
             <td><b>Subsidize Private Well</b></td>
@@ -170,15 +206,7 @@
             </button></td>
         </tr>
         {% endif %}
-        <tr>
-        {% if nation.uranium > 0 %}
-        <tr>
-            <td><b>Develop Nuclear Reactor</b></td>
-            <td>Turn that yellow cake into magical electricity. Gives an extra $1 million growth a turn while operational and allows for the peaceful development of nuclear weapons.</td>
-            <td>$5,000k, 50 research</td>
-            <td><button type="submit" class="btn btn-default" name="reactor" />Develop</td>
-        </tr>
-        {% endif %}
+
         {% if nation.mines > 0 %}
         <tr>
             <td><b>Close Mine</b></td>
@@ -187,21 +215,25 @@
             <td><button type="submit" class="btn btn-default" name="closemine" >Close</button></td>
         </tr>
         {% endif %}
-        {% if nation.wells > 0 %}
+
+        {% if nation.closed_mines > 0 %}
         <tr>
-            <td><b>Shutdown Well</b></td>
-            <td>Closes down a well. Reduces approval as unemployment increases.</td>
-           <td>Reduces approval</td>
-            <td><button type="submit" class="btn btn-default" name="closewell" >Shutter</button></td>
+            <td><b>Close Mine</b></td>
+            <td>Closes down a mine. Reduces approval as unemployment increases.</td>
+            <td>$600k</td>
+            <td><button type="submit" class="btn btn-default" name="openmine" >Close</button></td>
         </tr>
         {% endif %}
-        {% if nation.factories > 0 %}
+
+        {% if nation.uranium > 0 %}
         <tr>
-            <td><b>Shut Down Factory</b></td>
-            <td>Well that worker's paradise didn't exactly work out. Removes a factory, costs nothing but decreases approval as unemployment increases.</td>
-            <td>Reduces approval<td><button type="submit" class="btn btn-default" name="deindustrialize" />Fire</button></td>
+            <td><b>Develop Nuclear Reactor</b></td>
+            <td>Turn that yellow cake into magical electricity. Gives an extra $1 million growth a turn while operational and allows for the peaceful development of nuclear weapons.</td>
+            <td>$5,000k, 50 research</td>
+            <td><button type="submit" class="btn btn-default" name="reactor" />Develop</td>
         </tr>
         {% endif %}
+
 		
     </form>
         

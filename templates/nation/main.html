@@ -335,16 +335,16 @@
                  <td>Uranium:</td>
                  <td><i>{{ nation.uranium }}</i></td>
              </tr>
-		  {% if military.reactor > 0 %}
-             <tr>
-                 <td>Reactor:</td>
-                 <td><i>
+        {% endif %}
+		{% if military.reactor > 0 %}
+         <tr>
+             <td>Reactor:</td>
+            <td><i>
                  <div class="progress">
                     <div class="progress-bar progress-bar-danger" style="width: {{ reactor_progress }}%"></div>
                 </div>
-                 </i></td>
-             </tr>
-            {% endif %}
+            </i></td>
+        </tr>
         {% endif %}
         </table>
              

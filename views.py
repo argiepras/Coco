@@ -529,6 +529,16 @@ def nationpage(request, idnumber):
                 news.aidnews(nation, target, 'research', 50)
                 result = "50 research gets transferred to %s!" % target.name
 
+        elif 'uranium' in request.POST and not nation.vacation:
+            if nation.uranium < 1:
+                result = "You do not have any uranium!"
+            else:
+                action = {'uranium': {'action': 'add', 'amount': 1}}
+                utils.atomic_transaction(Nation, nation.pk, action, target.pk)
+                utils.atomic_transaction(Nation, nation.pk, {'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -5)}})
+                news.uraniumaid(nation, target)
+                result = "You send off the yellow cake to %s" % target.name
+
         elif 'infiltrate' in request.POST and not nation.vacation:
             form = spyselectform(nation, request.POST)
             if form.is_valid():

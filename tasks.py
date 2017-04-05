@@ -173,7 +173,7 @@ def turnchange(debug=False):
                 if nation.gdp + gdpchange > nation.maxgdp:
                     actions.update({'maxgdp': {'action': 'set', 'amount': nation.gdp + gdpchange}})
                 utils.atomic_transaction(Nation, nation.pk, actions)
-            except IntegrityError, OperationalError:
+            except:
                 nation.refresh_from_db()
                 continue
             eventhandler.trigger_events(nation)
