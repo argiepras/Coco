@@ -30,7 +30,7 @@
         <td>{{ spy.specialty }}</td>
         {% if spy.nation == nation %}
         <td><div class="dropdown">
-            <a data-toggle="dropdown" href="#"><img src="statsicon.png" height=17px />
+            <a data-toggle="dropdown" href="#"><img src="{% static '/static/assets/statsicon.png' %}" height=17px />
                 {{ spy.experience }}
            </a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
@@ -38,7 +38,7 @@
             </ul></div>
         </td>
         <td><div class="dropdown">
-            <a data-toggle="dropdown" href="#"><img src="statsicon.png" height=17px />
+            <a data-toggle="dropdown" href="#"><img src="{% static '/static/assets/statsicon.png' %}" height=17px />
                 {{ spy.infiltration }}
            </a>
             <ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">

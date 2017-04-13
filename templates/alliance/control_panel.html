@@ -347,6 +347,9 @@
 	<p>
 		Set maximum withdrawal limits and whether limits apply per nation or as alliance total
 	</p>
+	{% if alliance.bank.limit == False %}
+	<p class="red">There are no limits on withdrawals</p>
+	{% endif %}
 <form method="POST">{% csrf_token %}
 	<div class="row spacer-small">
 		<div class="col-xs-6 col-xs-offset-3">
@@ -419,9 +422,14 @@
 		</div>
 	</div>
 	<div class="row spacer-small">
-		<div class="col-xs-6 col-xs-offset-3">
+		<div class="col-xs-3 col-xs-offset-3">
 			<button type="submit" class="btn btn-default" name="bankingset">
 				Set New Limits
+			</button>
+		</div>
+		<div class="col-xs-3">
+			<button type="submit" class="btn btn-default" name="no_limit">
+				Set No Limits
 			</button>
 		</div>
 	</div>

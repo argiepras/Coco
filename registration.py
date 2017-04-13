@@ -119,6 +119,7 @@ def newuser(request, regid):
 
 @login_required
 def log_out(request):
+    request.user.nation.logout_times.create(IP=request.META.get('REMOTE_ADDR'))
     logout(request)
     return redirect('index')
 
@@ -144,6 +145,12 @@ def log_in(request):
             if user is not None:
                 if user.is_active:
                     login(request, user)
+                    try:
+                        user.nation
+                    except:
+                        pass
+                    else:
+                        user.nation.login_times.create(IP=request.META.get('REMOTE_ADDR'))
                     return redirect('nation:main')
                 else:
                     return render(request, 'registration/login.html', {'inactive': True})

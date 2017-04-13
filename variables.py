@@ -142,7 +142,7 @@ agencies = {
 
 landmin = 10000
 
-unicost = 2 #mg per turn per uni
+unicost = 1 #mg per turn per uni
 researchperuni = 4
 
 specialities = {

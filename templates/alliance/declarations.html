@@ -1,6 +1,6 @@
 {% extends 'nation/base.html' %}
 {% block content %}
-{% load humanize %}
+<div class="container">
 <h2 style="margin: 50px">Alliance Declarations</h2>
 
 {% if result %}
@@ -14,19 +14,9 @@
 
 <div> 
 <ul class="pagination">
-{% if declarations.has_previous %}
-  <li><a href="{% url 'alliance:declarations' declarations.previous_page_number %}">{{ declarations.previous_page_number }}</a></li>
-  <li><a href="{% url 'alliance:declarations' declarations.number %}">{{ declarations.number }}</a></li>
-    {% if declarations.has_next %}
-  <li><a href="{% url 'alliance:declarations' declarations.next_page_number %}">{{ declarations.next_page_number }}</a></li>
-    {% endif %}
-{% elif not declarations.has_previous and not declarations.has_next %}
-    <li><a href="{% url 'alliance:declarations' declarations.number %}">{{ declarations.number }}</a></li>
-{% else %}
-    <li><a href="{% url 'alliance:declarations' declarations.number %}">{{ declarations.number }}</a></li>
-  <li><a href="{% url 'alliance:declarations' declarations.next_page_number %}">{{ declarations.next_page_number }}</a></li>
-  <li><a href="{% url 'alliance:declarations' declarations.next_page_number|add:'1' %}">{{ declarations.next_page_number|add:'1' }}</a></li>
-{% endif %}
+{% for page in pages %}
+    <li><a href="{% url 'declarations' page.page %}">{{ page.page }}</a></li>
+{% endfor %}
 </ul> 
 </div>
 
@@ -36,7 +26,7 @@
         <div class="declaration">
             <div class="row">
                 <div class="col-sm-10">
-                    <div style="text-align: left; padding-left: 10px">
+                    <div style="text-align: left; padding: 5px">
                     <a href="{{ declaration.nation.get_absolute_url }}">
                     <img src="{{ declaration.nation.settings.showflag }}" height="20">
                     <b>{{ declaration.nation.name }}</b> from <b>{{ declaration.alliance }}</b>
@@ -44,7 +34,9 @@
                     </div>
                 </div>
                 <div class="col-sm-2">
-                    {{ declaration.timestamp|naturaltime }}
+                    <div style="padding: 5px">
+                    {{ declaration.timestamp|date:"o/m/d G:i" }}
+                    </div>
                 </div>
             </div>
             <div class="row">
@@ -64,13 +56,20 @@
 
 {% endif %}
 
+{% if nation.permissions.is_officer %}
 <form method="POST">{% csrf_token %}
-<div class="row">
-    <div class="col-sm-4 col-sm-offset-4">
-        {{ declarationform.message }}
+    <p><h5>Alliance declarations costs $100k</h5></p>
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            {{ declarationform.message }}
+        </div>
     </div>
+        <div>
+            <button type="submit" class="btn" style="margin: 20px" name="declare">
+                Declare
+            </button>
+        </div>
+    </form>
+{% endif %}
 </div>
-    <div><button type="submit" class="btn" style="margin: 20px" name="declare">Declare</button></div>
-</form>
-
 {% endblock %}

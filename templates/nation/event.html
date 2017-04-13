@@ -10,6 +10,7 @@
 <form method="POST">
 <input type="hidden" name="event" value="{{ id }}">
 <center>
+<div class="row">
 {% for button in buttons %}
     <div class="col-xs-6">
         <a href="#" data-toggle="tooltip" data-placement="right" title="{{ button.tooltip }}">
@@ -21,4 +22,5 @@
         </a>
     </div>
 {% endfor %}
+</div>
 </center>

@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from django.contrib.auth import update_session_auth_hash
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.contrib.auth.decorators import login_required
@@ -10,7 +11,7 @@ from django.utils import timezone
 #then other stuff
 from .models import *
 from .forms import *
-from .decorators import nation_required, novacation, nonation_required
+from .decorators import nation_required, novacation, nonation_required, reset_required
 from .turnchange import nation_income
 from . import utilities as utils
 import news
@@ -84,6 +85,7 @@ def main(request, msg=False):
         'avatar': nation.settings.showportrait(),
         'reactor_progress': nation.military.reactor * 5,
     })
+    print type(request.POST)
     return render(request, 'nation/main.html', context)
 
 @login_required
@@ -126,17 +128,22 @@ def new_nation(request):
 
 
 @login_required
-@nonation_required
+@reset_required
 def reset_nation(request):
     context = {'form': newnationform()}
     if request.method == "POST":
         form = newnationform(request.POST)
         if form.is_valid():
+            nation = request.user.nation
             for field in form.cleaned_data:
+                if field == 'id':
+                    continue
                 nation.__dict__[field] = form.cleaned_data[field]
-            context.update({'result': "Your nation has been successfully created!"})
+            nation.reset = False
+            nation.save()
+            return redirect('nation:main')
         else:
-            return render(request, 'nation/newnation.html', {'form': form})
+            context['form'] = form
     return render(request, 'nation/newnation.html', context)
 
 
@@ -360,7 +367,7 @@ def nation_page(request, url):
     try:
         idnumber = Donorurl.objects.get(url=url).index
     except: 
-        if Nation.objects.filter(deleted=False, index=int(url)).exists():
+        if Nation.objects.filter(deleted=False, reset=False, index=int(url)).exists():
             return nationpage(request, int(url))
         else:
             return render(request, 'nation/notfound.html', {'item': 'nation'})
@@ -418,13 +425,20 @@ def nationpage(request, idnumber):
             if form.is_valid():
                 resource = request.POST['aid']
                 if resource in v.resources and type(form.cleaned_data[resource]) == type(int()):
-                    market = Market.objects.latest('pk')
+                    aid_amount = form.cleaned_data[resource]
+                    if nation.outgoing__aid.filter(
+                        reciever=target, 
+                        resource=resource, 
+                        amount=aid_amount, 
+                        timestamp__gte=v.now() - timezone.timedelta(minutes=10)
+                            ).count() > 5:
+                        return HttpResponse('no')
+                    #market = Market.objects.latest('pk')
                     tariff = 0
                     if (nation.economy < 33 and target.economy > 66) or (target.economy < 33 and nation.economy > 66):
                         tariff += 10
                     if (nation.alignment == 3 and target.alignment == 1) or (target.alignment == 3 and nation.alignment  == 1):
                         tariff += 10
-                    aid_amount = form.cleaned_data[resource]
                     nation.__dict__[resource] -= aid_amount
                     actions.update({resource: {'action': 'add', 'amount': aid_amount}})
                     if resource != 'budget':
@@ -437,6 +451,7 @@ def nationpage(request, idnumber):
                     news.aidnews(nation, target, resource, aid_amount)
                     #to decrease clutter, merge aidlogs < 10 minutes old
                     #so instead of 2x $9999k aid logs, it's 1x $19998k log
+                    nation.outgoing__aid.create(resource=resource, reciever=target, amount=aid_amount)
                     try: 
                         aidlog = nation.outgoing_aid.all().get(resource=resource, reciever=target, 
                             timestamp__gte=v.now() - timezone.timedelta(minutes=10))
@@ -695,6 +710,7 @@ def nationpage(request, idnumber):
             'spyselectform': spyselectform(nation),
         })
         request.user.nation = nation #rebind original nation instance
+    print request.COOKIES
     return render(request, 'nation/nation.html', context)
 
 
@@ -737,7 +753,7 @@ def newspage(request):
 
 def rankings(request, page):
     context = {}
-    nations = Nation.objects.select_related('settings').filter(vacation=False, deleted=False).order_by('-gdp')
+    nations = Nation.objects.select_related('settings').actives().order_by('-gdp')
     paginator = Paginator(nations, 15)
     page = int(page)
     try:
@@ -765,7 +781,7 @@ def regionalrankings(request, region, page):
     except:
         return render(request, 'nation/notfound.html', {'item': region})
     context = {}
-    nations = Nation.objects.filter(subregion=bigregion, vacation=False, deleted=False).order_by('-gdp')
+    nations = Nation.objects.actives().filter(subregion=bigregion).order_by('-gdp')
     paginator = Paginator(nations, 15)
     page = int(page)
     try:
@@ -788,9 +804,7 @@ def regionalrankings(request, region, page):
 def rankingsearch(request):
     form = searchform(request.POST)
     if form.is_valid():
-        query = Nation.objects.filter(
-            deleted=False, 
-            vacation=False, 
+        query = Nation.objects.actives().filter(
             name__icontains=form.cleaned_data['nation']
         )
         if query.count() == 0:
@@ -886,24 +900,24 @@ def statistics(request, page):
         'total_nations24': Nation.objects.filter(creationtime__gte=timezone.now()-timezone.timedelta(hours=24)).count(),
         'total_nations7': Nation.objects.filter(creationtime__gte=timezone.now()-timezone.timedelta(days=30)).count(),
         'reactors': Military.objects.filter(nation__deleted=False, nation__vacation=False, reactor=20).count(),
-        'east': Nation.objects.filter(deleted=False, vacation=False, alignment=1).count(),
-        'neutral': Nation.objects.filter(deleted=False, vacation=False, alignment=2).count(),
-        'west': Nation.objects.filter(deleted=False, vacation=False, alignment=3).count(),
+        'east': Nation.objects.actives().filter(alignment=1).count(),
+        'neutral': Nation.objects.actives().filter(dalignment=2).count(),
+        'west': Nation.objects.actives().filter(alignment=3).count(),
         'activewars': War.objects.filter(over=False).count(),
         'commcount': Comm.objects.filter(timestamp__gte=timezone.now()-timezone.timedelta(hours=24)).count(),
     }
     #looping over the list of stuff instead of writing it out
     wantedstats = ['gdp', 'growth', 'universities', 'factories', 'oilreserves', 'wells', 'oil', 'mines', 'rm', 'food', 'uranium']
     for stat in wantedstats:
-        stats.update({stat: Nation.objects.filter(deleted=False, vacation=False).aggregate(Sum(stat))['%s__sum' % stat]})
+        stats.update({stat: Nation.objects.actives().aggregate(Sum(stat))['%s__sum' % stat]})
 
     wantedmilstats = ['army', 'navy', 'planes', 'weapons', 'nukes']
     for stat in wantedmilstats:
         stats.update({stat: Military.objects.filter(nation__deleted=False, nation__vacation=False).aggregate(Sum(stat))['%s__sum' % stat]})
 
-    commands = Nation.objects.filter(deleted=False, vacation=False, economy__lte=33).count()
-    mixed = Nation.objects.filter(deleted=False, vacation=False, economy__lte=66).count() - commands
-    capitalists = Nation.objects.filter(deleted=False, vacation=False).count() - mixed
+    commands = Nation.objects.actives().filter(economy__lte=33).count()
+    mixed = Nation.objects.actives().filter(economy__lte=66).count() - commands
+    capitalists = Nation.objects.actives().count() - mixed
     stats.update({'commands': commands, 'mixed': mixed, 'capitalists': capitalists})
 
     prevgob = -1
@@ -1249,6 +1263,7 @@ def war_win(attacker, defender, war):
         'oil': {'action': 'add', 'amount': defender.oil/2},
         'mg': {'action': 'add', 'amount': defender.mg/2},
         'factories': {'action': 'add', 'amount': defender.factories/4},
+        'universities': {'action': 'add', 'amount': defender.universities/4},
         'food': {'action': 'add', 'amount': defender.food/2},
         'uranium': {'action': 'add', 'amount': defender.uranium},
         'oilreserves': {'action': 'add', 'amount': defender.oilreserves/6},
@@ -1261,6 +1276,7 @@ def war_win(attacker, defender, war):
         'oil': {'action': 'subtract', 'amount': defender.oil/2},
         'mg': {'action': 'subtract', 'amount': defender.mg/2},
         'factories': {'action': 'subtract', 'amount': defender.factories/4},
+        'universities': {'action': 'add', 'amount': defender.universities/4},
         'food': {'action': 'subtract', 'amount': defender.food/2},
         'uranium': {'action': 'subtract', 'amount': defender.uranium},
         'oilreserves': {'action': 'subtract', 'amount': defender.oilreserves/6},
@@ -1635,9 +1651,10 @@ def agentorange(nation, target, war, action):
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
     waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
     if success > chance:
-        targetactions = {'foodtech': {'action': 'subtract', 'amount': 1}}
+        loss = (target.econdata.foodproduction/2 if target.econdata.foodproduction < 200 else 100)
+        targetactions = {'foodproduction': {'action': 'subtract', 'amount': loss}}
         nationactions.update({'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -20)}})
-        utils.atomic_transaction(Researchdata, target.researchdata.pk, targetactions)
+        utils.atomic_transaction(Econdata, target.econdata.pk, targetactions)
         result = "You have bombed their fields with agent orange, reducing their agriculture production."
     else:
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
@@ -1710,7 +1727,7 @@ def nuked(nation, target):
     radioactive fallout spreads across the planet, impacting the quality of life of billions!" \
     % (target.subregion, target.subregion)
     #global effects
-    base_query = Nation.objects.filter(vacation=False, deleted=False).exclude(pk=nation.pk)
+    base_query = Nation.objects.actives().exclude(pk=nation.pk)
     growth_query = base_query.filter(subregion=target.subregion).exclude(pk=target.pk)
     growth_query.update(growth=F('growth') - 10)
     base_query.update(qol=F('qol') - 5)

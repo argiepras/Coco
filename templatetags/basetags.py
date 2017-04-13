@@ -439,11 +439,6 @@ def growthchange(nation):
             color = ('green' if redisgain[0] == '+' else 'red')
             redis = '<p><span class="%s">%s</span></p>' % (color, txt)
 
-        recover = changes.growthrecovery(nation)
-        if recover > 0:
-            txt = "+%s million from economic recovery" % recover
-            rec = '<p><span class="green">%s</span></p>' % txt
-
 
         if changes.growthchanges_unsustainable(nation) < 0:
             txt = "%s million from unsustainable growth" % changes.growthchanges_unsustainable(nation)

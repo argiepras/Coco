@@ -167,8 +167,9 @@ def reset():
     #this one resets all nation related attributes
     #and deletes non-log stuff
     Nation.objects.all().update(
+        name='',
         gdp=300,
-        budget=600,
+        budget=1000,
         trade_balance=0,
         approval=51,
         stability=51,
@@ -245,7 +246,7 @@ def reset():
     Spy.objects.all().delete()
     Extradition_request.objects.all().delete()
     for n in Nation.objects.all():
-        n.news.create(event=True, content='newbie_event')
+        n.news.create(event=True, content='newbie_event', deletable=False)
 
 
 
@@ -290,7 +291,7 @@ def get_player(ID):
 
 def get_active_player(ID):
     nation = False
-    query = Nation.objects.filter(vacation=False, deleted=False)
+    query = Nation.objects.actives()
     try:
         nation = query.get(index=ID)
     except:

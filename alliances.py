@@ -17,7 +17,7 @@ import nation.turnchange as turnchange
 
 @alliance_required
 def main(request):
-    nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__initiatives').prefetch_related( \
+    nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__initiatives', 'alliance__bank').prefetch_related( \
         'alliance__members', 'alliance__permissions').get(user=request.user)
     alliance = nation.alliance
     context = {}
@@ -54,60 +54,53 @@ def main(request):
                 result = "Resignation gets handed over and you assume the role of an ordinary member"
         
         elif 'deposit' in request.POST:
-            form = numberform(request.POST)
+            form = depositform(nation, request.POST)
             if form.is_valid():
-                amount = form.cleaned_data['amount']
-                resource = form.cleaned_data['resource']
-                if nation.__dict__[resource] < amount:
-                    result = "You do not have enough %s!" % v.depositchoices[resource]
+                if form.cleaned_data['empty']:
+                    result = "You can't deposit nothing!"
                 else:
-                    with transaction.atomic(): #no error handling fuck the police
-                        action = {resource: {'action': 'subtract', 'amount': amount}}
-                        utils.atomic_transaction(Nation, nation.pk, action)
-                        action[resource]['action'] = 'add'
-                        utils.atomic_transaction(Bank, alliance.bank.pk, action)
-                        alliance.bank_logs.create(amount=amount, resource=resource, nation=nation)
-                    result = "%s has been deposited in the alliance bank!" % v.pretty(amount, resource)
+                    form.cleaned_data.pop('empty')
+                    actions = {}
+                    depositactions = {}
+                    for field in form.cleaned_data:
+                        actions.update({field: {'action': 'subtract', 'amount': form.cleaned_data[field]}})
+                        depositactions.update({field: {'action': 'add', 'amount': form.cleaned_data[field]}})
+                    utils.atomic_transaction(Nation, nation.pk, actions)
+                    utils.atomic_transaction(Bank, alliance.bank.pk, depositactions)
+                    result = "Deposited!"
             else:
                 result = "invalid form data"
+                
 
         elif 'withdraw' in request.POST and nation.permissions.can_withdraw():
-            form = numberform(request.POST)
+            form = withdrawform(nation, request.POST)
             if form.is_valid():
-                amount = form.cleaned_data['amount']
-                resource = form.cleaned_data['resource']
-                if alliance.bank.__dict__[resource] < amount:
-                    result = "The alliance bank doesn't have that much!"
+                if form.cleaned_data['empty']:
+                    result = "You can't deposit nothing!"
                 else:
-                    if alliance.bank.per_nation:
-                        limit = alliance.bank.__dict__["%s_limit" % resource]
-                        sofar = nation.memberstats.__dict__[resource]
-                        if limit < sofar + amount:
-                            result = "This is more than maximum allowed! You can only withdraw %s!" % (limit-sofar)
-                    else:
-                        limit = alliance.bank.__dict__["%s_limit" % resource]
-                        sofar = 0
-                        stats = Memberstats.objects.filter(alliance=alliance)
-                        for stat in stats:
-                            sofar += stat.__dict__[resource]
-                        if limit < sofar + amount:
-                            result = "This is more than maximum allowed! You can only withdraw %s!" % (limit-sofar)
-                    #if the above doesn't toss an error, ie sets result
-                    if result == '' or nation.permissions.template.founder:
-                        action = {resource: {'action': 'add', 'amount': amount}}
-                        with transaction.atomic():
-                            #pour into nation
-                            #set the memberstat to new amount withdrawn this turn
-                            #subtract from bank
-                            utils.atomic_transaction(Nation, nation.pk, action)
-                            utils.atomic_transaction(Memberstats, nation.memberstats.pk, action)
-                            action[resource]['action'] = 'subtract'
-                            utils.atomic_transaction(Bank, alliance.bank.pk, action)
-                            alliance.bank_logs.create(nation=nation, resource=resource,
-                                    amount=amount, deposit=False)
-                        result = v.pretty(amount, resource)
-                        if resource == "food":
-                            result.replace('our', 'the')
+                    form.cleaned_data.pop('empty')
+                    actions = {} #moving to nation
+                    withdraws = {} #setting bankstats for limiting
+                    withdrawactions = {} #moving from bank
+                    for field in form.cleaned_data:
+                        actions.update({field: {'action': 'add', 'amount': form.cleaned_data[field]}})
+                        withdrawactions.update({field: {'action': 'subtract', 'amount': form.cleaned_data[field]}})
+                        withdraws.update({field: F(field) + form.cleaned_data[field]})
+
+                    #atomic transactions for rollback if error happens
+                    with transaction.atomic():
+                        utils.atomic_transaction(Nation, nation.pk, actions)
+                        utils.atomic_transaction(Bank, alliance.bank.pk, withdrawactions)
+                        if nation.alliance.bank.limit:
+                            if nation.alliance.bank.per_nation:
+                                qfilter = {'nation': nation}
+                            else:
+                                qfilter = {'alliance': nation.alliance}
+                            Memberstats.objects.select_for_update().filter(**qfilter).update(**withdraws)
+                    result = "Withdrawal has been made!"
+            else:
+                result = "Invalid form data"
+
 
         elif 'kick' in request.POST and nation.permissions.kickpeople():
             pks = request.POST.getlist('ids')
@@ -331,8 +324,6 @@ def applications(request):
         else:
             if 'accept' in request.POST:
                 for applicant in applications:
-                    if applicant.nation.has_alliance():
-                        applicant.nation = applicant.nation.alliance.kick(applicant.nation)
                     alliance.add_member(applicant.nation)
                     applicant.delete()
                     news.acceptedapplication(applicant.nation, alliance)
@@ -409,10 +400,17 @@ def control_panel(request):
                     alliance.bank.per_nation = True
                 else:
                     alliance.bank.per_nation = False
+                alliance.bank.limit = True
                 alliance.bank.save()
                 result = "New limits have been set!"
             else:
                 result = "Invalid form data"
+
+        elif 'no_limit' in request.POST and permissions.can_banking():
+            alliance.bank.limit = False
+            alliance.bank.save()
+            result = "Limits on withdrawals have been removed!"
+
 
         elif 'initiativechange' in request.POST:
             initiative = request.POST['initiative']
@@ -544,15 +542,16 @@ def control_panel(request):
 
     #setting initial data for banking form
     bankinginit = {}
-    for field in alliance.bank._meta.fields: #MEMES
-        if len(field.name.split('_')) == 1:
-            continue
-        if field.name.split('_')[1] == 'limit':
-            bankinginit.update({field.name: alliance.bank.__dict__[field.name]})
-    if alliance.bank.per_nation:
-        bankinginit.update({'per_nation': 'per_nation'})
-    else:
-        bankinginit.update({'per_nation': 'total'})
+    if alliance.bank.limit:
+        for field in alliance.bank._meta.fields: #MEMES
+            if len(field.name.split('_')) == 1:
+                continue
+            if field.name.split('_')[1] == 'limit':
+                bankinginit.update({field.name: alliance.bank.__dict__[field.name]})
+        if alliance.bank.per_nation:
+            bankinginit.update({'per_nation': 'per_nation'})
+        else:
+            bankinginit.update({'per_nation': 'total'})
     #initial data for the tax forum
     taxinit =  {}
     for field in alliance.initiatives._meta.fields:
@@ -717,12 +716,19 @@ def alliancedeclarations(request, page):
         if not nation.has_alliance():
             result = "You need to be in an alliance to post here!"
         if 'declare' in request.POST and result == '':
-            form = declarationform(request.POST)
-            if form.is_valid():
-                nation.alliance.declarations.create(content=form.cleaned_data['message'], nation=nation)
-                result = "Declaration made!"
+            if nation.permissions.is_officer():
+                form = declarationform(request.POST)
+                if form.is_valid():
+                    if nation.budget > 100:
+                        nation.alliance.declarations.create(content=form.cleaned_data['message'], nation=nation)
+                        result = "Declaration made!"
+                        utils.atomic_transaction(Nation, nation.pk, {'budget': {'action': 'subtract', 'amount': 100}})
+                    else:
+                        result = "You do not have enough money!"
+                else:
+                    result = form.errors
             else:
-                result = form.errors
+                result = "You need to be an officer to make alliance declarations"
             context.update({'result': result})
     declarations = Alliancedeclaration.objects.select_related('nation', 'nation__settings', 'alliance').all().order_by('-pk')
     paginator = Paginator(declarations, 10)
@@ -735,10 +741,14 @@ def alliancedeclarations(request, page):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         declist = paginator.page(paginator.num_pages)
+
     if result:
         context.update({'result': result})
-    print "result: %s" % result 
-    context.update({'declarations': declist, 'declarationform': declarationform()})
+    context.update({
+        'pages': utils.pagination(paginator, declist),
+        'declarations': declist, 
+        'declarationform': declarationform()
+    })
     return render(request, 'alliance/declarations.html', context)
 
 @login_required
@@ -834,3 +844,14 @@ def initiative_display(initiatives):
             app.update({'timer': False})
         inits.append(app)
     return inits
+
+
+
+def banklogging(nation, actions, deposit):
+    for resource in actions:
+        nation.alliance.bank_logs.create(
+            nation=nation,
+            resource=resource,
+            amount=actions[resource]['amount'],
+            deposit=deposit
+            )

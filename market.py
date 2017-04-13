@@ -112,35 +112,36 @@ def offers(request, page):
     filtered = False
     nation = request.user.nation
     econ = (nation.economy / 33 if nation.economy < 98 else 2)
-    offers = Marketoffer.objects.annotate(econ=
-        Case(
+    offers = Marketoffer.objects.annotate(
+        econ=Case(
             When(nation__economy__gt=98, then=Value(2)), 
             When(nation__economy__lt=98, then=F('nation__economy')/33),
             output_field=IntegerField()
                 ) #end case
             ).annotate(
                 opposite=Case(
-                When(Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2), then=True),
-                default=False,
-                output_field=BooleanField(),
-                    ) #end case
-                ).annotate(tariff=Case(
-                    When((Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2))&(Q(econ=econ + 2)|Q(econ=econ - 2)), then=Value(20)),
-                    When((Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2))|(Q(econ=econ + 2)|Q(econ=econ - 2)), then=Value(10)),
-                    default=0,
-                    output_field=IntegerField(),
+                    When(Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2), then=True),
+                    default=False,
+                    output_field=BooleanField(),
                         ) #end case
-                    ).exclude(
-                        allow_tariff=False, 
-                        tariff__gt=0
+                    ).annotate(
+                        tariff=Case(
+                            When((Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2))&(Q(econ=econ + 2)|Q(econ=econ - 2)), then=Value(20)),
+                            When((Q(nation__alignment=nation.alignment + 2)|Q(nation__alignment=nation.alignment - 2))|(Q(econ=econ + 2)|Q(econ=econ - 2)), then=Value(10)),
+                            default=0,
+                            output_field=IntegerField(),
+                                ) #end case
                             ).exclude(
-                                offer='army',
-                                opposite=True,
+                                allow_tariff=False, 
+                                tariff__gt=0
                                     ).exclude(
-                                        nation__econdata__expedition=True,
                                         offer='army',
+                                        opposite=True,
                                             ).exclude(
-                                                nation=nation)
+                                                nation__econdata__expedition=True,
+                                                offer='army',
+                                                    ).exclude(
+                                                        nation=nation)
     if request.method == 'POST':
         if 'postoffer' in request.POST:
             if nation.offers.all().count() < 10:

@@ -1,5 +1,6 @@
 {% extends 'nation/base.html' %}
 {% block content %}
+{% load basetags %}
 {% load alliancetags %}
 
 {% if permissions.template.officer or permissions.template.founder %}
@@ -54,7 +55,7 @@
 		{% endif %}
 
 		<img src="{{ alliance.flag }}" class="dflag" style="display: inline;">
-		<center>
+		
 		<div class="row">
 			<div class="col-xs-6 col-xs-offset-3">
 				<p style="margin: 40px">{{ alliance.description }}</p>
@@ -110,14 +111,106 @@
     {% endif %}
     <div style="margin: 20px">
     <form method="POST">{% csrf_token %}
-        <div class="row">
-            <div class="col-xs-3 col-xs-offset-3">
-                {{ depositform.amount }}
-            </div>
-            <div class="col-xs-3">
-                {{ depositform.resource }}
-            </div>
-        </div>
+    <div class="col-xs-10 col-xs-offset-1">
+    <table class="table">
+        <thead>
+            <td></td>
+            <td></td>
+            <td>Bank content</td>
+            {% if permissions.can_withdraw %}
+                <td>Withdrawal limits</td>
+            {% endif %}
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    Cash
+                </td>
+                <td>
+                    {{ depositform.budget }}
+                </td>
+                <td>
+                    <span style="color: green">${{ alliance.bank.budget }}k</span>
+                </td>
+                {% if permissions.can_withdraw %}
+                <td>
+                    ${{ nation|remaining_limit:'budget' }}k
+                </td>
+                {% endif %}
+            </tr>
+
+            <tr>
+                <td>
+                    Oil
+                </td>
+                <td>
+                    {{ depositform.oil }}
+                </td>
+                <td>
+                    <span style="color: green">{{ alliance.bank.oil }} mbbls</span>
+                </td>
+                {% if permissions.can_withdraw %}
+                <td>
+                    {{ nation|remaining_limit:'oil' }} mbbls
+                </td>
+                {% endif %}
+            </tr>
+
+            <tr>
+                <td>
+                    Raw Material
+                </td>
+                <td>
+                    {{ depositform.rm }}
+                </td>
+                <td>
+                    <span style="color: green">{{ alliance.bank.rm }} tons</span>
+                </td>
+                {% if permissions.can_withdraw %}
+                <td>
+                    {{ nation|remaining_limit:'rm' }}  tons
+                </td>
+                {% endif %}
+            </tr>
+
+            <tr>
+                <td>
+                    Manufactured Goods
+                </td>
+                <td>
+                    {{ depositform.mg }}
+                </td>
+                <td>
+                    <span style="color: green">{{ alliance.bank.mg }} tons</span>
+                </td>
+                {% if permissions.can_withdraw %}
+                <td>
+                    {{ nation|remaining_limit:'mg' }} tons
+                </td>
+                {% endif %}
+            </tr>
+
+            <tr>
+                <td>
+                    Food
+                </td>
+                <td>
+                    {{ depositform.food }}
+                </td>
+                <td>
+                    <span style="color: green">{{ alliance.bank.food }} tons</span>
+                </td>
+                {% if permissions.can_withdraw %}
+                <td>
+                    {{ nation|remaining_limit:'food' }} tons
+                </td>
+                {% endif %}
+            </tr>
+
+
+        </tbody>
+    </table>
+    </div>
         <div class="row">
         {% if permissions.can_withdraw %}
             <div class="col-xs-2 col-xs-offset-4">
@@ -215,8 +308,9 @@
 				<tr>
 					<th>Name</th>
 					<th>Rank</th>
-					<th>Region</th>
 					<th>GDP</th>
+                    <th>Region</th>
+                    <th>Alignment</th>
 					{% if permissions.template.kick %}
 					<th>Kick</th>
 					{% endif %}
@@ -229,14 +323,15 @@
 		<tr>
 			<td><a href="{{ member.get_absolute_url }}">
                 {% if member.permissions.template.officer %}
-                    <img src="{{ alliance.icon }}" style="max-width: {{ member.permissions|iconsize }}; max-height:{{ member.permissions|iconsize }}">
+                    <img src="{{ alliance.icon }}" style="max-width: {{ member.permissions|iconsize }}px; max-height:{{ member.permissions|iconsize }}px">
                 {% endif %}
                 {{ member.name }}
                 
             </a></td>
 			<td>{{ member.permissions.template.title }}</td>
+            <td>${{ member.gdp }}m</td>
 			<td>{{ member.subregion }}</td>
-			<td>{{ member.gdp }}</td>
+            <td>{{ member.alignment|alignment }}</td>
 
 			{% if permissions|kick:member == True %}
 				<td>
@@ -270,7 +365,6 @@
         </div>
         {% else %}
         <div class="col-xs-12">
-            {% csrf_token %}
             <button type="submit" class="btn btn-danger" name="leave">
                 Leave {{ alliance.name }}
             </button>

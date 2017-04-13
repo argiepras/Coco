@@ -17,7 +17,7 @@ def latestmarket():
 class Alliance(models.Model):
     def __init__(self, *args, **kwargs):
         super(Alliance, self).__init__(*args, **kwargs)
-        self.averagegdp = self.members.all().filter(deleted=False, vacation=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
+        self.averagegdp = self.members.actives().filter(gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
     name = models.CharField(max_length=30)
     description = models.CharField(max_length=1000, default="You can change this description in the alliance control panel")
     flag = models.CharField(max_length=100, default="/static/alliance/default.png")
@@ -32,6 +32,8 @@ class Alliance(models.Model):
         return reverse('alliance:alliance_page', kwargs={'alliancepk': (str(self.pk))})
 
     def add_member(self, nation):
+        nation.invites.all().delete()
+        nation.applications.all().delete()
         Memberstats.objects.create(nation=nation, alliance=self)
         membertemplate = self.templates.get(rank=5)
         p = Permissions(member=nation, alliance=self, template=membertemplate)
@@ -76,6 +78,12 @@ class ID(models.Model):
     #because overriding primary key values pose all sorts of problems
     #so nation IDs will be simple int fields
 
+
+class Actives(models.Manager):
+    def actives(self):
+        return super(Actives, self).get_queryset().filter(vacation=False, reset=False, deleted=False)
+
+
 class Nation(models.Model):
     index = models.IntegerField(default=0)
     user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
@@ -93,8 +101,7 @@ class Nation(models.Model):
     creationtime = models.DateTimeField(default=v.now)
     subregion = models.CharField(max_length=25, default="Carribean")
     gdp = models.IntegerField(default=300)
-    maxgdp = models.IntegerField(default=300)
-    budget = models.IntegerField(default=600)
+    budget = models.IntegerField(default=1000)
     trade_balance = models.IntegerField(default=0)
     approval = models.IntegerField(default=51)
     stability = models.IntegerField(default=51)
@@ -128,6 +135,7 @@ class Nation(models.Model):
     research = models.IntegerField(default=0)
     universities = models.IntegerField(default=0)
     closed_universities = models.IntegerField(default=0)
+    objects = Actives()
     def __unicode__(self):
         return u"%s" % self.name
 
@@ -292,7 +300,7 @@ class Settings(models.Model):
     donatoravatar = models.CharField(max_length=200, default='none')
     donatorflag = models.CharField(max_length=200, default='none')
     anthem = models.CharField(max_length=20, default='')
-    autoplay = models.BooleanField(default=False)
+    autoplay = models.BooleanField(default=True)
     def __unicode__(self):
         return u"%s settings" % self.nation.name
 
@@ -672,6 +680,8 @@ class Bank(models.Model):
     food_limit = models.IntegerField(default=0)
     food = models.IntegerField(default=0)
     research = models.IntegerField(default=0)
+    research_limit = models.IntegerField(default=0)
+    limit = models.BooleanField(default=True)
     per_nation = models.BooleanField(default=True)
 
 
@@ -825,6 +835,9 @@ class Permissions(models.Model):
     def __unicode__(self):
         return u"%s, rank %s" % (self.template.title, self.template.rank)
 
+    def is_officer(self):
+        return self.panel_access()
+
     def panel_access(self):
         return self.template.founder or self.template.officer
 
@@ -857,9 +870,6 @@ class Permissions(models.Model):
 
     def can_banking(self): #retarded name but whatever
         return self.template.founder or self.template.banking
-
-    def can_withdraw(self):
-        return self.template.withdraw or self.template.founder
 
     def can_invites(self):
         return self.template.founder or (self.template.invite and self.template.officer)
@@ -909,6 +919,13 @@ class Loginlog(models.Model):
     def __unicode__(self):
         return u"%s seen at %s" % (self.nation.name, self.timestamp)
 
+class Logoutlog(models.Model):
+    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="logout_times")
+    timestamp = models.DateTimeField(default=v.now)
+    IP = models.GenericIPAddressField()
+    def __unicode__(self):
+        return u"%s seen at %s" % (self.nation.name, self.timestamp)
+
 
 
 class Actionlog(models.Model):
@@ -919,6 +936,10 @@ class Actionlog(models.Model):
     total_cost = models.CharField(max_length=50) #for multiple cost types
     timestamp = models.DateTimeField(default=v.now)
 
+#might seem redundant
+#but first one is used for the total amount going in or out and is displayed in the mod interface
+#and second part is used to prevent spam
+#so if more than n database entries within a given timeframe
 
 class Aidlog(models.Model):
     sender = models.ForeignKey(Nation, related_name="outgoing_aid", on_delete=models.SET_NULL, null=True, blank=True)
@@ -926,6 +947,15 @@ class Aidlog(models.Model):
     resource = models.CharField(max_length=7)
     amount = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
+
+class Aid(models.Model):
+    sender = models.ForeignKey(Nation, related_name="outgoing__aid", on_delete=models.SET_NULL, null=True, blank=True)
+    reciever = models.ForeignKey(Nation, related_name="incoming__aid", on_delete=models.SET_NULL, null=True, blank=True)
+    resource = models.CharField(max_length=7)
+    amount = models.IntegerField(default=0)
+    timestamp = models.DateTimeField(default=v.now)
+
+
 
 
 class Warlog(models.Model):

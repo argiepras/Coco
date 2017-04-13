@@ -29,6 +29,8 @@ def nation_required(f):
             request.user.nation
         except:
             return redirect('nation:new')
+        if request.user.nation.reset:
+            return redirect('nation:reset')
         return f(request, *args, **kwargs)
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__
@@ -48,10 +50,11 @@ def nonation_required(f):
 def reset_required(f):
     def wrap(request, *args, **kwargs):
         try:
-            if request.user.nation.reset:
-                return f(request, *args, **kwargs)
+            request.user.nation
         except:
-            pass
+            return redirect('nation:new')
+        if request.user.nation.reset:
+            return f(request, *args, **kwargs)
         return redirect('nation:main')
     wrap.__doc__ = f.__doc__
     wrap.__name__ = f.__name__

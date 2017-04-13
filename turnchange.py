@@ -1,5 +1,5 @@
 from django.utils import timezone
-from django.db.models import Sum
+from django.db.models import Sum, Avg
 
 import nation.utilities as utils
 from nation.models import *
@@ -19,17 +19,17 @@ from math import sqrt
 
 
 def nation_income(nation):
-    income = (round(nation.gdp/72.0) if nation.budget < nation.gdp * 2 else 0)
+    ideal = round(nation.gdp/72.0)
+    if ideal == 0 and nation.budget < nation.gdp*2:
+        ideal = 1
+    income = (ideal if nation.budget < nation.gdp * 2 else 0)
     income = int(income)
-    if income == 0 and nation.budget < nation.gdp*2:
-        income = 1
     bracket = None
     tax = 0
     if nation.has_alliance():
         bracket = nation.alliance.taxtype(nation)
         taxrate = nation.alliance.taxrate(nation)
-        tax = int(round(income * taxrate))
-        income -= tax
+        tax = int(round(ideal * taxrate))
     return {
         'bracket': bracket,
         'tax': tax,
@@ -51,7 +51,7 @@ def alliancetotal(alliance, display=False):
 def alliance_income(alliance, display=False):
     stats = {'total': 0}
     #tax income from members
-    for member in alliance.members.filter(vacation=False, deleted=False):
+    for member in alliance.members.actives():
         info = nation_income(member)
         #we populate the stats dictionary the lazy way
         if info['bracket'] in stats:
@@ -65,7 +65,7 @@ def alliance_income(alliance, display=False):
 
 
 def alliance_expenditures(alliance):
-    count = alliance.members.all().filter(vacation=False, deleted=False).count()
+    count = alliance.members.actives().count()
     if count == None:
         count = 0
     if alliance.averagegdp == None:
@@ -96,14 +96,14 @@ def alliance_healthcost(alliance, membercount):
 def alliance_freedomcost(alliance):
     cost = 0
     if alliance.initiatives.freedom:
-        totlit = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('literacy'))['literacy__sum']
+        totlit = alliance.members.actives().aggregate(Sum('literacy'))['literacy__sum']
         cost = int(round(totlit/50.0))
     return (1 if cost < 1 and alliance.initiatives.freedom else cost)
 
 def alliance_weapcost(alliance):
     cost = 0
     if alliance.initiatives.weapontrade:
-        totweps = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('military__weapons'))['military__weapons__sum']
+        totweps = alliance.members.actives().aggregate(Sum('military__weapons'))['military__weapons__sum']
         cost = int(round(totweps/100.0))
     return (1 if cost < 1 and alliance.initiatives.weapontrade else cost)
 
@@ -414,15 +414,19 @@ def researchgain_unis(nation):
     if nation.universities > 0:
         cost = nation.universities * v.unicost
         if mg > cost:
-            return cost
-        return mg * v.researchperuni/2
+            return cost * v.researchperuni
+        return mg * v.researchperuni
     return 0
 
 def researchgain_alliance(nation):
     if nation.has_alliance():
         if nation.alliance.initiatives.freedom:
-            tot = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('universities'))['universities__sum']
-            return round(tot*(nation.literacy/100.0))
+            averages = nation.alliance.members.actives().aggregate(Avg('universities'), Avg('literacy'))
+            count = nation.alliance.members.actives().count()
+            avg_unis = averages['universities__avg']
+            avg_lit = averages['literacy__avg']
+            bonus = avg_unis * (sqrt(avg_lit)/2) * (1 + count/100.0)
+            return int(round(bonus))
     return 0
 
 
@@ -533,7 +537,6 @@ def growthchanges(nation):
     if faminecheck(nation):
         return v.faminecost
     growth = 0
-    growth += growthrecovery(nation)
     growth += growthchanges_industry(nation)
     growth += growthchanges_stab(nation)
     growth += growthchanges_unsustainable(nation)
@@ -542,12 +545,6 @@ def growthchanges(nation):
     growth += growthchanges_unis(nation)
     growth -= growthchanges_military(nation)
     return growth
-
-def growthrecovery(nation):
-    gain = 0
-    if nation.gdp < int(nation.maxgdp*0.9):
-        gain = int(sqrt(nation.maxgdp - nation.gdp))
-    return gain
 
 def growthchanges_stab(nation):
     if nation.stability > 80:
@@ -561,7 +558,7 @@ def growthchanges_stab(nation):
 
 def growthchanges_unsustainable(nation):
     unsus = 0
-    if nation.growth > 20 and nation.gdp > int(nation.maxgdp*0.9):
+    if nation.growth > (40 if nation.gdp/150 < 40 else nation.gdp/150):
         unsus =(nation.growth/20-1)**2
         if unsus > nation.growth:
             unsus = int(nation.growth + sqrt(nation.growth))
@@ -589,7 +586,7 @@ def growthchanges_redistribution(nation):
     gain = 0
     if nation.has_alliance():
         if nation.alliance.initiatives.redistribute:
-            avg = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('gdp'))['gdp__sum']
+            avg = nation.alliance.members.actives().aggregate(Sum('gdp'))['gdp__sum']
             if nation.gdp < avg/2:
                 gain = 5
             elif nation.gdp < avg:
@@ -683,5 +680,5 @@ def spygain_experience(spy):
 
 def literacycost(alliance):
     if alliance.initiatives.literacy:
-        count = alliance.members.filter(vacation=False, deleted=False).count()
-        gdp = alliance.members.filter(vacation=False, deleted=False).aggregate(Sum('gdp'))['gdp__sum']
+        count = alliance.members.actives().count()
+        gdp = alliance.members.actives().aggregate(Sum('gdp'))['gdp__sum']

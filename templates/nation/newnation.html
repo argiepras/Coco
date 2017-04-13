@@ -32,23 +32,8 @@
         {% endif %}
     </div>
 
-    {% if form.id %}
-    <div class="row spacer">
-        <p>You may also pick your own ID number, leave blank if you don't care</p>
-        <div class="col-xs-4 col-xs-offset-4">
-            <div class="form-group">
-                {{ form.id }}
-            </div>
-        </div>
-        {% if form.id.errors %}  
-            <div class="col-xs-4">
-                <p style="float: left">{{ form.id.errors.as_text }}</p>
-            </div>
-        {% endif %}
-    </div>
-    {% endif %}
 
-    <p>Before you choose where you want to locate, you should check out the 
+    <p style="margin: 50px">Before you choose where you want to locate, you should check out the 
         <a href="{% url 'map' %}">world map 
             {% load static %}
             <img  src="{% static 'main/globe.png' %}" width="20">

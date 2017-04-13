@@ -1,6 +1,7 @@
 from nation.models import *
 import nation.utilities as utils
 import nation.variables as v
+import random
 
 from django.db import IntegrityError, OperationalError
 

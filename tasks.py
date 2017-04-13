@@ -6,6 +6,8 @@ from celery.decorators import periodic_task
 from django.db.models import Sum, Q, Count, Avg
 from django.db import IntegrityError, OperationalError
 from django.utils import timezone
+from django.core.mail import send_mail
+import traceback
 
 import nation.utilities as utils
 from nation.models import *
@@ -19,6 +21,18 @@ from nation.events import *
 
 
 @periodic_task(run_every=crontab(minute="0,10,20,30,40,50", hour="*", day_of_week="*"))
+def money_gain():
+    try:
+        alliance_gain()
+    except:
+        from django.conf import settings
+        send_mail(
+            'Budget generation error', 
+            traceback.format_exc(), 
+            "admin@coldconflict.com", 
+            [email for admin, email in settings.ADMINS]
+        )
+
 def alliance_gain():
     for alliance in Alliance.objects.select_related('bank', 'initiatives').all().iterator():
         bankstats = alliance.bankstats.get_or_create(turn=ID.objects.get().turn)[0]
@@ -32,8 +46,6 @@ def alliance_gain():
                 total_out = 0
                 for cost in expenditures:
                     total_out += expenditures[cost]
-                print expenditures
-                print total_out
                 alliance.bank.budget += income['total']
                 if alliance.bank.budget >= total_out:
                     alliance.bank.budget -= total_out
@@ -87,25 +99,38 @@ def alliance_gain():
 def add_budget():
     #alliance members gets paid first, then regular nations
     for alliance in Alliance.objects.select_related('initiatives').annotate(membercount=Count('members')).filter(membercount__gte=1):
-        for member in alliance.members.filter(vacation=False, deleted=False).iterator():
+        for member in alliance.members.actives().iterator():
             while True:
                 income = nation_income(member)
-                if income['income'] != 0:
-                    try:
-                        utils.atomic_transaction(Nation, member.pk, {
-                            'budget': {'action': 'add', 'amount': income['income']}
-                        })
-                    except IntegrityError, OperationalError: #in case something else is using the member
-                        member.refresh_from_db()
-                        continue
+                try:
+                    utils.atomic_transaction(Nation, member.pk, {
+                        'budget': {'action': 'add', 'amount': income['income'] - income['tax']}
+                    })
+                except IntegrityError, OperationalError: #in case something else is using the member
+                    member.refresh_from_db()
+                    continue
                 break
-    #allianceless nations just gets a update query
-    Nation.objects.filter(
-        vacation=False, 
-        deleted=False, 
+
+    for nation in Nation.objects.actives().filter(
         alliance=None, 
-        budget__lt=F('gdp') * 2,
-    ).update(budget=F('budget') + F('gdp') / 72)
+        budget__lt=F('gdp') * 2):
+        income = nation_income(nation)
+        while True:
+            try:
+                utils.atomic_transaction(Nation, nation.pk, {'budget': {'action': 'add', 'amount': income['income']}})
+            except:
+                nation.refresh_from_db()
+                continue
+            break
+
+
+
+    #Nation.objects.filter(
+    #   vacation=False, 
+    #    deleted=False, 
+    #    alliance=None, 
+    #    budget__lt=F('gdp') * 2,
+    #).update(budget=F('budget') + F('gdp') / 72)
 
 
 
@@ -114,14 +139,28 @@ def add_budget():
 #hourly check for vacation-eligible nations and subsequent placing them in it
 @periodic_task(run_every=crontab(minute="5", hour="*", day_of_week="*"))
 def vaccheck():
-    Nation.objects.filter(last_seen__gt=timezone.now() - v.inactivedelta())
+    Nation.objects.actives().filter(last_seen__gt=timezone.now() - v.inactivedelta())
 
 
 
-@periodic_task(run_every=crontab(minute="30", hour="*", day_of_week="*"))
+@periodic_task(run_every=crontab(minute="*", hour="0, 12", day_of_week="*"))
+def fire_turn():
+    try:
+        turnchange()
+    except:
+        from django.conf import settings
+        print traceback.format_exc()
+        send_mail(
+            'Turn error', 
+            traceback.format_exc(), 
+            "admin@coldconflict.com", 
+            [email for admin, email in settings.ADMINS]
+        )
+
 def turnchange(debug=False):
     ID.objects.all().update(turn=F('turn') + 1)
-    for nation in Nation.objects.select_related('alliance__initiatives').filter(deleted=False, vacation=False).iterator():
+    for nation in Nation.objects.actives().select_related('alliance__initiatives').iterator():
+        print nation
         while True:
             try:
                 approval = qol = growth = FI = mg = manpower = research = rebels = 0
@@ -170,10 +209,9 @@ def turnchange(debug=False):
                     'mg': {'action': 'add', 'amount': mg},
                     'food': {'action': 'add', 'amount': food},
                 }
-                if nation.gdp + gdpchange > nation.maxgdp:
-                    actions.update({'maxgdp': {'action': 'set', 'amount': nation.gdp + gdpchange}})
                 utils.atomic_transaction(Nation, nation.pk, actions)
             except:
+                print traceback.format_exc()
                 nation.refresh_from_db()
                 continue
             eventhandler.trigger_events(nation)
@@ -185,6 +223,7 @@ def milturn(debug=False):
     Military.objects.filter(
         nation__vacation=False, 
         nation__deleted=False, 
+        nation__reset=False, 
         training__gt=0).update(training=F('training') - 1)
     return econturn()
 
@@ -193,6 +232,7 @@ def econturn(debug=False):
     Econdata.objects.filter(
         nation__vacation=False, 
         nation__deleted=False,
+        nation__reset=False, 
         ).update(
             labor=1,
             expedition=False,
@@ -201,6 +241,7 @@ def econturn(debug=False):
     Econdata.objects.filter(
         nation__vacation=False, 
         nation__deleted=False,
+        nation__reset=False, 
         nation__subregion__in=v.latin_america,
         ).update(
             drugs=F('drugs') + 1,
@@ -208,6 +249,7 @@ def econturn(debug=False):
     Econdata.objects.filter(
         nation__vacation=False, 
         nation__deleted=False,
+        nation__reset=False, 
         nation__subregion__in=v.africa,
         ).update(
             diamonds=F('diamonds') + 1,
@@ -218,8 +260,8 @@ def econturn(debug=False):
 def allianceturn(debug=False):
     for alliance in Alliance.objects.all().iterator():
         try:
-            totalgdp = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('gdp'))['gdp__sum']
-            alliance.averagegdp = totalgdp / alliance.members.filter(deleted=False, vacation=False).count()
+            totalgdp = alliance.members.actives().aggregate(Sum('gdp'))['gdp__sum']
+            alliance.averagegdp = totalgdp / alliance.members.actives().count()
             alliance.save(update_fields=['averagegdp'])
         except: #nobody in the alliance
             pass
@@ -246,9 +288,9 @@ def marketturn(debug=False):
         bought = Marketlog.objects.filter(turn=market.pk, cost__gt=0).aggregate(Sum('cost'))['cost__sum']
         sold = Marketlog.objects.filter(turn=market.pk, cost__lt=0).aggregate(Sum('cost'))['cost__sum']
     #setting new thresholds
-    count = Nation.objects.filter(vacation=False, deleted=False).count()
+    count = Nation.objects.actives().count()
 
-    stats = Nation.objects.filter(vacation=False, deleted=False).aggregate(
+    stats = Nation.objects.actives().aggregate(
         Sum('rm'), 
         Sum('mines'),
         Sum('oil'), 
@@ -263,7 +305,8 @@ def marketturn(debug=False):
         Avg('econdata__foodproduction'),
     )
     for field in stats:
-        stats[field] = (stats[field] if stats[field] != None else 1)
+        if field.split('__')[1] == 'sum':
+            stats[field] = (stats[field] if stats[field] != None and stats[field] > 0 else 1)
     #accurate food production calculations
     available_land = stats['land__sum']
     multiplier = (1 - v.researchbonus['urbantech'])**stats['researchdata__urbantech__avg']
@@ -295,5 +338,5 @@ def marketturn(debug=False):
 
 
 def infilgain():
-    for spy in Spy.objects.filter(nation__vacation=False, nation__deleted=False).select_related('nation', 'location').iterator():
+    for spy in Spy.objects.filter(nation__vacation=False, nation__deleted=False, nation__reset=False).select_related('nation', 'location').iterator():
         Spy.objects.filter(pk=spy.pk).update(infiltration=spy.infiltration + spygain(spy), actioned=False)

@@ -341,7 +341,7 @@ def infiltrate(location, spy):
         else:
             news.caughtspyarrested(location)
             result = "Your spy was discovered at the border and immediately arrested."
-            Spy.objects.filter(pk=spy.pk).update(arrested=True, actioned=True, location=location)
+            Spy.objects.filter(pk=spy.pk).update(arrested=True, discovered=True, actioned=True, location=location)
     else:
         Spy.objects.filter(pk=spy.pk).update(actioned=True, location=location)
         result = "Your spy slips across the border effortlessly and begins to set up set up \
@@ -371,7 +371,10 @@ def withdraw(nation, target, spy):
             result = "Agent %s quietly slips through the border and returns home." % spy.name
         else:
             news.caughtspyreturning(target, nation)
-            actions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True},
+                })
             commitspy(spy, actions)
             result = "Agent %s was caught while trying to move out of %s and was placed under arrest!" % (spy.name, target.name)
     return {'result': result, 'img': img}
@@ -394,7 +397,10 @@ def armrebels(nation, target, spy):
             result = "%s was caught arming the rebels. Agent %s has been arrested." % (spy.name, spy.name)
             #no news report
             img = "spy.jpg"
-            spyactions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True}
+                })
         else:
             img = "rebel.jpg"
             result = "%s has successfully armed the rebels." % spy.name
@@ -432,7 +438,10 @@ def fundopposition(nation, target, spy):
         if strength < chance:
             result = "%s was caught trying to fund the opposition. The agent has been arrested." % spy.name
             #no news report
-            spyactions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True}
+                })
         else:
             result = "%s has successfully funded the opposition, decreasing government approval." % spy.name
             spyactions = {
@@ -473,7 +482,10 @@ def terroristattack(nation, target, spy):
             result = "%s has been caught planning a terrorist attack! The agent responsible has been detained." % spy.name
             news.terroristattack(target)
             img = "spy.jpg"
-            spyactions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True}
+                })
         else:
             img = "spy.jpg"
             news.terroristattacked(target)
@@ -523,7 +535,10 @@ def sabotagewell(nation, target, spy):
             result = "%s was caught sabotaging an oil well. The agent responsible has been detained." % spy.name
             news.sabotagewell(target)
             img = "spy.jpg"
-            spyactions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True}
+                })
         else:
             img = "spy.jpg"
             result = "%s has successfully sabotaged an oil well, decreasing their production." % spy.name
@@ -570,7 +585,10 @@ def sabotagemine(nation, target, spy):
         if strength < chance:
             result = "Agent %s was caught sabotaging a mine. He has been placed under arrest." % spy.name
             news.sabotagemine(target)
-            spyactions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True}
+                })
             img = "spy.jpg"
         else:
             img = "spy.jpg"
@@ -619,7 +637,10 @@ def poison(nation, target, spy):
         if strength < chance:
             result = "%s was caught preparing to poison the crops. He was subsequently placed under arrest." % spy.name
             img = "spy.jpg"
-            spyactions.update({'arrested': {'action': 'set', 'amount': True}})
+            spyactions.update({
+                'arrested': {'action': 'set', 'amount': True},
+                'discovered': {'action': 'set', 'amount': True}
+                })
         else:
             img = "spy.jpg"
             result = "%s successfully poisoned the target nation's crops, decreasing their food production." % spy.name

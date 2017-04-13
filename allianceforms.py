@@ -2,12 +2,6 @@ from models import *
 from django import forms
 from . import variables as v
 
-def depositchoices():
-    choices = []
-    for choice in v.depositchoices:
-        choices.append((choice, v.depositchoices[choice]))
-    return tuple(choices)
-
 class anthemform(forms.Form):
     anthem = forms.CharField(max_length=15, widget=forms.TextInput(attrs={
         'placeholder': 'New anthem', 'class': 'form-control', 'style': 'color: black',}))
@@ -52,12 +46,88 @@ class descriptionform(forms.Form):
         'placeholder': 'Enter new description', 'class': 'form-control', 'style': 'height: 150px; color: black;'}))
 
 
+# Withdrawing and depositing limits are form enforced
+# withdrawing limits are whatever is lower between nation withdrawal limit or bank stockpile
+
+
 class numberform(forms.Form):
-    amount = forms.IntegerField(min_value=1, widget=forms.NumberInput(attrs={
-        'class': 'form-control', 'placeholder': 'Deposit amount', 'style': 'color: black;'
-        }))
-    resource = forms.ChoiceField(choices=depositchoices(), widget=forms.Select(attrs={
-        'class': 'form-control', 'style': 'color: black;'}))
+    def __init__(self, *args, **kwargs):
+        super(numberform, self).__init__(*args, **kwargs)
+        for choice in v.depositchoices:
+            self.fields[choice] = forms.IntegerField(
+                min_value=1, 
+                required=False,
+                widget=forms.NumberInput(attrs={
+                        'class': 'form-control', 
+                        'placeholder': 'Amount', 
+                        'style': 'color: black;'
+                    }))
+
+class depositform(forms.Form):
+    def __init__(self, nation, *args, **kwargs):
+        super(depositform, self).__init__(*args, **kwargs)
+        for choice in v.depositchoices:
+            self.fields[choice] = forms.IntegerField(
+                min_value=1, 
+                required=False,
+                widget=forms.NumberInput(attrs={
+                        'class': 'form-control', 
+                        'placeholder': 'Deposit amount', 
+                        'style': 'color: black;'
+                    }))
+
+
+    empty = forms.BooleanField(required=False)
+
+    def clean(self):
+        cleaned_data = super(depositform, self).clean()
+        fields = []
+        for field in cleaned_data:
+            if cleaned_data[field] == None:
+                fields.append(field)
+        for field in fields:
+            cleaned_data.pop(field)
+        if len(cleaned_data) == 1:
+            cleaned_data['empty'] = True
+        return cleaned_data
+
+
+class withdrawform(forms.Form):
+    def __init__(self, nation, *args, **kwargs):
+        super(withdrawform, self).__init__(*args, **kwargs)
+        for choice in v.depositchoices:
+            stockpile = nation.__dict__[choice]
+            bankstock = nation.alliance.bank.__dict__[choice]
+            if nation.alliance.bank.limit:
+                limit = nation.alliance.bank.__dict__['%s_limit' % choice] - nation.memberstats.__dict__[choice]
+                maxwithdraw = (limit if limit < bankstock else bankstock)
+            else:
+                maxwithdraw = bankstock
+            print maxwithdraw
+            self.fields[choice] = forms.IntegerField(
+                min_value=1, 
+                max_value=maxwithdraw, 
+                required=False,
+                widget=forms.NumberInput(attrs={
+                        'class': 'form-control', 
+                        'placeholder': 'Deposit amount', 
+                        'style': 'color: black;'
+                    }))
+
+
+    empty = forms.BooleanField(required=False)
+
+    def clean(self):
+        cleaned_data = super(withdrawform, self).clean()
+        fields = []
+        for field in cleaned_data:
+            if cleaned_data[field] == None:
+                fields.append(field)
+        for field in fields:
+            cleaned_data.pop(field)
+        if len(cleaned_data) == 1:
+            cleaned_data['empty'] = True
+        return cleaned_data
 
 
 class bankingform(forms.Form):
