@@ -147,7 +147,7 @@ class Nation(models.Model):
         return int(self.land - tot)
 
     def landcost(self, buildingtype):
-        if self.researchdata.urbantech == 0:
+        if self.researchdata.urbantech == 0 or buildingtype not in v.landresearchbonus:
             return v.landcosts[buildingtype]
         else:
             multiplier = (1 - v.researchbonus['urbantech'])**self.researchdata.urbantech
@@ -663,6 +663,7 @@ class Memberstats(models.Model):
     rm = models.IntegerField(default=0)
     mg = models.IntegerField(default=0)
     food = models.IntegerField(default=0)
+    research = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now) #functions as join time
 
 #limits are either total or per nation

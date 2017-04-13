@@ -207,6 +207,7 @@ landcosts = {
     'universities': 1000,
 }
  
+landresearchbonus = ['factories', 'universities']
  
 commprefix = {
     'leadership': 'LEADERSHIP COMM',

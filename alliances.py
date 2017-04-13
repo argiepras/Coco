@@ -67,6 +67,7 @@ def main(request):
                         depositactions.update({field: {'action': 'add', 'amount': form.cleaned_data[field]}})
                     utils.atomic_transaction(Nation, nation.pk, actions)
                     utils.atomic_transaction(Bank, alliance.bank.pk, depositactions)
+                    banklogging(nation, actions, True)
                     result = "Deposited!"
             else:
                 result = "invalid form data"
@@ -97,9 +98,10 @@ def main(request):
                             else:
                                 qfilter = {'alliance': nation.alliance}
                             Memberstats.objects.select_for_update().filter(**qfilter).update(**withdraws)
+                    banklogging(nation, actions, False)
                     result = "Withdrawal has been made!"
             else:
-                result = "Invalid form data"
+                result = "You can't withdraw more than your limit!"
 
 
         elif 'kick' in request.POST and nation.permissions.kickpeople():

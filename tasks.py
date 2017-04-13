@@ -149,7 +149,6 @@ def fire_turn():
         turnchange()
     except:
         from django.conf import settings
-        print traceback.format_exc()
         send_mail(
             'Turn error', 
             traceback.format_exc(), 
@@ -160,7 +159,6 @@ def fire_turn():
 def turnchange(debug=False):
     ID.objects.all().update(turn=F('turn') + 1)
     for nation in Nation.objects.actives().select_related('alliance__initiatives').iterator():
-        print nation
         while True:
             try:
                 approval = qol = growth = FI = mg = manpower = research = rebels = 0
@@ -211,7 +209,6 @@ def turnchange(debug=False):
                 }
                 utils.atomic_transaction(Nation, nation.pk, actions)
             except:
-                print traceback.format_exc()
                 nation.refresh_from_db()
                 continue
             eventhandler.trigger_events(nation)

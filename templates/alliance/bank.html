@@ -19,28 +19,33 @@
     <thead>
         <tr>
             <td></td>
-            <td>Money</td>
-            <td>Raw Materials</td>
-            <td>Oil</td>
-            <td>Manufactured Goods</td>
-            <td>Food</td>
+            <td>Holdings</td>
+            <td>Withdrawal limit</td>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>Holdings</td>
+            <td>Money</td>
             <td><span style="color: green">${{ bank.budget }}k</span></td>
-            <td><span style="color: green">{{ bank.rm }} Tons</span></td>
-            <td><span style="color: green">{{ bank.oil }} Mbbls</span></td>
-            <td><span style="color: green">{{ bank.mg }} Tons</span></td>
-            <td><span style="color: green">{{ bank.food }} Tons</span></td>
+            <td>${{ bank.budget_limit }}k</td>
         </tr>
         <tr>
-            <td>Withdrawal limits</td>
-            <td>${{ bank.budget_limit }}k</td>
+            <td>Raw Material</td>
+            <td><span style="color: green">{{ bank.rm }} Tons</span></td>
             <td>{{ bank.rm_limit  }} Tons</td>
+        </tr>
+        <tr>
+            <td>Oil</td>
+            <td><span style="color: green">{{ bank.oil }} Mbbls</span></td>
             <td>{{ bank.oil_limit  }} Mbbls</td>
+        <tr>
+            <td>Manufactured Goods</td>
+            <td><span style="color: green">{{ bank.mg }} Tons</span></td>
             <td>{{ bank.mg_limit  }} Tons</td>
+        </tr>
+        <tr>
+            <td>Food</td>
+            <td><span style="color: green">{{ bank.food }} Tons</span></td>
             <td>{{ bank.food_limit  }} Tons</td>
         </tr>
     </tbody>
@@ -123,7 +128,7 @@
     {% for entry in logentries %}
     <tr>
         <td>
-            <a href="{{ entry.nation.get_absolute_url }}"">
+            <a href="{{ entry.nation.get_absolute_url }}">
                 <b>{{ entry.nation.name }}</b>
             </a>
             {% if entry.deposit %}
@@ -131,8 +136,9 @@
             {% else %}
                 <span style="color: red;">withdrew</span>
             {% endif %}
-                {{ entry.display }} {{ entry.timestamp|date:"o/m/d G:i" }}
+                {{ entry.display }}
         </td>
+        <td><h5>{{ entry.timestamp|date:"o/m/d G:i" }}</h5></td>
         <td>
             <button class="btn btn-danger" type="submit" name="delete" value="{{ entry.pk }}">
                 Delete
