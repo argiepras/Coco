@@ -70,14 +70,14 @@ def main(request):
                     banklogging(nation, actions, True)
                     result = "Deposited!"
             else:
-                result = "invalid form data"
+                result = "Can't deposit that much!"
                 
 
         elif 'withdraw' in request.POST and nation.permissions.can_withdraw():
             form = withdrawform(nation, request.POST)
             if form.is_valid():
                 if form.cleaned_data['empty']:
-                    result = "You can't deposit nothing!"
+                    result = "You can't withdraw nothing!"
                 else:
                     form.cleaned_data.pop('empty')
                     actions = {} #moving to nation
@@ -139,6 +139,7 @@ def main(request):
                         member.comms.create(sender=nation, leadership=True, message=form.cleaned_data['message'])
                     nation.sent_comms.create(leadership=True, message=form.cleaned_data['message'])
                     result = "Leadership comm sent!"
+                nation.actionlogging('mass commed')
 
     context.update({
         'result': result,
@@ -384,6 +385,7 @@ def control_panel(request):
                         target.invites.create(alliance=alliance, inviter=nation)
                         news.invited(target, alliance)
                         result = "Invitation sent!"
+                        nation.actionlogging('invited %s' % target.name)
                 else:
                     result = "That nation doesn't exist!"
             else:
@@ -405,12 +407,14 @@ def control_panel(request):
                 alliance.bank.limit = True
                 alliance.bank.save()
                 result = "New limits have been set!"
+                nation.actionlogging('set withdrawal limits')
             else:
                 result = "Invalid form data"
 
         elif 'no_limit' in request.POST and permissions.can_banking():
             alliance.bank.limit = False
             alliance.bank.save()
+            nation.actionlogging('removed withdrawal limits')
             result = "Limits on withdrawals have been removed!"
 
 
@@ -517,6 +521,7 @@ def control_panel(request):
                 alliance.flag = form.cleaned_data['flag']
                 alliance.save(update_fields=['flag'])
                 result = "New flag set!"
+                nation.actionlogging('set alliance flag')
             else:
                 result = "Input too long! 100 characters max"
 
@@ -526,6 +531,7 @@ def control_panel(request):
                 alliance.anthem = form.cleaned_data['anthem']
                 alliance.save(update_fields=['anthem'])
                 result = "New anthem set!"
+                nation.actionlogging('set alliance anthem')
             else:
                 result = "Input too long! 15 characters max"
 
@@ -537,6 +543,7 @@ def control_panel(request):
                     alliance.initiatives.__dict__[field] = form.cleaned_data[field]
                     updates.append(field)
                 alliance.initiatives.save(update_fields=updates)
+                nation.actionlogging('set taxes')
                 result = "Tax rates have been updated!"
             else:
                 result = "invalid form data"
@@ -607,12 +614,13 @@ def bankinterface(request, page):
     if request.POST:
         if 'delete' in request.POST and permissions.logchange:
             try:
-                alliance.bank_logs.all().get(pk=request.POST['delete']).delete()
+                alliance.bank_logs.filter(pk=request.POST['delete']).update(deleted=True)
                 result = "Log entry deleted!"
+                nation.actionlogging('deleted banklog')
             except:
                 result = "Log entry doesn't exist!"
 
-    paginator = Paginator(alliance.bank_logs.all().order_by('-pk'), 50)
+    paginator = Paginator(alliance.bank_logs.filter(deleted=False).order_by('-pk'), 50)
     page = int(page)
     try:
         logentries = paginator.page(page)

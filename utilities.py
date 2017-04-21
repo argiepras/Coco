@@ -188,7 +188,6 @@ def reset():
         FI=0,
         food=100,
         uranium=0,
-        oilreserves=0,
         soviet_points=0,
         us_points=0,
         mines=3,

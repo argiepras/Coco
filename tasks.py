@@ -20,7 +20,7 @@ from nation.events import *
 
 
 
-@periodic_task(run_every=crontab(minute="0,10,20,30,40,50", hour="*", day_of_week="*"))
+@periodic_task(run_every=crontab(minute="0, 10, 20, 30, 40, 50", hour="*", day_of_week="*"))
 def money_gain():
     try:
         alliance_gain()
@@ -87,7 +87,7 @@ def alliance_gain():
                     bankstats.__dict__[field] += income[field]
                 bankstats.save()
 
-            except IntegrityError, OperationalError:
+            except OperationalError:
                 alliance.bank.refresh_from_db()
                 continue
             break
@@ -106,7 +106,7 @@ def add_budget():
                     utils.atomic_transaction(Nation, member.pk, {
                         'budget': {'action': 'add', 'amount': income['income'] - income['tax']}
                     })
-                except IntegrityError, OperationalError: #in case something else is using the member
+                except OperationalError: #in case something else is using the member
                     member.refresh_from_db()
                     continue
                 break
@@ -118,22 +118,10 @@ def add_budget():
         while True:
             try:
                 utils.atomic_transaction(Nation, nation.pk, {'budget': {'action': 'add', 'amount': income['income']}})
-            except:
+            except OperationalError:
                 nation.refresh_from_db()
                 continue
             break
-
-
-
-    #Nation.objects.filter(
-    #   vacation=False, 
-    #    deleted=False, 
-    #    alliance=None, 
-    #    budget__lt=F('gdp') * 2,
-    #).update(budget=F('budget') + F('gdp') / 72)
-
-
-
 
 
 #hourly check for vacation-eligible nations and subsequent placing them in it
@@ -143,7 +131,7 @@ def vaccheck():
 
 
 
-@periodic_task(run_every=crontab(minute="*", hour="0, 12", day_of_week="*"))
+@periodic_task(run_every=crontab(minute="0", hour="0, 12", day_of_week="*"))
 def fire_turn():
     try:
         turnchange()
@@ -207,8 +195,10 @@ def turnchange(debug=False):
                     'mg': {'action': 'add', 'amount': mg},
                     'food': {'action': 'add', 'amount': food},
                 }
+                if debug:
+                    print nation
                 utils.atomic_transaction(Nation, nation.pk, actions)
-            except:
+            except OperationalError:
                 nation.refresh_from_db()
                 continue
             eventhandler.trigger_events(nation)

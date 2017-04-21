@@ -264,6 +264,7 @@ eventhandler.register_event('stability_reset', StabilityReset)
 
 
 class GDP_Reset(Event_base):
+    
     def __init__(self, nation):
         super(GDP_Reset, self).__init__(nation)
         stealables = ['oilreserves', 'rm', 'mg', 'oil']
@@ -271,10 +272,10 @@ class GDP_Reset(Event_base):
         for resource in stealables:
             if self.nation.__dict__[resource] > 0:
                 stolen = True
-                self.choices['reset']['actions'][resource]['amount'] = self.nation.__dict__[resource]/2
+                self.choices['reset']['actions'].update({resource: {'action': 'set', 'amount': self.nation.__dict__[resource]/2}})
         if stolen:
             self.description += " and helped themselves to our assets."
-
+    
     apply_instantly = True
 
     img = ''
@@ -289,15 +290,10 @@ class GDP_Reset(Event_base):
                 'stability': {'action': 'set', 'amount': 51},
                 'reputation': {'action': 'set', 'amount': 40},
                 'approval': {'action': 'set', 'amount': 51},
-                'maxgdp': {'action': 'set', 'amount': 250},
                 'budget': {'action': 'set', 'amount': 300},
                 'literacy': {'action': 'set', 'amount': 51},
                 'food': {'action': 'add', 'amount': 200},
                 'uranium': {'action': 'set', 'amount': 0},
-                'oilreserves': {'action': 'subtract', 'amount': 0},
-                'rm': {'action': 'subtract', 'amount': 0},
-                'mg': {'action': 'subtract', 'amount': 0},
-                'oil': {'action': 'subtract', 'amount': 0},
                 'manpower': {'action': 'set', 'amount': 50},
             }
         },

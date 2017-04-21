@@ -28,8 +28,13 @@
                 <div class="col-sm-10">
                     <div style="text-align: left; padding: 5px">
                     <a href="{{ declaration.nation.get_absolute_url }}">
-                    <img src="{{ declaration.nation.settings.showflag }}" height="20">
-                    <b>{{ declaration.nation.name }}</b> from <b>{{ declaration.alliance }}</b>
+                        <img src="{{ declaration.nation.settings.showflag }}" height="20">
+                        <b>{{ declaration.nation.name }}</b>
+                    </a> 
+                        from 
+                    <a href="{{ declaration.alliance.get_absolute_url }}">
+                        <b>{{ declaration.alliance }}</b>
+                    </a>
                     </a> declared the following
                     </div>
                 </div>

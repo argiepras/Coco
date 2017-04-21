@@ -245,7 +245,6 @@ class Nation(models.Model):
                     'timestamp',
                     'amount'])
             else:
-                print "regular"
                 self.actionlogs.all().filter(
                     timestamp__gte=v.now() - timezone.timedelta(minutes=15),
                     action=policy,
@@ -253,6 +252,20 @@ class Nation(models.Model):
                             cost=F('cost') + cost)
         else:
             self.actionlogs.create(cost=cost, action=policy, total_cost=othercost)
+
+    #for easier logging
+    def actionlogging(self, action):
+        if self.actionlogs.filter(
+            timestamp__gte=v.now() - timezone.timedelta(minutes=15),
+            action=action,
+                ).exists():
+            self.actionlogs.filter(
+            timestamp__gte=v.now() - timezone.timedelta(minutes=15),
+            action=action,
+                ).update(amount=F('amount') + 1)
+        else:
+            self.actionlogs.create(action=action, policy=False)
+
 
     #next couple of functions are helpers used for generating URLs
     #throughout the html templates
@@ -694,6 +707,7 @@ class Banklog(models.Model):
     amount = models.IntegerField(default=0)
     deposit = models.BooleanField(default=True)
     timestamp = models.DateTimeField(default=v.now)
+    deleted = models.BooleanField(default=False)
     def display(self):
         if self.resource == 'budget':
             return "$%sk" % self.amount
@@ -839,6 +853,9 @@ class Permissions(models.Model):
     def is_officer(self):
         return self.panel_access()
 
+    def logchange(self):
+        return self.template.founder or self.template.delete_log
+
     def panel_access(self):
         return self.template.founder or self.template.officer
 
@@ -935,6 +952,7 @@ class Actionlog(models.Model):
     amount = models.IntegerField(default=1)
     cost = models.IntegerField(default=0) #for pure budget cost
     total_cost = models.CharField(max_length=50) #for multiple cost types
+    policy = models.BooleanField(default=True)
     timestamp = models.DateTimeField(default=v.now)
 
 #might seem redundant

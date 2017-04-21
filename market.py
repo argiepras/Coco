@@ -167,26 +167,25 @@ def offers(request, page):
         elif 'filter' in request.POST:
             form = filterform(request.POST)
             if form.is_valid():
-                offerlist = offers.filter(**form.cleaned_data)
-                if form.cleaned_data['offer'] == 'army':
-                     filtered = "No trades for troops found"
-                else:
-                    filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
-
+                print offers
+                offers = offers.filter(offer=form.cleaned_data['offer'])
+                if len(offers) == 0:
+                    if form.cleaned_data['offer'] == 'army':
+                         filtered = "No trades for troops found"
+                    else:
+                        filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
+                    
 
     paginator = Paginator(offers, 30)
-    if not filtered:
-        page = int(page)
-        try:
-            offerlist = paginator.page(page)
-        except PageNotAnInteger:
-            # If page is not an integer, deliver first page.
-            offerlist = paginator.page(1)
-        except EmptyPage:
-            # If page is out of range (e.g. 9999), deliver last page of results.
-            offerlist = paginator.page(paginator.num_pages)
-    else:
-        context.update({'filtered': filtered})
+    page = int(page)
+    try:
+        offerlist = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        offerlist = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        offerlist = paginator.page(paginator.num_pages)
     context.update({
         'offers': offerlist,
         'own_offers': nation.offers.all(),
@@ -194,6 +193,7 @@ def offers(request, page):
         'remaining': 10 - nation.offers.all().count(),
         'pages': utils.pagination(paginator, offerlist),
         'filterform': filterform(),
+        'filtered': filtered,
         })
     return render(request, 'nation/marketoffers.html', context)
 

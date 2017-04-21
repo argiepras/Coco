@@ -433,7 +433,7 @@ def nationpage(request, idnumber):
                         timestamp__gte=v.now() - timezone.timedelta(minutes=10)
                             ).count() > 5:
                         return HttpResponse('no')
-                    #market = Market.objects.latest('pk')
+                    market = Market.objects.latest('pk')
                     tariff = 0
                     if (nation.economy < 33 and target.economy > 66) or (target.economy < 33 and nation.economy > 66):
                         tariff += 10
@@ -511,15 +511,14 @@ def nationpage(request, idnumber):
             else:
                 action = {'weapons': {'action': 'add', 'amount': 5}}
                 utils.atomic_transaction(Military, nation.military.pk, action, target.military.pk)
+                reploss = True
                 if nation.has_alliance() and target.has_alliance():
                     if nation.alliance == target.alliance and nation.alliance.initiatives.weapontrade:
                         reploss = False
-                    else:
-                        reploss = True
 
                 result = "The weapons are packed in crates and shipped off."
                 if reploss:
-                    result += "The UN didn't seem too happy."
+                    result += " The UN didn't seem too happy."
                     action = {'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -2)}}
                     utils.atomic_transaction(Nation, nation.pk, action)
 
@@ -753,7 +752,7 @@ def newspage(request):
 
 def rankings(request, page):
     context = {}
-    nations = Nation.objects.select_related('settings').actives().order_by('-gdp')
+    nations = Nation.objects.actives().select_related('settings').order_by('-gdp')
     paginator = Paginator(nations, 15)
     page = int(page)
     try:
@@ -901,7 +900,7 @@ def statistics(request, page):
         'total_nations7': Nation.objects.filter(creationtime__gte=timezone.now()-timezone.timedelta(days=30)).count(),
         'reactors': Military.objects.filter(nation__deleted=False, nation__vacation=False, reactor=20).count(),
         'east': Nation.objects.actives().filter(alignment=1).count(),
-        'neutral': Nation.objects.actives().filter(dalignment=2).count(),
+        'neutral': Nation.objects.actives().filter(alignment=2).count(),
         'west': Nation.objects.actives().filter(alignment=3).count(),
         'activewars': War.objects.filter(over=False).count(),
         'commcount': Comm.objects.filter(timestamp__gte=timezone.now()-timezone.timedelta(hours=24)).count(),
@@ -1698,12 +1697,12 @@ def nuked(nation, target):
     nukermilactions = {
         'nukes': {'action': 'subtract', 'amount': 1},
     }
-
+    manpower = target.manpower
     actions = {
         'gdp': {'action': 'set', 'amount': target.gdp/2},
         'growth': {'action': 'subtract', 'amount': 100},
         'factories': {'action': 'set', 'amount': target.factories/2},
-
+        'manpower': {'action': 'subtract', 'amount': (manpower/2 if manpower/2 > 20 else (20 if manpower >= 20 else manpower))}
     }
     reactor = target.military.reactor
     if reactor > 0:

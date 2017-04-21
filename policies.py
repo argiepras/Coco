@@ -11,6 +11,7 @@ import random
 @login_required
 @novacation
 def militarypolicies(request):
+    breaking = me
     context = {}
     img = ''
     result = False
@@ -138,7 +139,7 @@ def militarypolicies(request):
                 result = "You do not have enough manufactured goods!"
             elif mildata.planes == 10:
                 result = "Your airforce is already at full strength!"
-            elif nation.factories < 2:
+            elif nation.factories < 3:
                 result = "You do not have the capacity to manufacture these! Build more weapons factories!"
             else:
                 mildata.planes += 1
@@ -224,12 +225,12 @@ def militarypolicies(request):
         elif 'aks' in request.POST:
             if nation.alignment == 3:
                 result = "The soviet union doesn't deal with the likes of you"
-            elif nation.soviet_points < 5:
+            elif nation.soviet_points < 8:
                 result = "You do not have close enough relations with the Soviets!"
             elif mildata.weapons > 500:
                 result = "You have better equipment! These are worthless!"
             else:
-                actions.update({'soviet_points': {'action': 'subtract', 'amount': 5}})
+                actions.update({'soviet_points': {'action': 'subtract', 'amount': 8}})
                 mildata.weapons += 2
                 mildata.save(update_fields=['weapons'])
                 img = ""
@@ -238,12 +239,12 @@ def militarypolicies(request):
         elif 'm14' in request.POST:
             if nation.alignment == 1:
                 result = "The united states refuses to respond"
-            elif nation.us_points < 5:
+            elif nation.us_points < 8:
                 result = "You do not have close enough relations with the US!"
             elif mildata.weapons > 500:
                 result = "You have better equipment! These are worthless!"
             else:
-                actions.update({'us_points': {'action': 'subtract', 'amount': 5}})
+                actions.update({'us_points': {'action': 'subtract', 'amount': 8}})
                 mildata.weapons += 2
                 mildata.save(update_fields=['weapons'])
                 img = ""
@@ -265,7 +266,7 @@ def militarypolicies(request):
                 result = "Your workers proudly stamp your face on each and every rifle."
 
         elif 't62' in request.POST:
-            cost = 13
+            cost = 16
             oilcost = 3
             if nation.alignment == 3:
                 result = "The soviet union doesn't deal with the likes of you"
@@ -286,7 +287,7 @@ def militarypolicies(request):
                 result = "A couple T-62s arrive on the latest freighter from Odessa"
 
         elif 'm60' in request.POST:
-            cost = 13
+            cost = 16
             oilcost = 3
             if nation.alignment == 1:
                 result = "The united states refuses to respond"
@@ -328,7 +329,7 @@ def militarypolicies(request):
                 result = "Your workers proudly stamp your face on each and every tank."
 
         elif 't90' in request.POST:
-            cost = 20
+            cost = 25
             oilcost = 10
             if nation.alignment == 3:
                 result = "The soviet union doesn't deal with the likes of you"
@@ -349,7 +350,7 @@ def militarypolicies(request):
                 result = "A couple T-90s arrive on the latest freighter from Odessa"
 
         elif 'm1' in request.POST:
-            cost = 20
+            cost = 25
             oilcost = 10
             if nation.alignment == 1:
                 result = "The united states refuses to respond"
@@ -506,7 +507,7 @@ def foreignpolicies(request):
             else:
                 actions.update({
                     'soviet_points': {'action': 'subtract', 'amount': cost},
-                    'growth': {'action': 'add', 'amount': 2},
+                    'growth': {'action': 'add', 'amount': 5},
                     })
                 img += "sovietaid.jpg"
                 result = "Growth increases as the our Soviet comrades shower us with the glorious benefits of socialism."
@@ -529,7 +530,7 @@ def foreignpolicies(request):
             else:
                 actions.update({
                     'us_points': {'action': 'subtract', 'amount': cost},
-                    'growth': {'action': 'add', 'amount': 2},
+                    'growth': {'action': 'add', 'amount': 5},
                     })
                 img += "usaid.jpg"
                 result = "Growth increases as Americans give us free stuff in the name of freedom because freedom isn't free or something."
@@ -953,7 +954,7 @@ def economicpolicies(request):
             if nation.budget < cost:
                 result = "You do not have enough money!"
             elif nation.rm < rmcost:
-                result = "You do noth ave enough raw materials!"
+                result = "You do not have enough raw materials!"
             elif nation.economy > 66:
                 result = "Free markets cannot engage in heinous socialism!"
             else:
@@ -1251,7 +1252,6 @@ def economicpolicies(request):
                     'rm': {'action': 'subtract', 'amount': rmcost},
                     'economy': {'action': 'add', 'amount': econ}
                     })
-                img = ""
                 if chance > 7:
                     actions.update({
                         'FI': {'action': 'add', 'amount': fi},
@@ -1261,8 +1261,10 @@ def economicpolicies(request):
                     result = "Foreign investment pours in which trickles down all over your economy, generating growth!"
                 elif chance < 4:
                     actions.update({'FI': {'action': 'add', 'amount': fi}})
+                    img = ""
                     result = "Foreign investment pours in but unfortunately there is no trickling down on the domestic economy!"
                 else:
+                    img = ""
                     result = "No one takes up your offer to invest!"
 
         elif 'mine' in request.POST:

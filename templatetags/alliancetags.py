@@ -37,7 +37,7 @@ register.filter('banktotal', banktotal)
 def remaining_limit(nation, resource):
     stockpile = nation.__dict__[resource]
     bankstock = nation.alliance.bank.__dict__[resource]
-    if nation.alliance.bank.limit:
+    if nation.alliance.bank.limit and not nation.permissions.template.founder:
         limit = nation.alliance.bank.__dict__['%s_limit' % resource] - nation.memberstats.__dict__[resource]
         maxwithdraw = (limit if limit < bankstock else bankstock)
     else:

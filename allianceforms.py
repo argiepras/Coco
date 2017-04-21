@@ -50,6 +50,9 @@ class descriptionform(forms.Form):
 # withdrawing limits are whatever is lower between nation withdrawal limit or bank stockpile
 
 
+#base form for rendering
+#using either a deposit or withdraw form could lead to problems with max values
+#this has more redundant code but easier verification
 class numberform(forms.Form):
     def __init__(self, *args, **kwargs):
         super(numberform, self).__init__(*args, **kwargs)
@@ -63,12 +66,15 @@ class numberform(forms.Form):
                         'style': 'color: black;'
                     }))
 
+
+
 class depositform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(depositform, self).__init__(*args, **kwargs)
         for choice in v.depositchoices:
             self.fields[choice] = forms.IntegerField(
-                min_value=1, 
+                min_value=1,
+                max_value=nation.__dict__[choice],
                 required=False,
                 widget=forms.NumberInput(attrs={
                         'class': 'form-control', 
@@ -98,12 +104,11 @@ class withdrawform(forms.Form):
         for choice in v.depositchoices:
             stockpile = nation.__dict__[choice]
             bankstock = nation.alliance.bank.__dict__[choice]
-            if nation.alliance.bank.limit:
+            if nation.alliance.bank.limit and not nation.permissions.template.founder:
                 limit = nation.alliance.bank.__dict__['%s_limit' % choice] - nation.memberstats.__dict__[choice]
                 maxwithdraw = (limit if limit < bankstock else bankstock)
             else:
                 maxwithdraw = bankstock
-            print maxwithdraw
             self.fields[choice] = forms.IntegerField(
                 min_value=1, 
                 max_value=maxwithdraw, 

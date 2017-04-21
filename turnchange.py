@@ -51,7 +51,7 @@ def alliancetotal(alliance, display=False):
 def alliance_income(alliance, display=False):
     stats = {'total': 0}
     #tax income from members
-    for member in alliance.members.actives():
+    for member in alliance.members.filter(deleted=False, vacation=False):
         info = nation_income(member)
         #we populate the stats dictionary the lazy way
         if info['bracket'] in stats:
@@ -65,7 +65,7 @@ def alliance_income(alliance, display=False):
 
 
 def alliance_expenditures(alliance):
-    count = alliance.members.actives().count()
+    count = alliance.members.filter(deleted=False, vacation=False).count()
     if count == None:
         count = 0
     if alliance.averagegdp == None:
@@ -96,14 +96,14 @@ def alliance_healthcost(alliance, membercount):
 def alliance_freedomcost(alliance):
     cost = 0
     if alliance.initiatives.freedom:
-        totlit = alliance.members.actives().aggregate(Sum('literacy'))['literacy__sum']
+        totlit = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('literacy'))['literacy__sum']
         cost = int(round(totlit/50.0))
     return (1 if cost < 1 and alliance.initiatives.freedom else cost)
 
 def alliance_weapcost(alliance):
     cost = 0
     if alliance.initiatives.weapontrade:
-        totweps = alliance.members.actives().aggregate(Sum('military__weapons'))['military__weapons__sum']
+        totweps = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('military__weapons'))['military__weapons__sum']
         cost = int(round(totweps/100.0))
     return (1 if cost < 1 and alliance.initiatives.weapontrade else cost)
 
@@ -235,9 +235,9 @@ def stabilitygain_modifiers(nation, var):
         stability += 2
     elif nation.__dict__[var] > nation.stability:
         stability += 1
-    elif nation.__dict__[var]/2 < nation.stability:
+    elif nation.__dict__[var]*2 < nation.stability:
         stability -= 4
-    elif nation.__dict__[var]/1.5 < nation.stability:
+    elif nation.__dict__[var]*1.5 < nation.stability:
         stability -= 2
     elif nation.__dict__[var] < nation.stability:
         stability -= 1
@@ -292,8 +292,7 @@ def oilgain(nation):
 def oilbase(nation):
     if nation.oilreserves > nation.wells:
         return nation.wells
-    else:
-        return nation.oilreserves
+    return nation.oilreserves
 
 def oilbonus(nation, oil):
     oil *= utils.research('oil', nation.researchdata.oiltech)
@@ -421,8 +420,8 @@ def researchgain_unis(nation):
 def researchgain_alliance(nation):
     if nation.has_alliance():
         if nation.alliance.initiatives.freedom:
-            averages = nation.alliance.members.actives().aggregate(Avg('universities'), Avg('literacy'))
-            count = nation.alliance.members.actives().count()
+            averages = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Avg('universities'), Avg('literacy'))
+            count = nation.alliance.members.filter(deleted=False, vacation=False).count()
             avg_unis = averages['universities__avg']
             avg_lit = averages['literacy__avg']
             bonus = avg_unis * (sqrt(avg_lit)/2) * (1 + count/100.0)
@@ -586,7 +585,7 @@ def growthchanges_redistribution(nation):
     gain = 0
     if nation.has_alliance():
         if nation.alliance.initiatives.redistribute:
-            avg = nation.alliance.members.actives().aggregate(Sum('gdp'))['gdp__sum']
+            avg = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('gdp'))['gdp__sum']
             if nation.gdp < avg/2:
                 gain = 5
             elif nation.gdp < avg:
@@ -667,18 +666,3 @@ def spygain_region(spy):
 
 def spygain_experience(spy):
     return spy.experience/25
-
-
-
-
-
-
-#############################
-## Alliance initiative costs
-#############################
-
-
-def literacycost(alliance):
-    if alliance.initiatives.literacy:
-        count = alliance.members.actives().count()
-        gdp = alliance.members.actives().aggregate(Sum('gdp'))['gdp__sum']

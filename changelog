@@ -1,6 +1,9 @@
- - turns send mails on error (means consistent turns as I don't have to monitor them)
- - alliance decs are only for officers now
- - buffed starting budget from 600k to 1000k
- - fixed reset
- - changed timezone to US/Central so turns are in line with rumbloc turns
- - fixed initiatives tickbox not being shown in permissions altering
+ - fixed deposit bug
+ - removed withdrawal limits for founders
+ - fixed typo in great leap forward
+ - fixed not being able to delete bank logs
+ - fixed EFI image not showing up 
+ - bumped growth per relation point and nerfed weapons per relation points
+ - fixed bug that caused too much stability loss with qol and approval
+ - removed extra link to regional discussions
+ - fixed manpower not being affected by being nuked
