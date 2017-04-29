@@ -1293,6 +1293,7 @@ def war_win(attacker, defender, war):
     }
     if war.attacker == attacker:
         logactions = {
+            'winner': {'action': 'set', 'amount': attacker},
             'attacker_armyend': {'action': 'set', 'amount': attacker.military.army},
             'attacker_techend': {'action': 'set', 'amount': attacker.military.weapons},
             'defender_armyend': {'action': 'set', 'amount': defender.military.army},
@@ -1301,13 +1302,13 @@ def war_win(attacker, defender, war):
         }
     else:
         logactions = {
+            'winner': {'action': 'set', 'amount': defender},
             'attacker_armyend': {'action': 'set', 'amount': defender.military.army},
             'attacker_techend': {'action': 'set', 'amount': defender.military.weapons},
             'defender_armyend': {'action': 'set', 'amount': attacker.military.army},
             'defender_techend': {'action': 'set', 'amount': attacker.military.weapons},
             'timeend': {'action': 'set', 'amount': v.now()},
         }
-    defender.infiltrators.filter(arrested=True,)
     utils.atomic_transaction(Nation, attacker.pk, atkactions)
     utils.atomic_transaction(Nation, defender.pk, defactions)
     utils.atomic_transaction(Military, defender.military.pk, defmilactions)

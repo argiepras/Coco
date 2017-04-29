@@ -30,7 +30,7 @@
             <p>Username matches:</p>
             <p>
                 {% for horse in username_matches %}
-                    <a href="{{ found.get_modview_url }}">
+                    <a href="{{ horse.get_modview_url }}">
                         <b>{{ horse.name }}</b>
                     </a>
                     {% if forloop.last == False %}

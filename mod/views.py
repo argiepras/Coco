@@ -5,10 +5,10 @@ from django.utils import timezone
 from django.core.paginator import *
 from django.http import HttpResponseRedirect
 
-from .models import *
-from .allianceforms import *
-from .decorators import mod_required, headmod_required
-from nation.modforms import *
+from nation.models import *
+from nation.allianceforms import *
+from nation.decorators import mod_required, headmod_required
+from .forms import *
 import nation.utilities as utils
 import nation.variables as v
 
@@ -408,9 +408,7 @@ def nation_page(request, nation_id):
 
     if can_see:
         context.update({
-                'warlogs': Warlog.objects.filter(Q(attacker=target)|Q(defender=target)),
-                'offensivewarlogs': target.offensive_warlogs.all()[0:10],
-                'defensivewarlogs': target.defensive_warlogs.all()[0:10],
+                'warlogs': Warlog.objects.filter(Q(attacker=target)|Q(defender=target))[0:10],
                 'incoming_aid': target.incoming_aid.all()[0:20],
                 'outgoing_aid': target.outgoing_aid.all()[0:20],
                 'actionlogs': target.actionlogs.all()[0:10],

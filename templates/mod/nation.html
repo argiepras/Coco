@@ -3,6 +3,13 @@
 
 <div class="container">
     <p style="margin: 2em;"><h2>{{ target.name }}</h2></p>
+    <div>
+        <a href="{{ target.get_absolute_url }}">
+            <button type="button" class="btn btn-default">
+                View nation page
+            </button>
+        </a>
+    </div>
 
     {% if result %}
     	<div class="result">
