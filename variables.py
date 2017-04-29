@@ -444,16 +444,16 @@ training = {
  
 airforce = {
     0: 'None',
-    1: 'Hot Air Balloons',
-    2: 'Biplanes',
-    3: 'Biplanes and Zeppelin Gunships',
-    4: 'Light Attack Aircraft',
-    5: 'Medium Attack Aircraft',
-    6: 'Heavy Attack Aircraft',
-    7: 'Twin Engine Fighters',
-    8: 'Bomber Gunships',
-    9: 'Modern Jets and Bombers',
-    10: 'Advanced Multirole Aircraft'
+    1: 'Token',
+    2: 'Tiny',
+    3: 'Small',
+    4: 'Almost moderate',
+    5: 'Moderate',
+    6: 'Semi-large',
+    7: 'Large',
+    8: 'Huge',
+    9: 'Gigantic',
+    10: 'Innumerable'
 }
  
 navy = {

@@ -1,5 +1,3 @@
-import django
-django.setup()
 from celery import shared_task, task
 from celery.task.schedules import crontab
 from celery.decorators import periodic_task
@@ -99,7 +97,7 @@ def alliance_gain():
 def add_budget():
     #alliance members gets paid first, then regular nations
     for alliance in Alliance.objects.select_related('initiatives').annotate(membercount=Count('members')).filter(membercount__gte=1):
-        for member in alliance.members.actives().iterator():
+        for member in alliance.members.filter(vacation=False, reset=False, deleted=False).iterator():
             while True:
                 income = nation_income(member)
                 try:

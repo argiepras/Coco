@@ -378,7 +378,10 @@ def foodgain_agricultureideal(nation):
     for field in v.foodproduction:
         land = field
         gain = v.foodproduction[field]
-    return int((nation.farmland() / land) * gain) * nation.researchdata.foodtech
+    ideal = int((nation.farmland() / land) * gain) * nation.researchdata.foodtech
+    if nation.region() == "Middle East":
+        ideal = int(ideal * 0.75)
+    return ideal
 
 def foodgain_agriculture(nation):
     return int(foodgain_agricultureideal(nation) * (nation.econdata.foodproduction/100.0))

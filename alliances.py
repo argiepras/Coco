@@ -196,7 +196,7 @@ def alliancepage(request, alliancepk, msg=False):
                 alliance.applications.create(nation=nation)
                 if alliance.comm_on_applicants:
                     for officer in alliance.members.filter(Q(permissions__template__founder=True)|Q(permissions__template__applicants=True)):
-                        news.newapplicant(nation, alliance)
+                        news.newapplicant(officer, nation)
                 result = "Your application has been sent! Now we wait and see if they will accept it."
 
         elif 'unapply' in request.POST:
@@ -399,7 +399,8 @@ def control_panel(request):
                     if len(field.name.split('_')) == 1:
                         continue
                     if field.name.split('_')[1] == 'limit':
-                        alliance.bank.__dict__[field.name] = data[field.name]
+                        if field.name in data:
+                            alliance.bank.__dict__[field.name] = data[field.name]
                 if data['per_nation'] == 'per_nation':
                     alliance.bank.per_nation = True
                 else:
@@ -548,6 +549,15 @@ def control_panel(request):
             else:
                 result = "invalid form data"
 
+        elif 'setheir' in request.POST:
+            form = heirform(nation, request.POST)
+            if form.is_valid():
+                alliance.permissions.all().update(heir=False)
+                alliance.permissions.filter(member=form.cleaned_data['heir']).update(heir=True)
+                result = "%s has been appointed as heir!" % form.cleaned_data['heir'].name
+            else:
+                result = "Invalid choice"
+
 
     #setting initial data for banking form
     bankinginit = {}
@@ -575,12 +585,14 @@ def control_panel(request):
     membertemplate = alliance.templates.get(rank=5)
     acceptapplicant = {'choice': ('on' if alliance.accepts_applicants else 'off')}
     commapplicant = {'choice': ('on' if alliance.comm_on_applicants else 'off')}
+    heirinit = {'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)}
+    print heirinit
     context.update({
         'result': result,
         'permissions': permissions,
         'alliance': alliance,
         'inviteform': inviteform(),
-        'heirform': heirform(nation),
+        'heirform': heirform(nation, initial={'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)}),
         'descriptionform': descriptionform(initial={'content': alliance.description}),
         'initiatives': initiative_display(alliance.initiatives),
         'bankingform': bankingform(initial=bankinginit),

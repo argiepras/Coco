@@ -226,9 +226,9 @@ def rejectedapplication(nation, alliance):
     txt = "%s has rejected your application for membership!" % link
     nation.news.create(content=txt)
 
-def newapplicant(nation, alliance):
-    link = '<a href="%s"><b>%s</b></a>' % (alliance.get_absolute_url(), alliance.name)
-    txt = "A new nation has applied to be a member of %s!" % link
+def newapplicant(nation, applicant):
+    link = '<a href="%s"><b>%s</b></a>' % (applicant.get_absolute_url(), applicant.name)
+    txt = "%s has applied to be a member of our alliance!" % link
     nation.news.create(content=txt)
 
 def random_tofounder(nation, alliance):

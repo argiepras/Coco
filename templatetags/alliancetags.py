@@ -7,7 +7,7 @@ register = template.Library()
 
 
 def kick(permissions, member):
-    return mark_safe(permissions.can_kick(member))
+    return permissions.can_kick(member)
 
 
 register.filter('kick', kick)

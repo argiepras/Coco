@@ -2,7 +2,7 @@
 {% block content %}
 {% load basetags %}
 {% load alliancetags %}
-
+<div class="container">
 <h2 style="margin: 50px"><b>{{ alliance.name }}</b></h2>
 
 {% if result %}
@@ -122,7 +122,7 @@
             <tr>
                 <td><a href="{{ member.get_absolute_url }}">
                 {% if member.permissions.template.officer %}
-                    <img src="{{ alliance.icon }}" style="max-width: {{ member.permissions|iconsize }}; max-height:{{ member.permissions|iconsize }}">
+                    <img src="{{ alliance.icon }}" style="max-width: {{ member.permissions|iconsize }}px; max-height: {{ member.permissions|iconsize }}px">
                 {% endif %}{{ member.name }}</a></td>
                 <td>{{ member.permissions.template.title }}</td>
                 <td>${{ member.gdp }}m</td>
@@ -132,6 +132,8 @@
         {% endfor %}
         </tbody>
     </table>
+</div>
+
 </div>
 
 

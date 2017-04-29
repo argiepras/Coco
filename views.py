@@ -426,7 +426,7 @@ def nationpage(request, idnumber):
                 resource = request.POST['aid']
                 if resource in v.resources and type(form.cleaned_data[resource]) == type(int()):
                     aid_amount = form.cleaned_data[resource]
-                    if nation.outgoing__aid.filter(
+                    if nation.outgoing_aidspam.filter(
                         reciever=target, 
                         resource=resource, 
                         amount=aid_amount, 
@@ -451,7 +451,7 @@ def nationpage(request, idnumber):
                     news.aidnews(nation, target, resource, aid_amount)
                     #to decrease clutter, merge aidlogs < 10 minutes old
                     #so instead of 2x $9999k aid logs, it's 1x $19998k log
-                    nation.outgoing__aid.create(resource=resource, reciever=target, amount=aid_amount)
+                    nation.outgoing_aidspam.create(resource=resource, reciever=target, amount=aid_amount)
                     try: 
                         aidlog = nation.outgoing_aid.all().get(resource=resource, reciever=target, 
                             timestamp__gte=v.now() - timezone.timedelta(minutes=10))
@@ -565,6 +565,8 @@ def nationpage(request, idnumber):
             if nation.military.weapons < nation.military.army/10:
                 result = "You do not have the weaponry to attack!"
             else:
+                if nation.protection > timezone.now():
+                    Nation.objects.filter(user=request.user).update(protection=timezone.now())
                 war = War.objects.create(defender=target, attacker=nation)
                 Warlog.objects.create(war=war, defender=target, attacker=nation,
                     attacker_armystart=nation.military.army, attacker_techstart=nation.military.weapons,

@@ -17,7 +17,7 @@ def latestmarket():
 class Alliance(models.Model):
     def __init__(self, *args, **kwargs):
         super(Alliance, self).__init__(*args, **kwargs)
-        self.averagegdp = self.members.actives().filter(gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
+        self.averagegdp = self.members.filter(vacation=False, reset=False, deleted=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
     name = models.CharField(max_length=30)
     description = models.CharField(max_length=1000, default="You can change this description in the alliance control panel")
     flag = models.CharField(max_length=100, default="/static/alliance/default.png")
@@ -27,7 +27,7 @@ class Alliance(models.Model):
     accepts_applicants = models.BooleanField(default=True)
     icon = models.CharField(max_length=40, default="/static/alliance/defaulticon.png")
     def __unicode__(self):
-        return u"%s" % self.name
+        return u"%s alliance" % self.name
     def get_absolute_url(self):
         return reverse('alliance:alliance_page', kwargs={'alliancepk': (str(self.pk))})
 
@@ -137,7 +137,7 @@ class Nation(models.Model):
     closed_universities = models.IntegerField(default=0)
     objects = Actives()
     def __unicode__(self):
-        return u"%s" % self.name
+        return u"nation: %s" % self.name
 
 
     def farmland(self):
@@ -867,12 +867,12 @@ class Permissions(models.Model):
 
     def can_kick(self, member):
         if self.member.pk == member.pk:
-            return False
+            return False #can't kick yourself
         elif self.template.founder:
-            return True
-        elif self.template.officer and member.template.officer:
+            return True #founders can kick everyone
+        elif self.template.officer and member.permissions.template.officer:
             if self.template.kick_officer:
-                if self.template.rank > member.template.rank:
+                if self.template.rank > member.permissions.template.rank:
                     return True
                 else:
                     return False
@@ -935,7 +935,7 @@ class Loginlog(models.Model):
     timestamp = models.DateTimeField(default=v.now)
     IP = models.GenericIPAddressField()
     def __unicode__(self):
-        return u"%s seen at %s" % (self.nation.name, self.timestamp)
+        return u"%s seen at %s" % (self.nation.name, self.timOestamp)
 
 class Logoutlog(models.Model):
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="logout_times")
@@ -968,8 +968,8 @@ class Aidlog(models.Model):
     timestamp = models.DateTimeField(default=v.now)
 
 class Aid(models.Model):
-    sender = models.ForeignKey(Nation, related_name="outgoing__aid", on_delete=models.SET_NULL, null=True, blank=True)
-    reciever = models.ForeignKey(Nation, related_name="incoming__aid", on_delete=models.SET_NULL, null=True, blank=True)
+    sender = models.ForeignKey(Nation, related_name="outgoing_aidspam", on_delete=models.SET_NULL, null=True, blank=True)
+    reciever = models.ForeignKey(Nation, related_name="incoming_aidspam", on_delete=models.SET_NULL, null=True, blank=True)
     resource = models.CharField(max_length=7)
     amount = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)

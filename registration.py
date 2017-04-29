@@ -58,8 +58,10 @@ def register(request):
 
 
 def send_registrationmail(reg):
-    msg = tmp.replace('activationlink', reg.code)
-    mails = send_mail('Cold Conflict account signup', msg, "admin@coldconflict.com", [reg.email])
+    msg = emailtemplate.replace('{{ headline }}', 'Account sign up')
+    content = tmp.replace('activationlink', reg.code)
+    msg = msg.replace('{{ content }}', content)
+    mails = send_mail('Cold Conflict account signup', '', "admin@coldconflict.com", [reg.email], html_message=msg)
     if mails > 0: #if django successfully sent the email
         result = "Signup email has been sent!"
     else:
@@ -169,8 +171,9 @@ def recover(request):
             if q:
                 user = q[0]
                 a = Recovery.objects.create(user=user)
-                recovermsg = recovertemplate.replace('insert', a.code)
-                send_mail('Password recovery request', recovermsg, 'admin@coldconflict.com', [user.email])
+                recovermsg = emailtemplate.replace('{{ headline }}', 'Password recovery')
+                recovermsg = recovermsg.replace('{{ content }}', recovertemplate.replace('insert', a.code))
+                send_mail('Password recovery request', '', 'admin@coldconflict.com', [user.email], html_message=recovermsg)
                 context.update({'result': 'An email has been sent!'})
             else:
                 context.update({'result': 'There is no user with that email!'})
@@ -200,24 +203,61 @@ def complete_recover(request, recid):
 
 
 
-recovertemplate = """Follow the link to reset your password
-http://coldconflict.com/recover/insert
+recovertemplate = """So you've forgotten your password huh? Simply follow <a href="http://coldconflict.com/recover/insert" style="color: rgb(255, 238, 227)"><b>this link</b></a>
+    in order to reset your password</a>
+        
 """
 
 tmp = """You (or someone pretending to be you) have asked to register an account at
 http://coldconflict.com.  If this wasn't you, please ignore this email
 and your address will be removed from our records.
 
-To complete registration, please click the following link within the next 
+To complete registration, simply click below within the next 
 7 days:
-
-http://coldconflict.com/register/new/activationlink
-
-Sincerely,
-The badmin"""
-
-tmpcret = """
-    Thank you for signing up to Cold Conflict! Your username is $user and your
-    generated password is $pass, and can
-    be changed at any time in your user settings.
+    <center>
+    <a href="http://coldconflict.com/register/new/activationlink">
+                    <button style="color: rgb(255, 238, 227); background-color: rgba(255, 238, 227, 0.2);
+                      padding: 8px 12px;
+                      font-size: 16px;
+                      border: 0px solid transparent;
+                      border-radius: 4px;
+                      margin: 50px;">
+                        Create nation
+                    </button>
+                </a>
+    </center>
 """
+
+emailtemplate = """
+<center>
+<table style="width: 100%" background="http://coldconflict.com/static/img/emailbackground.jpg">
+    <tr><td><center>
+    <table style="width: 600px; border-radius: 5px; background-color: rgba(10, 10, 10, 0.5); padding: 10px; font-family: Droid Sans,Helvetica Neue, Helvetica,Arial,sans-serif">
+        <tr>
+            <td style="background-color: rgba(23, 21, 20, 0.4); padding: 10px;">
+            <center>
+                <img src="http://coldconflict.com/static/assets/logo.png">
+            </center>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <center>
+                    <p class="headline">
+                        <h1 style="color: rgb(255, 238, 227); padding: 10px;">
+                            {{ headline }}
+                        </h1>
+                    </p>
+                </center>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <p style="color: rgb(255, 238, 227); padding: 10px;">
+                    {{ content }}
+                </p>
+            </td>
+        </tr>
+    </table>
+</center></td></tr>
+</table>"""

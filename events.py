@@ -46,7 +46,7 @@ class Newbie_event(Event_base):
         'economy': { 
             'model': Nation, 
             'actions': {
-                    'budget': {'action': 'add', 'amount': 1000},
+                    'budget': {'action': 'add', 'amount': 1500},
                 },
             },
         'qol': {
@@ -68,7 +68,7 @@ class Newbie_event(Event_base):
     tooltips = {
         'military': "Increases your military in size, 5k troops, \
             increases training, and gives the army a boost in military equipment.",
-        'economy': "Adds $1000k to your budget.",
+        'economy': "Adds $1500k to your budget.",
         'stability': "Will increase your governments stability.",
         'qol': "Will increase your nations quality of life and approval.",
     }
@@ -376,7 +376,7 @@ class FactoryEvent(Event_base):
                 
     def conditions(self, nation):
         chance = 0
-        if (nation.factories+1)*1000 >= nation.FI and nation.farmland() > nation.landcost('factories'):
+        if (nation.factories+1)*1000 >= nation.FI and nation.farmland() > nation.landcost('factories') and nation.economy > 66 and nation.FI >= 1000:
             chance = 5
         if random.randint(1, 100) <= chance:
             return True
@@ -456,7 +456,7 @@ class JuntaEvent(Event_base):
     def __init__(self, nation):
         super(JuntaEvent, self).__init__(nation)
         self.choices['army']['actions']['training']['amount'] = utils.attrchange(nation.military.training, 25)
-        self.choices['airforce']['actions']['planes']['amount'] = utils.attrchange(nation.military.planes, 2, upper=10)
+        self.choices['airforce']['actions']['planes']['amount'] = utils.attrchange(nation.military.planes, 1, upper=10)
         self.choices['special']['actions']['chems']['amount'] = utils.attrchange(nation.military.chems, 1, upper=10)
         self.choices['navy']['actions']['navy']['amount'] = utils.attrchange(nation.military.navy, 1)
         self.description = "%s " % nation.name + self.description

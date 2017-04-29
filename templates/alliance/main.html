@@ -332,8 +332,7 @@
             <td>${{ member.gdp }}m</td>
 			<td>{{ member.subregion }}</td>
             <td>{{ member.alignment|alignment }}</td>
-
-			{% if permissions|kick:member == True %}
+			{% if permissions|kick:member %}
 				<td>
                     <input type="checkbox" value="{{ member.pk }}" name="member_choice">
                 </td>

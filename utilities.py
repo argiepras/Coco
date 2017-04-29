@@ -1,5 +1,5 @@
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Sum, Q
 from django.utils import timezone
 import variables as v
 from django.contrib.auth.models import User
@@ -91,8 +91,6 @@ def can_attack(nation, target):
         reason = "You have already declared war once in the last 2 months!"
     elif target.protection > timezone.now():
         reason = "They have recently lost a war and are recovering!"
-    elif nation.protection > timezone.now():
-        reason = "We have recently lost a war"
     elif War.objects.filter(defender=target, over=False).exists():
         reason = "They are already fighting a defensive war!"
     else:
