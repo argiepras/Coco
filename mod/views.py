@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.db.models import Count, Q
+from django.db.models import Count, Q, F
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.paginator import *
@@ -151,79 +151,6 @@ def mods(request):
         })
     return render(request, 'mod/mods.html', context)
 
-@mod_required
-def reports(request, page):
-    context = {}
-    nation = request.user.nation
-    result = False
-    if request.method == "POST":
-        if 'claim' in request.POST:
-            claimed = Report.objects.get(pk=request.POST['claim'])
-            if claimed.open():
-                claimed.investigator = nation
-                claimed.save(update_fields=['investigator'])
-                result = "Report has been claimed."
-            else:
-                result = "This report has already been claimed by %s!" % claimed.investigator.name
-
-        elif 'release' in request.POST:
-            claimed = nation.investigated.get(pk=request.POST['release'])
-            claimed.investigator = None
-            claimed.save(update_fields=['investigator'])
-            result = "Report has been released."
-
-
-    reportquery = Report.objects.all().order_by('investigated')
-    paginator, actionlist = utils.paginate_me(reportquery, 50, page)
-    context.update({
-            'result': result,
-            'pages': utils.pagination(paginator, actionlist),
-            'reports': actionlist,
-        })
-
-
-    
-    return render(request, 'mod/reports.html', context)
-
-@mod_required
-def reportpage(request, report_id):
-    context = {}
-    result = False
-    nation = request.user.nation
-    try:
-        report = Report.objects.get(pk=report_id)
-    except:
-        return render(request, 'mod/reportpage.html', {'notfound': True})
-    if request.method == "POST":
-        if 'claim' in request.POST:
-            if report.open():
-                report.investigator = nation
-                report.save(update_fields=['investigator'])
-                result = "Report has been claimed."
-            else:
-                result = "This report has already been claimed by %s!" % report.investigator.name
-
-        elif 'release' in request.POST:
-            report.investigator = None
-            report.save(update_fields=['investigator'])
-            result = "Report has been released."
-
-        elif 'close' in request.POST:
-            form = closereportform(request.POST)
-            if form.is_valid():
-                report.investigated = True
-                report.conclusion = form.cleaned_data['conclusion']
-                report.guilty = form.cleaned_data['guilty']
-                report.save()
-                result = "Report has been closed"
-            else:
-                result = "invalid POST data (forget a reason?)"
-    context.update({
-        'result': result,
-        'report': report,
-        'closereportform': closereportform(),
-    })
-    return render(request, 'mod/reportpage.html', context)
 
 
 
@@ -299,7 +226,7 @@ def nation_overview(request, page):
                     })
             else:
                 context.update({'result': 'Invalid input'})
-    query = Nation.objects.filter(deleted=False)
+    query = Nation.objects.filter(deleted=False, reset=False)
     paginator, actionlist = utils.paginate_me(query, 50, page)
     context.update({
             'pages': utils.pagination(paginator, actionlist),
@@ -317,7 +244,7 @@ def nation_page(request, nation_id):
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
-    pagecheck(nation, target, pagename)
+    utils.pagecheck(nation, target, pagename)
     if request.method == "POST":
         form = reasonform(request.POST)
         if form.is_valid():
@@ -428,176 +355,6 @@ def nation_page(request, nation_id):
     return render(request, 'mod/nation.html', context)
 
 
-@mod_required
-def nation_actions(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target}
-    pagecheck(nation, target, "all actions")
-
-    query = target.actionlogs.all().order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'actions': actionlist,
-        })
-    return render(request, 'mod/actions.html', context)
-
-
-
-
-@mod_required
-def nation_incoming(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target, 'title': 'All incoming aid', 'direction': 'in'}
-    pagecheck(nation, target, "incoming aid")
-    query = target.incoming_aid.all().order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'aidlist': actionlist,
-        })
-    return render(request, 'mod/aid.html', context)
-
-@mod_required
-def nation_outgoing(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target, 'title': 'All outgoing aid', 'direction': 'out'}
-    pagecheck(nation, target, "outgoing aid")
-    query = target.outgoing_aid.all().order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'aidlist': actionlist,
-        })
-    return render(request, 'mod/aid.html', context)
-
-@mod_required
-def nation_allaid(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target}
-    pagecheck(nation, target, "all aid")
-    query = Aidlog.objects.filter(Q(sender=target)|Q(reciever=target)).order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'aidlist': actionlist,
-        })
-    return render(request, 'mod/allaid.html', context)
-
-@mod_required
-def nation_wars(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target}
-    pagecheck(nation, target, "all wars")
-    query = Warlog.objects.filter(Q(attacker=target)|Q(defender=target)).order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'reports': actionlist,
-        })
-    return render(request, 'mod/wars.html', context)
-
-
-@mod_required
-def nation_reports(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target}
-    pagecheck(nation, target, "all wars")
-    query = target.reports.all().order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'reports': actionlist,
-        })
-    return render(request, 'mod/nation_reports.html', context)
-
-
-@mod_required
-def nation_logins(request, nation_id, page):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target}
-    #POST data handling
-    #what little of it there are
-    if request.method == "POST":
-        if 'correlate' in request.POST:
-            context.update({'result': 'not yet implemented'})
-
-
-    pagecheck(nation, target, "all wars")
-    query = target.login_times.all().order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
-    context.update({
-            'pages': utils.pagination(paginator, actionlist),
-            'logins': actionlist,
-        })
-    return render(request, 'mod/logins.html', context)
-
-@mod_required
-def iplogs(request, nation_id):
-    nation = request.user.nation
-    target = utils.get_player(nation_id)
-    if target == False:
-        return render(request, 'mod/not_found.html')
-    context = {'target': target}
-    #POST data handling
-    #what little of it there are
-    if request.method == "POST":
-        if 'correlate' in request.POST:
-            context.update({'result': 'not yet implemented'})
-
-        elif 'checkip' in request.POST:
-            try:
-                ip = target.IPs.get(pk=request.POST['checkip'])
-            except:
-                context.update({'result': 'Invalid entry'})
-            else:
-                context.update({
-                    'associates': IP.objects.select_related('nation').filter(IP=ip.IP),
-                    'checked': True,
-                    'selected_ip': ip.IP,
-                })
-
-    query = target.IPs.all().order_by('-pk')
-    iplist = []
-    for ip in query:
-        ip.nationcount = IP.objects.filter(IP=ip.IP).count()
-        iplist.append(ip)
-    context.update({
-            'IPs': query,
-        })
-    return render(request, 'mod/ips.html', context)
-
-def pagecheck(nation, target, pagename):
-    #check if entry exists and if so, update timestamp
-    #to avoid multiple entries in the database with repeated viewings
-    #don't need the same person to be placed in 10 times
-    if nation.mod_views.filter(timestamp__gte=v.now() - timezone.timedelta(hours=1), nation=target, page=pagename).exists():
-        nation.mod_views.filter(timestamp__gte=v.now() - timezone.timedelta(hours=1), nation=target, page=pagename).update(timestamp=v.now())
-    else:
-        nation.mod_views.create(nation=target, page=pagename)
-
-
 
 
 
@@ -611,7 +368,6 @@ def delete_war(request, target):
         otherguy = war.attacker.name
         adj = 'defensive'
     log = war.warlog
-    log.over = True
     log.timeend = v.now()
     log.save()
     war.delete()
@@ -619,20 +375,24 @@ def delete_war(request, target):
 
 
 #here we "delete" a nation, ie set as deleted and remove outstanding things like wars
+#applications, market offers etc
 def delete_nation(target):
     target.deleted = True
     target.save(update_fields=['deleted'])
-    if target.offensives.all().exists():
-        war = target.offensives.all()[0]
-        Warlog.objects.filter(war=war).update(over=False, timeend=v.now())
-        war.delete()
-    if target.defensives.all().exists():
-        war = target.defensives.all()[0]
-        Warlog.objects.filter(war=war).update(over=False, timeend=v.now())
-        war.delete()
+    #deleting the wars automatically delete the war logs
+    target.offensives.all().delete()
+    target.defensives.all().delete()
+    #all infiltrating spies are sent home, same with outstanding spies
+    Spy.objects.filter(location=target).update(location=F('nation'), discovered=False, arrested=False)
+    Spy.objects.filter(nation=target).update(location=F('nation'), discovered=False, arrested=False)
+    Extradition_request.objects.filter(Q(target=target)|Q(nation=target)).delete()
+    target.invites.all().delete()
+    target.offers.all().delete()
+    if target.has_alliance():
+        target.alliance.kick(target)
 
 
-
+#Shadow banning from reporting
 def report_ban(target, deleteall):
     target.settings.can_report = False
     target.settings.save(update_fields=['can_report'])
@@ -640,6 +400,10 @@ def report_ban(target, deleteall):
         target.reports.all().delete()
 
 
+#Reassigns an ID to the target nation
+#if the chosen ID has already been picked
+#iterates over the database to find an available ID to the unlucky guy
+#slow and inefficient, might get rewritten
 def assign_id(target, new_id):
     try:
         alredy = Nation.objects.get(index=new_id)

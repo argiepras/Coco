@@ -231,8 +231,15 @@ def reset():
         )
     ID.objects.all().update(turn=1)
     War.objects.all().delete()
-    Alliance.objects.all().delete() #alliance related objects automatically deletes themselves
+    Warlog.objects.all().delete()
+    #deleting alliances triggers cascading deletions on invites/applications/chats/decs/permissions
+    Alliance.objects.all().delete()
     Event.objects.all().delete()
+    Aid.objects.all().delete()
+    Loginlog.objects.all().delete()
+    Logoutlog.objects.all().delete()
+    Aidlog.objects.all().delete()
+    Actionlog.objects.all().delete()
     Eventhistory.objects.all().delete()
     Declaration.objects.all().delete()
     Market.objects.all().delete()
@@ -244,6 +251,17 @@ def reset():
     Extradition_request.objects.all().delete()
     for n in Nation.objects.all():
         n.news.create(event=True, content='newbie_event', deletable=False)
+
+
+#used in the mod section to keep track of what mods have viewed
+def pagecheck(nation, target, pagename):
+    #check if entry exists and if so, update timestamp
+    #to avoid multiple entries in the database with repeated viewings
+    #don't need the same person to be placed in 10 times
+    if nation.mod_views.filter(timestamp__gte=v.now() - timezone.timedelta(hours=1), nation=target, page=pagename).exists():
+        nation.mod_views.filter(timestamp__gte=v.now() - timezone.timedelta(hours=1), nation=target, page=pagename).update(timestamp=v.now())
+    else:
+        nation.mod_views.create(nation=target, page=pagename)
 
 
 
@@ -285,6 +303,7 @@ def get_player(ID):
     except:
         pass
     return nation
+
 
 def get_active_player(ID):
     nation = False

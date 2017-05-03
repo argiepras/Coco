@@ -21,7 +21,14 @@ def wartype(war, nation):
 register.filter('wartype', wartype)
 
 
+def lastip(nation):
+    return mark_safe(nation.IPs.all().latest('pk'))
+
+register.filter('lastip', lastip)
+
+
 def outcome(war, nation):
+
     if war.winner == None:
         war_outcome = "Ongoing"
     elif war.winner.pk == nation.pk:

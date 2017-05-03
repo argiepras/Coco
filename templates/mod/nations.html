@@ -1,5 +1,6 @@
 {% extends 'nation/base.html' %}
 {% block content %}
+{% load modtags %}
 <div class="container">
     <p class="spacer"><h2>All nations</h2></p>
     {% if result %}
@@ -68,6 +69,7 @@
         <thead>
             <td>Nation name</td>
             <td>Leader name</td>
+            <td>Last seen IP</td>
             <td>GDP</td>
             <td>Subregion</td>
         </thead>
@@ -80,6 +82,7 @@
                     </a>
                 </td>
                 <td>{{ player.user.username }}</td>
+                <td>{{ player|lastip }}</td>
                 <td>${{ player.gdp }}m</td>
                 <td>{{ player.subregion }}</td>
             </tr>

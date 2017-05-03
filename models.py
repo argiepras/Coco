@@ -69,6 +69,8 @@ class Alliance(models.Model):
         member.permissions.delete()
         member.alliance = None
         member.save(update_fields=['alliance'])
+        if self.member.all().count() == 0:
+            self.delete()
         return member
 
 class ID(models.Model):
@@ -600,14 +602,14 @@ class Marketoffer(models.Model):
 
     def approved(self, buyer):
         if self.offer in self.nation.__dict__:
-            seller = (True if self.offer_amount < self.nation.__dict__[self.offer] else False)
+            seller = (True if self.offer_amount <= self.nation.__dict__[self.offer] else False)
         else: #weapons are contained in the military model
-            seller = (True if self.offer_amount < self.nation.military.__dict__[self.offer] - 10 else False)
+            seller = (True if self.offer_amount <= self.nation.military.__dict__[self.offer] - 10 else False)
 
         if self.request in self.nation.__dict__:
-            buyer = (True if self.request_amount < buyer.__dict__[self.request] else False)
+            buyer = (True if self.request_amount <= buyer.__dict__[self.request] else False)
         else: #weapons are contained in the military model
-            buyer = (True if self.request_amount < buyer.military.__dict__[self.request] - 10 else False)
+            buyer = (True if self.request_amount <= buyer.military.__dict__[self.request] - 10 else False)
         return buyer, seller
 
 class Marketofferlog(models.Model):
@@ -716,7 +718,8 @@ class Banklog(models.Model):
     def __unicode__(self):
         if self.deposit:
             return u"%s deposited %s %s in %ss bank" % (self.nation.name, self.amount, self.resource, self.alliance.name)
-
+        return u"%s withdrew %s %s in %ss bank" % (self.nation.name, self.amount, self.resource, self.alliance.name)
+        
 
 class Bankstats(models.Model):
     alliance = models.ForeignKey(Alliance, on_delete=models.CASCADE, related_name="bankstats")
@@ -1014,6 +1017,13 @@ class Warlog(models.Model):
 
     def get_absolute_url(self):
         return reverse('mod:war', kwargs={'war_id': (str(self.pk))})
+
+    def isover(self):
+        return self.timeend > self.timestart
+
+
+class Wargain(models.Model):
+
 
 
 class Lastattack(models.Model):
