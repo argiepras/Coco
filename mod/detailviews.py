@@ -124,13 +124,6 @@ def nation_logins(request, nation_id, page):
     if target == False:
         return render(request, 'mod/not_found.html')
     context = {'target': target}
-    #POST data handling
-    #what little of it there are
-    if request.method == "POST":
-        if 'correlate' in request.POST:
-            context.update({'result': 'not yet implemented'})
-
-
     utils.pagecheck(nation, target, "all wars")
     query = target.login_times.all().order_by('-pk')
     paginator, actionlist = utils.paginate_me(query, 50, page)
@@ -138,7 +131,31 @@ def nation_logins(request, nation_id, page):
             'pages': utils.pagination(paginator, actionlist),
             'logins': actionlist,
         })
-    return render(request, 'mod/logins.html', context)
+    return details(request, nation_id, page, 'logins')
+
+
+def details(request, nation_id, page, template):
+
+    if template == 'logins':
+        context = basedetails(request, nation_id, 'login_times', 'all logins')
+
+    return render(request, 'mod/%s.html' % template, context)
+
+
+def basedetails(request, nation_id, manager, pcheck, var):
+    nation = request.user.nation
+    target = utils.get_player(nation_id)
+    if target == False:
+        return render(request, 'mod/not_found.html')
+    context = {'target': target}
+    utils.pagecheck(nation, target, pcheck)
+    query = getattr(target, manager).all().order_by('-pk')
+    paginator, actionlist = utils.paginate_me(query, 50, page)
+    context.update({
+            'pages': utils.pagination(paginator, actionlist),
+            var: actionlist,
+        })
+    return context
 
 @mod_required
 def iplogs(request, nation_id):

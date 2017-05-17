@@ -26,6 +26,11 @@ def lastip(nation):
 
 register.filter('lastip', lastip)
 
+def lastipurl(nation):
+    return mark_safe(nation.IPs.all().latest('pk').get_absolute_modurl())
+
+register.filter('lastipurl', lastipurl)
+
 
 def outcome(war, nation):
 

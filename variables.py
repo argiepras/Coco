@@ -13,6 +13,9 @@ def initprotection():
 def warprotection():
     return now() + timezone.timedelta(hours=72)
 
+def vacationtimer():
+    return now() + timezone.timedelta(days=7)
+
 resources = ['budget', 'rm', 'oil', 'mg', 'food']
 
 delay = 10 

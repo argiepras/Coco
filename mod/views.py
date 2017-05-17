@@ -11,6 +11,9 @@ from nation.decorators import mod_required, headmod_required
 from .forms import *
 import nation.utilities as utils
 import nation.variables as v
+import nation.mod.actions as actions
+from nation.mod.ip_magi import *
+
 
 
 @mod_required
@@ -18,6 +21,7 @@ def main(request):
     context = {}
     nation = request.user.nation
     result = False
+
     if request.method == 'POST':
         if 'newid' in request.POST:
             form = newidform(request.POST)
@@ -25,7 +29,6 @@ def main(request):
                 player = utils.get_player(form.cleaned_data['old'])
                 if player:
                     assign_id(player, form.cleaned_data['new'])
-
                     result = "%s has been assigned ID %s" % (player.name, form.cleaned_data['new'])
                 else:
                     result = "No nation found for '%s'" % form.cleaned_data['old']
@@ -51,61 +54,14 @@ def main(request):
             if form.is_valid():
                 player = utils.get_active_player(form.cleaned_data['player'])
                 if player:
-                    if form.cleaned_data['action'] == 'donor':
-                        Settings.objects.filter(nation=player).update(donor=True)
-                        action = "Gave %s donor" % player.name
-                        result = "%s has recieved donor status!" % player.name
-
-                    elif form.cleaned_data['action'] == 'revoke':
-                        Settings.objects.filter(nation=player).update(donor=False)
-                        action = "Revoked %ss donor" % player.name
-                        result = "%s has lost donor status!" % player.name
-
-                    elif form.cleaned_data['action'] == 'exit_vac':
-                        Nation.objects.filter(pk=player.pk).update(vacation=False)
-                        Settings.objects.filter(nation=player).update(vacation_timer=v.now())
-                        action = "Removed %s from vacation mode" % player.name
-                        result = "%s has been removed from vacation mode!" % player.name
-
-                    elif form.cleaned_data['action'] == 'enter_vac':
-                        Nation.objects.filter(pk=player.pk).update(vacation=True)
-                        Settings.objects.filter(nation=player).update(vacation_timer=v.now() + timezone.timedelta(days=7))
-                        action = "Placed %s in vacation mode" % player.name
-                        result = "%s has been placed into vacation mode!" % player.name
-
-                    elif form.cleaned_data['action'] == 'delete':
-                        delete_nation(player)
-                        action = "Deleted %s" % player.name
-                        result = "%s has been deleted!" % player.name
-
-                    elif form.cleaned_data['action'] == 'ban':
-                        Ban.objects.create(IP=player.IPs.latest('pk').IP)
-                        Nation.objects.filter(pk=player.pk).update(deleted=True)
-                        action = "deleted and banned %s" % player.name
-                        result = "%s has been deleted and %s put on the ban list" % (player.name, player.IPs.latest('pk').IP)
-
-                    elif form.cleaned_data['action'] == 'banreport':
-                        report_ban(player, False)
-                        action = "banned %s from reporting" %  player.name
-
-                        result = "%s has been banned from reporting" % player.name
-
-                    elif form.cleaned_data['action'] == 'unbanreport':
-                        player.settings.can_report = True
-                        player.settings.save(update_fields=['can_report'])
-                        action = "unbanned %s from reporting" %  player.name
-
-                        result = "%s has been unbanned from reporting" % player.name
-
-                    nation.mod_actions.create(
-                    action=action,
-                    reason=form.cleaned_data['reason'],
-                    reversible=True,
-                    reverse="not yet implemented",
-                    )
+                    result = actions.__dict__[form.cleaned_data['action']](
+                                nation, 
+                                player, 
+                                form.cleaned_data['reason']
+                            )
+                    
                 else:
                     result = "That nation doesn't exist!"
-
             else:
                 result = "Invalid POST data (did you forget the enter a reason?)"
 
@@ -119,6 +75,7 @@ def main(request):
         'newidform': newidform(),
         })
     return render(request, 'mod/main.html', context)
+
 
 @headmod_required
 def mods(request):
@@ -355,70 +312,48 @@ def nation_page(request, nation_id):
     return render(request, 'mod/nation.html', context)
 
 
-
-
-
-def delete_war(request, target):
-    if request.POST['deletewar'] == 'offensive':
-        war = target.offensives.all()[0] #there's only 1 because 1 war limit
-        otherguy = war.defender.name
-        adj = 'offensive'
-    else:
-        war = target.defensives.all()[0]
-        otherguy = war.attacker.name
-        adj = 'defensive'
-    log = war.warlog
-    log.timeend = v.now()
-    log.save()
-    war.delete()
-    return "%s war against %s has been deleted" % (adj, otherguy), otherguy
-
-
-#here we "delete" a nation, ie set as deleted and remove outstanding things like wars
-#applications, market offers etc
-def delete_nation(target):
-    target.deleted = True
-    target.save(update_fields=['deleted'])
-    #deleting the wars automatically delete the war logs
-    target.offensives.all().delete()
-    target.defensives.all().delete()
-    #all infiltrating spies are sent home, same with outstanding spies
-    Spy.objects.filter(location=target).update(location=F('nation'), discovered=False, arrested=False)
-    Spy.objects.filter(nation=target).update(location=F('nation'), discovered=False, arrested=False)
-    Extradition_request.objects.filter(Q(target=target)|Q(nation=target)).delete()
-    target.invites.all().delete()
-    target.offers.all().delete()
-    if target.has_alliance():
-        target.alliance.kick(target)
-
-
-#Shadow banning from reporting
-def report_ban(target, deleteall):
-    target.settings.can_report = False
-    target.settings.save(update_fields=['can_report'])
-    if deleteall: #delete all reports made
-        target.reports.all().delete()
-
-
-#Reassigns an ID to the target nation
-#if the chosen ID has already been picked
-#iterates over the database to find an available ID to the unlucky guy
-#slow and inefficient, might get rewritten
-def assign_id(target, new_id):
-    try:
-        alredy = Nation.objects.get(index=new_id)
-    except:
-        pass
-    else:
-        idindex = ID.objects.get()
-        while True:
-            if Nation.objects.filter(index=idindex.index).exists():
-                idindex.index += 1
+@mod_required
+def ipview(request, ip):
+    target = IP.objects.filter(IP=ip)
+    if target.count() == 0:
+        return render(request, 'mod/not_found.html')
+    iplist = IP_to_ip(target)
+    mod = request.user.nation
+    context = {
+        'ip': target[0],
+        'is_banned': Ban.objects.filter(IP__in=iplist).exists(),
+    }
+    creations, first = creation_ip_nations(iplist[0])
+    associations = Nation.objects.actives().filter(IPs__IP__in=iplist)
+    correlations, ips = correlated_ips(iplist)
+    if request.POST:
+        form = delbanreportform(request.POST)
+        reason = reasonform(request.POST)
+        if form.is_valid() and reason.is_valid():
+            if 'created' in request.POST:
+                query = creations
+            elif 'associated' in request.POST:
+                query = associations
+            elif 'correlated' in request.POST:
+                query = correlations
             else:
-                break
-        alredy.index = idindex.index
-        alredy.save(update_fields=['index'])
-    target.index = new_id
-    target.save(update_fields=['index'])
+                query = False
+            if form.cleaned_data['ban'] and query:
+                bulk_delete(query, mod, reason.cleaned_data['reason'])
 
+            if form.cleaned_data['delete'] and query:
+                bulk_ban(query, mod, reason.cleaned_data['reason'])
+
+
+
+
+    context.update({
+            'creations': creations,
+            'first_seen': first,
+            'associated_nations': associations,
+            'correlated_nations': correlations,
+            'form': delbanreportform(),
+            'reasonform': reasonform(),
+        })
+    return render(request, 'mod/ipview.html', context)
 

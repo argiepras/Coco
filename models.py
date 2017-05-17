@@ -31,7 +31,7 @@ class Alliance(models.Model):
     def get_absolute_url(self):
         return reverse('alliance:alliance_page', kwargs={'alliancepk': (str(self.pk))})
 
-    def add_member(self, nation):
+    def add_member(self, nation, founder=False):
         nation.invites.all().delete()
         nation.applications.all().delete()
         Memberstats.objects.create(nation=nation, alliance=self)
@@ -99,7 +99,7 @@ class Nation(models.Model):
     descriptor = models.CharField(max_length=100, default="")
     description = models.CharField(max_length=500)
     title = models.CharField(max_length=100, default="")
-    creationip = models.GenericIPAddressField()
+    creationip = models.GenericIPAddressField(default="127.0.0.1") #default only used for testing
     creationtime = models.DateTimeField(default=v.now)
     subregion = models.CharField(max_length=25, default="Carribean")
     gdp = models.IntegerField(default=300)
@@ -351,6 +351,9 @@ class IP(models.Model):
     def __unicode__(self):
         return u"%s" % self.IP
 
+    def get_absolute_modurl(self):
+        return reverse('mod:ip_view', kwargs={'ip': self.IP})
+
 class Military(models.Model):
     nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
     army = models.IntegerField(default=20)
@@ -530,7 +533,7 @@ class Modaction(models.Model):
     action = models.CharField(max_length=150)
     reason = models.CharField(max_length=500)
     reversible = models.BooleanField(default=False)
-    reverse = models.CharField(max_length=300)
+    reverse = models.TextField()
     timestamp = models.DateTimeField(default=v.now)
 
 
@@ -545,7 +548,7 @@ class Modview(models.Model):
 
 #simple ban for now
 class Ban(models.Model):
-    IP = models.GenericIPAddressField()
+    IP = models.GenericIPAddressField(unique=True)
     def __unicode__(self):
         return u"%s" % self.IP
 
@@ -1022,7 +1025,7 @@ class Warlog(models.Model):
         return self.timeend > self.timestart
 
 
-class Wargain(models.Model):
+#class Wargain(models.Model):
 
 
 

@@ -82,7 +82,11 @@
                     </a>
                 </td>
                 <td>{{ player.user.username }}</td>
-                <td>{{ player|lastip }}</td>
+                <td>
+                    <a href="{{ player|lastipurl }}">
+                        {{ player|lastip }}
+                    </a>
+                </td>
                 <td>${{ player.gdp }}m</td>
                 <td>{{ player.subregion }}</td>
             </tr>

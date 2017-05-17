@@ -20,4 +20,5 @@ urlpatterns = [
     url(r'^nations/(?P<nation_id>[a-zA-Z0-9_-]+)/reports/(?P<page>[0-9]+)/$', detailviews.nation_reports, name='nation_reports'),
     url(r'^nations/(?P<nation_id>[a-zA-Z0-9_-]+)/IPs/$', detailviews.iplogs, name='nation_IPs'),
     url(r'^nations/overview/(?P<page>[0-9]+)/$', views.nation_overview, name='nations'),
+    url(r'^IP/(?P<ip>[0-9.]+)/$', views.ipview, name="ip_view"),
 ]

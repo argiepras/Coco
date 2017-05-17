@@ -18,12 +18,12 @@ class quickactionform(forms.Form):
     actions = (
             ('ban', 'Ban player'),
             ('delete', 'Delete nation'),
-            ('enter_vac', 'Put in vacation'),
-            ('exit_vac', 'Remove from vacation'),
-            ('donor', 'Give donor'),
-            ('revoke', 'Revoke donor'),
-            ('banreport', 'Ban from reporting'),
-            ('unbanreport', 'Unban from reporting'),
+            ('enter_vacation', 'Put in vacation'),
+            ('exit_vacation', 'Remove from vacation'),
+            ('give_donor', 'Give donor'),
+            ('revoke_donor', 'Revoke donor'),
+            ('report_ban', 'Ban from reporting'),
+            ('report_unban', 'Unban from reporting'),
         )
     action = forms.ChoiceField(choices=actions, widget=forms.Select(attrs={
         'class': 'form-control', 'style': 'color: black',
@@ -53,3 +53,15 @@ class closereportform(forms.Form):
         'class': 'form-control', 'style': 'color: black; height: 100px;', 'placeholder': 'Report conclusion',
         }))
     guilty = forms.BooleanField(required=False)
+
+
+class delbanreportform(forms.Form):
+    ban = forms.BooleanField(required=False)
+    delete = forms.BooleanField(required=False)
+
+    def clean(self):
+        cleaned_data = super(delbanreportform, self).clean()
+
+        if not cleaned_data.get('ban') and not cleaned_data.get('delete'):
+            self.add_error('ban', 'You need to select at least one')
+        return cleaned_data

@@ -71,7 +71,6 @@ class offerform(forms.Form):
 
     def clean(self):
         cleaned_data = super(offerform, self).clean()
-        print cleaned_data
 
         if cleaned_data.get("offer") == cleaned_data.get("request"):
             self.add_error('offer', 'You cannot trade %(offer)s for %(offer)s!' % {'offer': cleaned_data.get("offer")})

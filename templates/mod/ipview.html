@@ -1,0 +1,262 @@
+{% extends "nation/base.html" %}
+{% block content %}
+<style>
+    .half {
+        width: 50%;
+    }
+</style>
+<div class="container">
+    <div class="headline">
+        <h2>Data associated with {{ ip.IP }}</h2>
+
+    </div>
+    {% if is_banned %}
+        <p class="spacer"><b style="color: red">IP is banned</b></p>
+    {% endif %}
+    <div class="row">
+        <div class="col-xs-8 col-xs-offset-2">
+        
+            <table class="table table-striped">
+                <tbody>
+                    <tr>
+                        <td class="half">First seen</td>
+                        <td>{{ ip.timestamp|date:"o/m/d G:i" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="half">First seen with</td>
+                        <td>
+                            <a href="{{ ip.nation.get_modview_url }}">
+                                {{ ip.nation.name }}
+                            </a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="half">Nations created with IP</td>
+                        <td>{{ creations.count }}</td>
+                    </tr>
+                    <tr>
+                        <td class="half">Nations seen with IP</td>
+                        <td>{{ associated_nations.count }}</td>
+                    </tr>
+                    <tr>
+                        <td class="half">Nations associated with IP</td>
+                        <td>{{ correlated_nations.count }}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+<form method="POST"> {% csrf_token %}
+    {% if not is_banned %}
+        <button class="btn btn-danger" name="ban">
+            Ban IP
+        </button>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-xs-8 col-xs-offset-2">
+            <div class="panel panel-default" style="margin-top: 5em">
+                <div style="background-color: rgb(60, 60, 60)">
+                    <a role="button" data-toggle="collapse" href="#collapse-created" aria-expanded="false" aria-controls="collapse-created">
+                        <div class="panel-heading">
+                            Nations created with {{ ip.IP }}
+                        </div>
+                    </a>
+                </div>
+                <div class="collapse" id="collapse-created">
+                    <div class="panel-body"></div>
+                    <table class="table">
+                        <thead>
+                            <td>
+                                Nation
+                            </td>
+                            <td> 
+                                Creation time
+                            </td>
+                        </thead>
+                        <tbody>
+                        {% for player in creations %}
+                            <tr>
+                                <td>
+                                    <a href="{{ player.get_modview_url }}">
+                                        <b>{{ player.name }}</b>
+                                    </a>
+                                </td>
+                                <td>{{ player.creationtime|date:"o/m/d G:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="spacer">
+                        <div class="row">
+                            <div class="col-xs-1 col-xs-offset-5">
+                                <div style="float: right;">{{ form.ban }}</div>
+                            </div>
+                            <div class="col-xs-6">
+                                <p style="float: left;">Ban all</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-1 col-xs-offset-5">
+                                <div style="float: right;">{{ form.delete }}</div>
+                            </div>
+                            <div class="col-xs-6">
+                                <p style="float: left;">Delete all</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1em">
+                        <button type="submit" class="btn btn-danger" name="created">
+                            Do it
+                        </button>
+                    </div>
+                </div>
+            </div> 
+        </div>
+    </div>
+
+
+
+    <div class="row">
+        <div class="col-xs-8 col-xs-offset-2">
+            <div class="panel panel-default" style="margin-top: 5em">
+                <div style="background-color: rgb(60, 60, 60)">
+                    <a role="button" data-toggle="collapse" href="#collapse-associated" aria-expanded="false" aria-controls="collapse-associated">
+                        <div class="panel-heading">
+                            Nations seen with {{ ip.IP }}
+                        </div>
+                    </a>
+                </div>
+                <div class="collapse" id="collapse-associated">
+                    <div class="panel-body">
+                        List of nations that has logged in with {{ ip.IP }}
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <td>
+                                Nation
+                            </td>
+                            <td> 
+                                Creation time
+                            </td>
+                        </thead>
+                        <tbody>
+                        {% for player in associated_nations %}
+                            <tr>
+                                <td>
+                                    <a href="{{ player.get_modview_url }}">
+                                        <b>{{ player.name }}</b>
+                                    </a>
+                                </td>
+                                <td>{{ player.creationtime|date:"o/m/d G:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    <div class="spacer">
+                        <div class="row">
+                            <div class="col-xs-1 col-xs-offset-5">
+                                <div style="float: right;">{{ form.ban }}</div>
+                            </div>
+                            <div class="col-xs-6">
+                                <p style="float: left;">Ban all</p>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-xs-1 col-xs-offset-5">
+                                <div style="float: right;">{{ form.delete }}</div>
+                            </div>
+                            <div class="col-xs-6">
+                                <p style="float: left;">Delete all</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-bottom: 1em">
+                        <button type="submit" class="btn btn-danger" name="associated">
+                            Just do it
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+
+    <div class="row">
+        <div class="col-xs-8 col-xs-offset-2">
+            <div class="panel panel-default" style="margin-top: 5em">
+                <div style="background-color: rgb(60, 60, 60)">
+                    <a role="button" data-toggle="collapse" href="#collapse-correlated" aria-expanded="false" aria-controls="collapse-correlated">
+                        <div class="panel-heading">
+                            Nations associated with {{ ip.IP }}
+                        </div>
+                    </a>
+                </div>
+                <div class="collapse" id="collapse-correlated">
+                <div class="panel-body">
+                    List of nations that has logged in with an IP in the set of IPs associated
+                    with nations that has logged in with {{ ip.IP }}
+                </div>
+                <table class="table">
+                    <thead>
+                        <td>
+                            Nation
+                        </td>
+                        <td> 
+                            Creation time
+                        </td>
+                    </thead>
+                    <tbody>
+                    {% for player in correlated_nations %}
+                        <tr>
+                            <td>
+                                <a href="{{ player.get_modview_url }}">
+                                    <b>{{ player.name }}</b>
+                                </a>
+                            </td>
+                            <td>{{ player.creationtime|date:"o/m/d G:i" }}</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div class="spacer">
+                    <div class="row">
+                        <div class="col-xs-1 col-xs-offset-5">
+                            <div style="float: right;">{{ form.ban }}</div>
+                        </div>
+                        <div class="col-xs-6">
+                            <p style="float: left;">Ban all</p>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-1 col-xs-offset-5">
+                            <div style="float: right;">{{ form.delete }}</div>
+                        </div>
+                        <div class="col-xs-6">
+                            <p style="float: left;">Delete all</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-bottom: 1em">
+                    <button type="submit" class="btn btn-danger" name="correlated">
+                        Don't let your dreams be dreams
+                    </button>
+                </div>
+            </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            {{ reasonform.reason }}
+        </div>
+    </div>
+</form>
+</div>
+{% endblock %}
