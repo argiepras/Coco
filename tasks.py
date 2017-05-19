@@ -125,7 +125,7 @@ def add_budget():
 #hourly check for vacation-eligible nations and subsequent placing them in it
 @periodic_task(run_every=crontab(minute="5", hour="*", day_of_week="*"))
 def vaccheck():
-    Nation.objects.actives().filter(last_seen__gt=timezone.now() - v.inactivedelta())
+    Nation.objects.actives().filter(last_seen__gt=timezone.now() - v.inactivedelta()).update(vacation=True)
 
 
 

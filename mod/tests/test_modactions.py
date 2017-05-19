@@ -1,8 +1,8 @@
 from nation.models import *
+from nation.testutils import *
 from nation.mod.actions import *
 import nation.variables as v
 from django.test import TestCase
-from copy import copy
 from django.db.models import Q
 
 class Actiontests(TestCase):
@@ -221,24 +221,46 @@ class deletiontest(TestCase):
         #expected behaviour is adding the offending IP(s) to the banlist
         #and that they don't exist before being added
         self.assertEqual(Ban.objects.filter(IP__in=self.b.IPs.all().values_list('IP', flat=True)).exists(), False)
-        ban_player(self.b)
+        ban_nation(self.b)
         expected = self.b.IPs.all().latest('pk').IP
         self.assertEqual(Ban.objects.filter(IP=expected).exists(), True)
 
-        ban_player(self.b, True)
+        ban_nation(self.b, True)
         expected = self.b.IPs.all().values_list('IP', flat=True)
         self.assertEqual(
             Ban.objects.filter(IP__in=expected).count(),
             self.b.IPs.all().count()
             )
 
+
+
+class bulk_operations(TestCase):
+    def setUp(self):
+        n = nation_generator(50)
+        for x in n:
+            for ip in ip_generator(5):
+                x.IPs.create(IP=ip)
+        s = Settings.objects.latest('pk')
+        s.mod = True
+        s.save()
+
     def test_bulk_deletion(self):
-        q = Nation.objects.all().exclude(nation__settings__mod=True)
+        q = Nation.objects.all().exclude(settings__mod=True)
         mod = Nation.objects.get(settings__mod=True)
         actioncount = mod.mod_actions.all().count()
         nationcount = q.count()
         bulk_delete(q, mod, 'testing bulk deletion')
-        self.assertEqual(Nation.objects.all().exclude(nation__settings__mod=True).count(), 0)
+        self.assertEqual(Nation.objects.actives().exclude(settings__mod=True).count(), 0)
         self.assertEqual(actioncount + 1, mod.mod_actions.all().count())
-        self.assertEqual(mod.mod_actions.filter(reason='testing bulk deletion').exists(), True)
+        action = mod.mod_actions.filter(reason='testing bulk deletion')
+        self.assertEqual(action.exists(), True)
+
+    def test_bulk_banning(self):
+        q = Nation.objects.all().exclude(settings__mod=True)
+        mod = Nation.objects.get(settings__mod=True)
+        ipcount = bulk_ban(q, mod, 'testing bulk banning')
+        self.assertEqual(ipcount, q.count() * 6)
+        self.assertEqual(mod.mod_actions.filter(reason='testing bulk banning').exists(), True)
+        self.assertEqual(Nation.objects.actives().count(), 1) #mod remains 
+
 

@@ -51,7 +51,7 @@ def delete(mod, player, reason):
     set_modaction(mod, "Deleted %s" % player.name, reason)
 
 def ban(mod, player, reason, all=False):
-    ban_player(player)
+    ban_nation(player)
     result = "Banned %s" % player.name
     set_modaction(mod, "Banned %s" % player.name, reason)
 
@@ -74,12 +74,12 @@ def report_unban(target):
 
 
 
-def set_modaction(mod, action, reason, reversible=True):
+def set_modaction(mod, action, reason, reversible=True, reverse="not yet implemented"):
     mod.mod_actions.create(
         action=action,
         reason=reason,
         reversible=reversible, 
-        reverse="not yet implemented",
+        reverse=reverse,
     )
 
 
@@ -100,15 +100,21 @@ def delete_war(request, target):
 
 #simple single IP ban
 def ban_nation(target, allips=False):
-    delete_nation(target)
-    bans = []
+    #Puts a player on the ban list
+    #all or just the latest IP
+    bans = [target.IPs.latest('pk').IP]
     if allips:
-        for ip in target.IPs.all().values_list('IP', flat=True):
-            bans.append(Ban(IP=ip))
-    else:
-        bans.append(Ban(IP=target.IPs.latest('pk').IP))
-    Bans.objects.bulk_create(bans)
-
+        bans = [ip for ip in target.IPs.all().values_list('IP', flat=True)]
+    count = 0
+    for ip in bans:
+        #unique constraints and negligent performance penalties
+        #means looping over a get or create is ideal
+        x, created = Ban.objects.get_or_create(IP=ip)
+        if created:
+            count += 1
+    delete_nation(target)
+    return count
+    
 
 #here we "delete" a nation, ie set as deleted and remove outstanding things like wars
 #applications, market offers etc
@@ -163,15 +169,22 @@ def assign_id(target, new_id):
     target.save(update_fields=['index'])
 
 
-def ban_player(target, allips=False):
-    #Puts a player on the ban list
-    #all or just the latest IP
-    bans = [target.IPs.latest('pk').IP]
-    if allips:
-        bans = [ip for ip in target.IPs.all().values_list('IP', flat=True)]
+def bulk_delete(query, mod, reason):
+    pks = ''
+    for player in query:
+        delete_nation(player)
+        pks += '%s,' % player.pk
+    set_modaction(mod, 'bulk deletion',reason, reverse=pks, reversible=True)
 
-    for ip in bans:
-        #unique constraints and negligent performance penalties
-        #means looping over a get or create is ideal
-        Ban.objects.get_or_create(IP=ip)
 
+def bulk_ban(query, mod, reason):
+    #bulk deletion
+    #might be reversible with use of the pks
+    #returns number of IPs put on the ban list
+    pks = ''
+    count = 0
+    for player in query:
+        count += ban_nation(player, True)
+        pks += '%s,' % player.pk
+    set_modaction(mod, 'bulk banning', reason, reverse=pks, reversible=True)
+    return count

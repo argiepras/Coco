@@ -8,8 +8,8 @@ from django.db import models
 from django.db.models import F, Avg
 from django.utils import timezone
 
-def latestmarket():
-    return Market.objects.latest('pk').pk
+def current_turn():
+    return ID.objects.get().turn
 
 
 # Create your models here.
@@ -85,23 +85,7 @@ class Actives(models.Manager):
     def actives(self):
         return super(Actives, self).get_queryset().filter(vacation=False, reset=False, deleted=False)
 
-
-class Nation(models.Model):
-    index = models.IntegerField(default=0)
-    user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
-    name = models.CharField(max_length=30)
-    alliance = models.ForeignKey(Alliance, related_name='members', blank=True, null=True, on_delete=models.SET_NULL)
-    protection = models.DateTimeField(default=v.initprotection)
-    last_seen = models.DateTimeField(default=v.now)
-    vacation = models.BooleanField(default=False) #here and not settings to avoid multiple queries
-    deleted = models.BooleanField(default=False) #mod deletion makes nation appear as deleted
-    reset = models.BooleanField(default=False)
-    descriptor = models.CharField(max_length=100, default="")
-    description = models.CharField(max_length=500)
-    title = models.CharField(max_length=100, default="")
-    creationip = models.GenericIPAddressField(default="127.0.0.1") #default only used for testing
-    creationtime = models.DateTimeField(default=v.now)
-    subregion = models.CharField(max_length=25, default="Carribean")
+class Nationattrs(models.Model):
     gdp = models.IntegerField(default=300)
     budget = models.IntegerField(default=1000)
     trade_balance = models.IntegerField(default=0)
@@ -137,6 +121,26 @@ class Nation(models.Model):
     research = models.IntegerField(default=0)
     universities = models.IntegerField(default=0)
     closed_universities = models.IntegerField(default=0)
+
+    class Meta:
+        abstract = True
+
+class Nation(Nationattrs):
+    index = models.IntegerField(default=0)
+    user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
+    name = models.CharField(max_length=30)
+    alliance = models.ForeignKey(Alliance, related_name='members', blank=True, null=True, on_delete=models.SET_NULL)
+    protection = models.DateTimeField(default=v.initprotection)
+    last_seen = models.DateTimeField(default=v.now)
+    vacation = models.BooleanField(default=False) #here and not settings to avoid multiple queries
+    deleted = models.BooleanField(default=False) #mod deletion makes nation appear as deleted
+    reset = models.BooleanField(default=False)
+    descriptor = models.CharField(max_length=100, default="")
+    description = models.CharField(max_length=500)
+    title = models.CharField(max_length=100, default="")
+    creationip = models.GenericIPAddressField(default="127.0.0.1") #default only used for testing
+    creationtime = models.DateTimeField(default=v.now)
+    subregion = models.CharField(max_length=25, default="Carribean")
     objects = Actives()
     def __unicode__(self):
         return u"nation: %s" % self.name
@@ -299,6 +303,14 @@ class Nation(models.Model):
                 raise ValueError
         except:
             return reverse('nations:nationpage', kwargs={'url': (str(self.index))})
+
+
+class Snapshot(Nationattrs):
+    #snapshot of the state of a nation during a given turn
+    nation = models.ForeignKey(Nation, related_name="snapshots", on_delete=models.CASCADE)
+    turn = models.IntegerField(default=current_turn)
+    alliance = models.ForeignKey(Alliance, related_name="member_snapshots", null=True, blank=True, on_delete=models.SET_NULL)
+
 
 class Settings(models.Model):
     nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
@@ -491,6 +503,8 @@ class Eventhistory(models.Model):
     choice = models.CharField(max_length=50)
     timestamp = models.DateTimeField(default=v.now)
 
+
+
 #######################
 ###### MOD STUFF ######
 #######################
@@ -573,8 +587,14 @@ class Market(models.Model):
     def __unicode__(self):
         return u'Market data for turn %s' % self.pk
 
-def marketpk():
-    return ID.objects.get().turn
+    def prices(self):
+        r = {}
+        for stuff in v.units:
+            try: #craps out with research
+                r[stuff] = self.__dict__['%sprice' % stuff]
+            except:
+                continue
+        return r
 
 #to preventing gaming the market by buying and selling to increase the sold/bought volumes
 class Marketlog(models.Model):
@@ -582,7 +602,7 @@ class Marketlog(models.Model):
     resource = models.CharField(max_length=4) #mg rm oil food
     volume = models.IntegerField(default=0)
     cost = models.IntegerField(default=0) #positive for buys negative for sells
-    turn = models.IntegerField(default=latestmarket) #set to market.pk
+    turn = models.IntegerField(default=current_turn) #set to market.pk
     def __unicode__(self):
         'Turn %s market log for %s' % (self.turn, self.nation.name)
 
@@ -726,7 +746,7 @@ class Banklog(models.Model):
 
 class Bankstats(models.Model):
     alliance = models.ForeignKey(Alliance, on_delete=models.CASCADE, related_name="bankstats")
-    turn = models.IntegerField(default=marketpk)
+    turn = models.IntegerField(default=current_turn)
     wealthy_tax = models.IntegerField(default=0)
     uppermiddle_tax = models.IntegerField(default=0)
     lowermiddle_tax = models.IntegerField(default=0)

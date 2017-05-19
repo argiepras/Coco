@@ -81,9 +81,9 @@ class ip_gathering_tests(TestCase):
     def test_iptoip(self):
         a = IP.objects.all()
         b = IP_to_ip(a)
-        assertEqual(len(a), len(b))
-        assertEqual(type(list()), type(b))
-        
+        self.assertEqual(len(a), len(b))
+        self.assertEqual(type(list()), type(b))
+
 
 
 

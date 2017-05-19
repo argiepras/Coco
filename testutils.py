@@ -1,5 +1,6 @@
 from random import randint, choice
 from nation.models import *
+from django.contrib.auth.models import User
 import string
 
 def ip_generator(amount=1):
@@ -11,6 +12,7 @@ def nation_generator(amount=1):
     nations = []
     for x in range(amount):
         q = Nation.objects.create(
+            user=User.objects.create(username=namegen()),
             index=x, 
             name=''.join(choice(string.ascii_letters) for x in range(8)),
             creationip=ip_generator()[0],
@@ -22,3 +24,7 @@ def nation_generator(amount=1):
         q.IPs.create(IP=q.creationip)
         nations.append(q)
     return nations
+
+
+def namegen():
+    return ''.join(choice(string.ascii_letters) for x in range(8))

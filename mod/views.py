@@ -327,24 +327,38 @@ def ipview(request, ip):
     associations = Nation.objects.actives().filter(IPs__IP__in=iplist)
     correlations, ips = correlated_ips(iplist)
     if request.POST:
+        first = False
         form = delbanreportform(request.POST)
         reason = reasonform(request.POST)
         if form.is_valid() and reason.is_valid():
-            if 'created' in request.POST:
-                query = creations
-            elif 'associated' in request.POST:
-                query = associations
-            elif 'correlated' in request.POST:
-                query = correlations
+            reason = reason.cleaned_data['reason']
+            if 'ban' in request.POST:
+                set_modaction(mod, 'banned %s' % iplist[0], reason)
+                Ban.objects.get_or_create(IP=iplist[0])
+                result = '%s has been banned' % iplist[0]
             else:
-                query = False
-            if form.cleaned_data['ban'] and query:
-                bulk_delete(query, mod, reason.cleaned_data['reason'])
+                if 'created' in request.POST:
+                    query = creations
+                elif 'associated' in request.POST:
+                    query = associations
+                elif 'correlated' in request.POST:
+                    query = correlations
+                else:
+                    query = False
+                if form.cleaned_data['ban'] and query:
+                    count = query.count()
+                    bulk_delete(query, mod, reason)
+                    first = True
+                    result = '%s nations have been deleted.'
 
-            if form.cleaned_data['delete'] and query:
-                bulk_ban(query, mod, reason.cleaned_data['reason'])
+                if form.cleaned_data['delete'] and query:
+                    count = bulk_ban(query, mod, reason)
+                    if first:
+                        result += '<br>'
+                    result += '%s IPs have been banned' % count
 
-
+        if result:
+            context.update({'result': result})
 
 
     context.update({
