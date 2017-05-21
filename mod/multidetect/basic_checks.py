@@ -7,6 +7,22 @@ import math
 
 
 
+def basic_aid_check(nation):
+    aid = nation.outgoing_aid.all()
+    nations = {}
+    total = len(aid)
+    # if more than 50% of all aid is going to one person, probably a multi
+    for x in aid:
+        if x.reciever.name in x:
+            nations[x.reciever.name] += 1
+        else:
+            nations.update({x.reciever.name: 1})
+
+    for entry in nations:
+        if total * (nations[entry] / 100.0) >= 50:
+            return True
+    return False
+
 
 
 def trade_balance_check(nation):
@@ -36,14 +52,15 @@ def base_production(nation):
     baseproduction = 0 
     #base production is total worth of production
     prices = Market.objects.latest('pk').prices()
-    gains = {
-        'rm': rmgain(nation),
-        'mg': mgdisplaywrapper(nation),
-        'oil': oilgain(nation),
-        'food': foodgain(nation)
-    }
-    for gain in gains:
-        baseproduction += gains[gain] * prices[gain]
+    baseproduction += rmgain(nation) * prices['rm']
+    baseproduction += mgdisplaywrapper(nation) * prices['mg']
+    baseproduction += oilgain(nation) * prices['oil']
+    baseproduction += foodgain(nation) * prices['food']
+    
     return baseproduction
 
 
+def actionchecks(nation):
+    #check if the actions are bare basics
+    #lazy multis just maintain, so daily actions look similar
+    begin = nation.creationtime

@@ -310,6 +310,8 @@ class Snapshot(Nationattrs):
     nation = models.ForeignKey(Nation, related_name="snapshots", on_delete=models.CASCADE)
     turn = models.IntegerField(default=current_turn)
     alliance = models.ForeignKey(Alliance, related_name="member_snapshots", null=True, blank=True, on_delete=models.SET_NULL)
+    def __unicode__(self):
+        return u"snapshot of %s from turn %s" % (self.nation.name, self.turn)
 
 
 class Settings(models.Model):
@@ -980,6 +982,7 @@ class Actionlog(models.Model):
     total_cost = models.CharField(max_length=50) #for multiple cost types
     policy = models.BooleanField(default=True)
     timestamp = models.DateTimeField(default=v.now)
+    turn = models.IntegerField(default=current_turn) #for easier comparisons
 
 #might seem redundant
 #but first one is used for the total amount going in or out and is displayed in the mod interface
@@ -1008,6 +1011,7 @@ class Warlog(models.Model):
     attacker = models.ForeignKey(Nation, on_delete=models.SET_NULL, blank=True, null=True, related_name="offensive_warlogs")
     defender = models.ForeignKey(Nation, on_delete=models.SET_NULL, blank=True, null=True, related_name="defensive_warlogs")
     winner = models.ForeignKey(Nation, on_delete=models.SET_NULL, blank=True, null=True, related_name="warlog_wins")
+    last_attack = models.DateTimeField(default=v.now)
     timestart = models.DateTimeField(default=v.now)
     timeend = models.DateTimeField(default=v.now)
     attacker_armystart = models.IntegerField(default=0)
@@ -1113,7 +1117,19 @@ class Extradition_request(models.Model):
 
 
 
+#############################
+##### meta stuff
+####################
 
+class Header(models.Model):
+    nation = models.ForeignKey(Nation, related_name='seen_headers', on_delete=models.CASCADE)
+    user_agent = models.CharField(max_length=200)
+    set_referrals = models.IntegerField(default=0)
+    empty_referrals = models.IntegerField(default=0) #bots don't submit referral fields; probably
+
+
+
+    
 
 
 

@@ -33,11 +33,8 @@ def index(request):
 @nation_required
 def main(request, msg=False):
     #msg is a result string passed from new nation creation
-    context = {'fish': 'bad'}
+    context = {}
     nation = Nation.objects.select_related('military', 'alliance', 'settings').prefetch_related('offensives', 'defensives').get(user=request.user)
-    if not nation.IPs.all().filter(IP=request.META.get('REMOTE_ADDR')).exists():
-        nation.IPs.create(IP=request.META.get('REMOTE_ADDR'))
-    Nation.objects.filter(pk=nation.pk).update(last_seen=v.now())
     if msg:
         context.update({'result': msg})
     try:
@@ -85,7 +82,6 @@ def main(request, msg=False):
         'avatar': nation.settings.showportrait(),
         'reactor_progress': nation.military.reactor * 5,
     })
-    print type(request.POST)
     return render(request, 'nation/main.html', context)
 
 @login_required
@@ -1258,7 +1254,7 @@ def war_win(attacker, defender, war):
     landgain = defender.land/6
     landwin = (landgain if defender.land - landgain > v.minland else defender.land - v.minland)
     atkactions = {
-        'land': {'action': 'add', 'amount': defender.land/6},
+        'land': {'action': 'add', 'amount': landwin},
         'gdp': {'action': 'add', 'amount': defender.gdp/5},
         'rm': {'action': 'add', 'amount': defender.rm/2},
         'oil': {'action': 'add', 'amount': defender.oil/2},
@@ -1271,7 +1267,7 @@ def war_win(attacker, defender, war):
         'budget': {'action': 'add', 'amount': (defender.budget/2 if defender.budget>0 else 0)},
     }
     defactions = {
-        'land': {'action': 'subtract', 'amount': defender.land/6},
+        'land': {'action': 'subtract', 'amount': landwin},
         'gdp': {'action': 'subtract', 'amount': defender.gdp/6},
         'rm': {'action': 'subtract', 'amount': defender.rm/2},
         'oil': {'action': 'subtract', 'amount': defender.oil/2},

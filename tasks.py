@@ -142,9 +142,13 @@ def fire_turn():
             [email for admin, email in settings.ADMINS]
         )
 
+
+
 def turnchange(debug=False):
     ID.objects.all().update(turn=F('turn') + 1)
+    turn = ID.objects.get().turn
     for nation in Nation.objects.actives().select_related('alliance__initiatives').iterator():
+        create_snapshot(nation, turn)
         while True:
             try:
                 approval = qol = growth = FI = mg = manpower = research = rebels = 0
@@ -255,7 +259,15 @@ def allianceturn(debug=False):
 
 
 def warcleanup(debug=False):
-    War.objects.all().update(attacked=False, defended=False, airattacked=False, airdefended=False, navyattacked=False, navydefended=False)
+    War.objects.all().update(
+        attacked=False, 
+        defended=False, 
+        airattacked=False, 
+        airdefended=False, 
+        navyattacked=False, 
+        navydefended=False)
+    #delete wars that hasn't had an offensive in >48 hours
+    War.objects.filter(warlog__last_attack__lte=timezone.now() - timezone.timedelta(hours=48)).delete()
     War.objects.filter(over=True, timestamp__lte=timezone.now()).delete()
     return marketturn()
 
@@ -325,3 +337,32 @@ def marketturn(debug=False):
 def infilgain():
     for spy in Spy.objects.filter(nation__vacation=False, nation__deleted=False, nation__reset=False).select_related('nation', 'location').iterator():
         Spy.objects.filter(pk=spy.pk).update(infiltration=spy.infiltration + spygain(spy), actioned=False)
+
+
+
+
+def create_snapshot(nation, turn):
+    s = Snapshot(nation=nation, turn=turn)
+    for field in Nationattrs._meta.fields:
+        s.__dict__[field.name] = nation.__dict__[field.name]
+    s.save()
+
+
+#regular ass tasks down here bruh
+
+@shared_task
+def meta_processing(agent, ip, userpk, referral=None):
+    #part of detecting multis is using metadata
+    #like user agents and whether or not referral links are submitted
+    #normal users with actual browsers submit referral links most of the time
+    headermodel, created = Header.objects.get_or_create(nation__user__pk=userpk, user_agent=agent)
+    if referral:
+        headermodel.empty_referrals += 1
+    else:
+        headermodel.set_referrals += 1
+    headermodel.save()
+    IP.objects.filter(nation__user__pk=userpk).get_or_create(IP=ip)
+    #since we're doing all this database stuff
+    #set the last seen var here as well
+    Nation.objects.filter(user__pk=userpk).update(last_seen=timezone.now())
+
