@@ -1027,6 +1027,8 @@ def settings(request):
             else:
                 if nation.vacation:
                     result = "You are already in vacation mode, you can't enter it twice and you don't have the button"
+                elif nation.atwar():
+                    result = "You can't enter vacation mode when you are at war!"
                 else:
                     timer = v.now() + timezone.timedelta(days=7)
                     Settings.objects.filter(pk=nation.settings.pk).update(vacation_timer=timer)

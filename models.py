@@ -3,13 +3,16 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
 from . import variables as v
+from nation.utilities import attrchange
+
 
 from django.db import models
 from django.db.models import F, Avg
 from django.utils import timezone
 
+
 def current_turn():
-    return ID.objects.get().turn
+    return ID.objects.get_or_create()[0].turn #get_or_create to make tests behave
 
 
 # Create your models here.
@@ -83,22 +86,58 @@ class ID(models.Model):
 
 class Actives(models.Manager):
     def actives(self):
-        return super(Actives, self).get_queryset().filter(vacation=False, reset=False, deleted=False)
+        return self.get_queryset().filter(vacation=False, reset=False, deleted=False)
 
-class Nationattrs(models.Model):
+class Baseattrs(models.Model):
+    _approval = models.IntegerField(default=51)
+    _stability = models.IntegerField(default=51)
+    _literacy = models.IntegerField(default=51)
+    _healthcare = models.IntegerField(default=51)
+    _qol = models.IntegerField(default=51)
+    _reputation = models.IntegerField(default=51)
+    _government = models.IntegerField(default=50)
+    _economy = models.IntegerField(default=50) #0 = commie 100 = capitalist
+    _soviet_points = models.IntegerField(default=0)
+    _us_points = models.IntegerField(default=0)
+    _manpower = models.IntegerField(default=100)
+
+    #the following code lets us access overflowable attributes and set them freely
+    #without risking the actual overflow
+    #they'll all go from 0-100 with regular assignments
+
+    def attrsetter(attr):
+        def set_any(self, value):
+            value = (100 if value > 100 else value)
+            value = (0 if value < 0 else value)
+            setattr(self, attr, value)
+        return set_any
+
+    def attrgetter(attr):
+        def get_any(self):
+            return self.__dict__[attr]
+        return get_any
+
+    approval = property(attrgetter('_approval'), attrsetter('_approval'))
+    stability = property(attrgetter('_stability'), attrsetter('_stability'))
+    literacy = property(attrgetter('_literacy'), attrsetter('_literacy'))
+    healthcare = property(attrgetter('_healthcare'), attrsetter('_healthcare'))
+    qol = property(attrgetter('_qol'), attrsetter('_qol'))
+    reputation = property(attrgetter('_reputation'), attrsetter('_reputation'))
+    government = property(attrgetter('_government'), attrsetter('_government'))
+    economy = property(attrgetter('_economy'), attrsetter('_economy'))
+    soviet_points = property(attrgetter('_soviet_points'), attrsetter('_soviet_points'))
+    us_points = property(attrgetter('_us_points'), attrsetter('_us_points'))
+    manpower = property(attrgetter('_manpower'), attrsetter('_manpower'))
+
+    class Meta:
+        abstract = True
+
+class Nationattrs(Baseattrs):
     gdp = models.IntegerField(default=300)
     budget = models.IntegerField(default=1000)
     trade_balance = models.IntegerField(default=0)
-    approval = models.IntegerField(default=51)
-    stability = models.IntegerField(default=51)
-    literacy = models.IntegerField(default=51)
-    healthcare = models.IntegerField(default=51)
-    qol = models.IntegerField(default=51)
     growth = models.IntegerField(default=5)
     rebels = models.IntegerField(default=0)
-    reputation = models.IntegerField(default=51)
-    government = models.IntegerField(default=50)
-    economy = models.IntegerField(default=50) #0 = commie 100 = capitalist
     land = models.IntegerField(default=30000)
     oil = models.IntegerField(default=15)
     rm = models.IntegerField(default=30)
@@ -107,8 +146,6 @@ class Nationattrs(models.Model):
     food = models.IntegerField(default=100)
     uranium = models.IntegerField(default=0)
     oilreserves = models.IntegerField(default=0)
-    soviet_points = models.IntegerField(default=0)
-    us_points = models.IntegerField(default=0)
     mines = models.IntegerField(default=3)
     closed_mines = models.IntegerField(default=0)
     wells = models.IntegerField(default=0)
@@ -116,12 +153,10 @@ class Nationattrs(models.Model):
     oilreserves = models.IntegerField(default=0)
     factories = models.IntegerField(default=0)
     closed_factories = models.IntegerField(default=0)
-    manpower = models.IntegerField(default=100)
     alignment = models.IntegerField(default=2) #1 2 3 east neu west
     research = models.IntegerField(default=0)
     universities = models.IntegerField(default=0)
     closed_universities = models.IntegerField(default=0)
-
     class Meta:
         abstract = True
 
@@ -145,6 +180,8 @@ class Nation(Nationattrs):
     def __unicode__(self):
         return u"nation: %s" % self.name
 
+    def atwar(self):
+        return self.offensives.filter(over=False).exists() or self.defensives.filter(over=False).exists()
 
     def farmland(self):
         tot = 0
@@ -418,10 +455,10 @@ class Econdata(models.Model):
     nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
     prospects = models.IntegerField(default=0)
     labor = models.IntegerField(default=1)
-    nationalize = models.BooleanField(default=False)
+    nationalize = models.IntegerField(default=0)
     diamonds = models.IntegerField(default=1)
     drugs = models.IntegerField(default=1)
-    expedition = models.BooleanField(default=False)
+    expedition = models.IntegerField(default=0)
     cedes = models.IntegerField(default=0)
     foodproduction = models.IntegerField(default=100) #percentage of production
     def __unicode__(self):
@@ -1160,3 +1197,10 @@ class Recovery(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     code = models.CharField(max_length=50, default=reg_generator)
     regtime = models.DateTimeField(auto_now_add=True)
+
+
+
+#legocy
+
+marketpk = None
+latestmarket = None

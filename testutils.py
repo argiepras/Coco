@@ -10,6 +10,7 @@ def ip_generator(amount=1):
 
 def nation_generator(amount=1):
     nations = []
+    ID.objects.get_or_create()
     for x in range(amount):
         q = Nation.objects.create(
             user=User.objects.create(username=namegen()),
@@ -28,3 +29,15 @@ def nation_generator(amount=1):
 
 def namegen():
     return ''.join(choice(string.ascii_letters) for x in range(8))
+
+
+def set_nation(nation, newvals):
+    """
+        Takes a dictionary and sets the fields of the supplied nation
+        uses setattr because it respects properties
+        unlike __dict__
+    """
+    if not isinstance(newvals, dict):
+        raise TypeError
+    for field in newvals:
+        setattr(nation, field, newvals[field])

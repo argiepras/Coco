@@ -124,13 +124,7 @@ def healthcare(healthcare):
 register.filter('healthcare', healthcare)
 
 def econsystem(econ):
-    if econ < 33:
-        econ = 0
-    elif econ < 66:
-        econ = 1
-    else:
-        econ = 2
-    return mark_safe('<span>%s</span>' % v.economy[econ])
+    return mark_safe('<span>%s</span>' % v.economy[utils.econsystem(econ)])
 
 register.filter('econsystem', econsystem)
 

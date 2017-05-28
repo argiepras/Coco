@@ -11,7 +11,6 @@ import random
 @login_required
 @novacation
 def militarypolicies(request):
-    breaking = me
     context = {}
     img = ''
     result = False

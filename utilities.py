@@ -3,7 +3,6 @@ from django.db.models import Sum, Q
 from django.utils import timezone
 import variables as v
 from django.contrib.auth.models import User
-from nation.models import *
 from django.core.paginator import *
 
 import random
@@ -18,6 +17,7 @@ def timedeltadivide(timediff):
     minutes = str(minutes).zfill(2)
     seconds = str(seconds).zfill(2)
     return hours, minutes, seconds
+
 
 def attrchange(current, amount, lower=0, upper=100):
     if current + amount > upper: #return the amount required to reach 100 and lower respectively
@@ -343,3 +343,15 @@ def opposing_alignments(nation1, nation2):
         return True
     return False
 
+
+def time_to_turns(timestamp):
+    x = timezone.now() - timestamp
+    
+
+def econsystem(econ):
+    if econ < 33:
+        return 0
+    elif econ < 66:
+        return 1
+    else:
+        return 2

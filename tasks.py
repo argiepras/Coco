@@ -125,7 +125,7 @@ def add_budget():
 #hourly check for vacation-eligible nations and subsequent placing them in it
 @periodic_task(run_every=crontab(minute="5", hour="*", day_of_week="*"))
 def vaccheck():
-    Nation.objects.actives().filter(last_seen__gt=timezone.now() - v.inactivedelta()).update(vacation=True)
+    Nation.objects.actives().filter(last_seen__lt=timezone.now() - v.inactivedelta()).update(vacation=True)
 
 
 
@@ -355,13 +355,14 @@ def meta_processing(agent, ip, userpk, referral=None):
     #part of detecting multis is using metadata
     #like user agents and whether or not referral links are submitted
     #normal users with actual browsers submit referral links most of the time
-    headermodel, created = Header.objects.get_or_create(nation__user__pk=userpk, user_agent=agent)
+    nation = Nation.objects.get(user__pk=userpk)
+    headermodel, created = Header.objects.get_or_create(nation=nation, user_agent=agent)
     if referral:
         headermodel.empty_referrals += 1
     else:
         headermodel.set_referrals += 1
     headermodel.save()
-    IP.objects.filter(nation__user__pk=userpk).get_or_create(IP=ip)
+    IP.objects.get_or_create(nation=nation, IP=ip)
     #since we're doing all this database stuff
     #set the last seen var here as well
     Nation.objects.filter(user__pk=userpk).update(last_seen=timezone.now())

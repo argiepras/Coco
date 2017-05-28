@@ -20,7 +20,7 @@ class Actiontests(TestCase):
         Econdata.objects.create(nation=q)
         Researchdata.objects.create(nation=q)
         cls.pleb = q
-        ID.objects.create()
+        ID.objects.get_or_create()
         cls.pleb.reports.create(reported=cls.mod)
 
 
