@@ -229,17 +229,17 @@ def stabilitygain_democracy(nation):
 
 def stabilitygain_modifiers(nation, var):
     stability = 0
-    if nation.__dict__[var]/2 > nation.stability:
+    if getattr(nation, var)/2 > nation.stability:
         stability += 4
-    elif nation.__dict__[var]/1.5 > nation.stability:
+    elif getattr(nation, var)/1.5 > nation.stability:
         stability += 2
-    elif nation.__dict__[var] > nation.stability:
+    elif getattr(nation, var) > nation.stability:
         stability += 1
-    elif nation.__dict__[var]*2 < nation.stability:
+    elif getattr(nation, var)*2 < nation.stability:
         stability -= 4
-    elif nation.__dict__[var]*1.5 < nation.stability:
+    elif getattr(nation, var)*1.5 < nation.stability:
         stability -= 2
-    elif nation.__dict__[var] < nation.stability:
+    elif getattr(nation, var) < nation.stability:
         stability -= 1
     return stability
 
@@ -268,13 +268,13 @@ def qolgain(nation):
 
 def qolgain_template(nation, gaintype):
     qol = 0
-    if nation.__dict__[gaintype]/2 > nation.qol:
+    if getattr(nation, gaintype)/2 > nation.qol:
         qol += 4
-    elif nation.__dict__[gaintype] > nation.qol:
+    elif getattr(nation, gaintype) > nation.qol:
         qol += 2
-    elif nation.__dict__[gaintype]*2 < nation.qol:
+    elif getattr(nation, gaintype)*2 < nation.qol:
         qol -= 4
-    elif nation.__dict__[gaintype] < nation.qol:
+    elif getattr(nation, gaintype) < nation.qol:
         qol -= 2
     return qol
 

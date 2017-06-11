@@ -16,7 +16,9 @@ def warprotection():
 def vacationtimer():
     return now() + timezone.timedelta(days=7)
 
+
 resources = ['budget', 'rm', 'oil', 'mg', 'food']
+
 
 delay = 10 
 commlimit = 2
@@ -64,6 +66,14 @@ units = {
     'mg': 'tons',
     'food': 'tons',
     'research': 'units',
+}
+
+policycost_descriptions = {
+    'us_points': "US relation points",
+    'soviet_points': "USSR relation points",
+    'research': 'research',
+    'uranium': 'ton of uranium',
+    'FI': 'foreign investment'
 }
 
 #for free market offers

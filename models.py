@@ -117,6 +117,7 @@ class Baseattrs(models.Model):
             return self.__dict__[attr]
         return get_any
 
+
     approval = property(attrgetter('_approval'), attrsetter('_approval'))
     stability = property(attrgetter('_stability'), attrsetter('_stability'))
     literacy = property(attrgetter('_literacy'), attrsetter('_literacy'))
@@ -131,6 +132,7 @@ class Baseattrs(models.Model):
 
     class Meta:
         abstract = True
+
 
 class Nationattrs(Baseattrs):
     gdp = models.IntegerField(default=300)
@@ -1015,10 +1017,9 @@ class Actionlog(models.Model):
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="actionlogs")
     action = models.CharField(max_length=50)
     amount = models.IntegerField(default=1)
-    cost = models.IntegerField(default=0) #for pure budget cost
-    total_cost = models.CharField(max_length=50) #for multiple cost types
+    cost = models.TextField() #json encoded cost
     policy = models.BooleanField(default=True)
-    timestamp = models.DateTimeField(default=v.now)
+    timestamp = models.DateTimeField(auto_now=True)
     turn = models.IntegerField(default=current_turn) #for easier comparisons
 
 #might seem redundant

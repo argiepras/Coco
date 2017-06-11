@@ -29,108 +29,17 @@
     <br /><br />
     
 
-<form method="POST">{% csrf_token %}
     <table class="table table-hover">
-        
-         <tr>
-            <td><b>Action</b></td>
-            <td><b>Description</b></td>
-            <td><b>Cost</b></td>
-            <td><b></b></td>
-        </tr>
-        <tr>
-            <td><b>Arrest opposition figures and would-be revolutionaries</b></td>
-            <td>These imputent fools do nothing but criticize. Shut them up. Your government will become more authoritarian. Chance of decreasing rebels. Slightly increases stability but a small decrease in reputation.</td>
-            <td>$50k</td>
-            <td><button type="submit" class="btn btn-default" name="arrest" />Arrest</button></td>
-        </tr>
-        <tr>
-            <td><b>Release political prisoners</b></td>
-            <td>Free the poor souls. Your government becomes more democratic. Small chance of the ungrateful fucks joining up with rebels. Decreases stability.</td>
-            <td>$50k</td>
-            <td><button type="submit" class="btn btn-default" name="release" />Free</button></td>
-        </tr>
-        <tr>
-            <td><b>Declare martial law</b></td>
-            <td>Dissent cannot be tolerated in wartime! Move decisively authoritarian, increase military size. Decreases stability and reputation.</td>
-            <td>$100k</td>
-            <td><button type="submit" class="btn btn-default" name="martial" />Declare</button></td>
-        </tr>
-        <tr>
-            <td><b>Hold free and fair elections</b></td>
-            <td>Sometimes it is necessary to let the people have a voice. Rebels will possibily lay down their arms and your government will become less authoritarian. Possibly increase growth but will cost some stability.</td>
-            <td>$200k</td>
-            <td><button type="submit" class="btn btn-default" name="elections" />Elect</button></td>
-        </tr>
-        <tr>
-            <td><b>Free Housing For the People</b></td>
-            <td>Mass produced modular tenements for everyone! Sure, every residential area in your country will look incredibly grey, boring and identical, but it's better than scrap metal shacks. Increases government popularity. Not available in Free Market economies.  Moves your economic system slightly to the left. Cost is relative to GDP.</td>
-            <td>${{ costs.housing }}k</td>
-            <td><button type="submit" class="btn btn-default" name="housing" />Build</button></td>
-        </tr>
-        <tr>
-            <td><b>Raise Minimum Wage</b></td>
-            <td>Apparently people need to eat. Increase their wages by a couple cents and it might just increase your popularity. Not available in Command Economies. Moves your economic system slightly to the left. Cost is relative to GDP.</td>
-            <td>Reduction in growth by ${{ costs.wage }} million</td>
-            <td><button type="submit" class="btn btn-default" name="wage" />Raise</button></td>
-        </tr>
-        <tr>
-            <td><b>Free Food For All!</b></td>
-            <td>Feed the poor and enjoy their loyalty. Increases approval. Moves government to the left.</td>
-            <td>{{ costs.food }} Tons of food</td>
-            <td><button type="submit" class="btn btn-default" name="freefood" />Give</button></td>
-        </tr>
-        <tr>
-            <td><b>Construct Public School</b></td>
-            <td>A literate people make more money for you to tax. Increases literacy. Cost is relative to GDP (.05%).</td>
-            <td>${{ costs.school.money }}k, {{ costs.school.rm }} Tons of raw material</td>
-            <td><button type="submit" class="btn btn-default" name="school" />Build</button></td>
-        </tr>
-        <tr>
-            <td><b>Found University</b></td>
-            <td>Distract your annoying dissident eggheads with a few shiny new buildings to pontificate to each other in. Provides 4 research per turn, but consumes 1 mg per turn. Also provides $1 million in growth per turn. Each university decreases the cost of raising literacy.</td>
-            <td>{{ costs.university.rm }} Tons of raw materials, {{ costs.university.oil }} mbbls of oil,
-            {{ costs.university.mg }} Tons of manufactured goods</td>
-            <td><button type="submit" class="btn btn-default" name="university" />Teach</button></td>
-        </tr>
-    {% if nation.universities > 0 %}
-        <tr>
-            <td><b>Close down University</b></td>
-            <td>Turns out those fancy buildings filled with so called intellectuals was a bad idea. Shut them down and let the students do real work.</td>
-            <td>Free</td>
-            <td><button type="submit" class="btn btn-default" name="closeuni" />Board up</button></td>
-        </tr>
-    {% endif %}
-    {% if nation.closed_universities > 0 %}
-        <tr>
-            <td><b>Reopen University</b></td>
-            <td>It's time for more eggheads! This reopens a previously closed university and
-            provides the benefits if it again.</td>
-            <td>$1000k</td>
-            <td><button type="submit" class="btn btn-default" name="reopenuni">Renovate</button></td>
-        </tr>
-    {% endif %}
-        <tr>
-            <td><b>Construct Free Hospital</b></td>
-            <td>Provide for all the ability to live past the age of 42. Increases healthcare. Not available to free market economies. Cost is relative to GDP (.05%).</td>
-            <td>${{ costs.hospital.money }}k, {{ costs.hospital.rm }} Tons of raw material</td>
-            <td><button type="submit" class="btn btn-default" name="hospital" />Build</button></td>
-        </tr>
-        <tr>
-            <td><b>Fund Medical Research</b></td>
-            <td>Discover the latest vaccine for the Butt Pox. Increases healthcare. Cost is relative to GDP (.05%).</td>
-            <td>${{ costs.medical.money }}k, {{ costs.medical.research }} Research</td>
-            <td><button type="submit" class="btn btn-default" name="medicalresearch" />Discover</button></td>
-        </tr>
-        <tr>
-            <td><b>Cult of Personality</b></td>
-            <td>The Great and Glorious Leader Provides For All. He was Born Under a Smiling Sun and Rides a Pegasus On His Days Off. Dear Leader Has Never Lost a Game of Ping-Pong. Increases popularity, makes your country instantly a dictatorship.</td>
-            <td>$500k</td>
-            <td><button type="submit" class="btn btn-default" name="cult" />Bask</button></td>
-        </tr>
-        
-
-    </form>
+         <thead>
+            <th><b>Action</b></th>
+            <th><b>Description</b></th>
+            <th><b>Cost</b></th>
+            <th><b></b></th>
+        </thead>
+        <tbody>
+            {% for policy in policies %}
+                
+            {% endfor %}
    </table>
    
    

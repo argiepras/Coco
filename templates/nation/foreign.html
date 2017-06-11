@@ -40,52 +40,6 @@
             <td><b>Cost</b></td>
             <td><b></b></td>
         </tr>
-        <tr>
-            <td><b>Praise the Soviet Union</b></td>
-            <td>Give the General Secretary a bear hug in front of the cameras. Sets your alignment as pro-Soviet. Stability decreases somewhat as the bourgeoisie bitches.</td>
-            <td>$50k</td>
-            <td><button type="submit" class="btn btn-default" name="praise_ussr" />Suck up</button></td>
-        </tr>
-        <tr>
-            <td><b>Praise the United States</b></td>
-            <td>Shake the Prez' hand on the tarmac. Sets your alignment as pro-USA. Stability decreases somewhat as all the pinkos complain.</td>
-            <td>$50k</td>
-            <td><button type="submit" class="btn btn-default" name="praise_us" />Kiss ass</button></td>
-        </tr>
-        <tr>
-            <td><b>Declare Neutrality</b></td>
-            <td>Show all the other countries that you're a proud independent nation that don't need no superpower. Sets your alignment as neutral.</td>
-            <td>$50k</td>
-            <td><button type="submit" class="btn btn-default" name="declareneutrality" />Stand Strong</button></td>
-        </tr>
-    {% if nation.alignment != 3 %}
-        <tr>
-            <td><b>Appeal to the Soviets for intervention</b></td>
-            <td>Ask our comrades in the Soviet Union to help defend equality and socialism from the evil capitalists. They will arrive with 10k troops.</td>
-            <td>35 Soviet Relations Points</td>
-            <td><button type="submit" class="btn btn-default" name="sovietintervention" />Beg</button></td>
-        </tr>
-        <tr>
-            <td><b>Appeal to the Soviets for development aid</b></td>
-            <td>Ask our comrades to give us a little taste of communism. Will increase growth by $2 million.</td>
-            <td>10 Soviet Relations Points</td>
-            <td><button type="submit" class="btn btn-default" name="sovietaid" />Beg</button></td>
-        </tr>
-    {% endif %}
-    {% if nation.alignment != 1 %}
-        <tr>
-            <td><b>Appeal to the United States for intervention</b></td>
-            <td>Ask our friends and allies in the United States to help defend freedom and democracy from the evil communists. They will arrive with 10k troops.</td>
-            <td>{{ intervention }} US Relations Points</td>
-            <td><button type="submit" class="btn btn-default" name="usintervention" />Beg</button></td>
-        </tr>
-        <tr>
-            <td><b>Appeal to the United States for development aid</b></td>
-            <td>Ask our capitalist allies to give us a little taste of McDonalds. Will increase growth by $2 million.</td>
-            <td>10 US Relations Points</td>
-            <td><button type="submit" class="btn btn-default" name="usaid" />Beg</button></td>
-        </tr>
-    {% endif %}
     </form>
     <form method="POST" action="{% url 'alliance:new' %}"> {% csrf_token %}
         <tr>

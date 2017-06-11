@@ -1,9 +1,6 @@
 {% extends 'nation/base.html' %}
 {% block content %}
 <div class="container">
-        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-        <script src="http://code.jquery.com/jquery.js"></script>
-        <script src="bootstrap/js/bootstrap.min.js"></script>
  <table class="table table-hover table-bordered"><tr>
   <td><a href="{% url 'nation:economic' %}"><h2><center><b>Economic</b></center></h2></a></td>
   <td><a href="{% url 'nation:domestic' %}"><h2><center>Domestic</center></h2></a></td>
@@ -17,14 +14,10 @@
     <img src="/static/img/economy.png" />
     <br /><br />
     
-{% if result %}
-    <div class="result">
-        {% if img %}
-            <img src="{{ img }}">
-        {% endif %}
-        <p class="spacer-small">{{ result }}</p>
-    </div>
-{% endif %}
+<div class="result">
+    <img class="resultimg" src="">
+    <p class="spacer-small" id="policyresult"></p>
+</div>
 
     <a href="#" data-toggle="tooltip" data-placement="left" title="Your budget increases every ten minutes, reaching 0.10% of your GDP (${{ nation.gdp }}k) after 12 hours. You may save up to 0.20% of your GDP (${{ nation.gdp|add:nation.gdp }}k).">
     Available budget: ${{ stats.budget }}k <i class="icon-question-sign"></i></a>
@@ -32,211 +25,61 @@
 
     
     
-    
     <table class="table table-hover">
-        <tr>
+        <thead>
             <td><b>Action</b></td>
             <td><b>Description</b></td>
             <td><b>Cost</b></td>
             <td><b></b></td>
-        </tr>
-    <form method="POST">{% csrf_token %}
-        {% if nation.gdp < 300 %}
-        <tr>
-            <td><b>Humanitarian Aid</b></td>
-            <td>Sometimes we all need a little help. Increases growth, no chance of failure, only available if GDP is below $300 million.</td>
-            <td>$75k</td>
-            <td><button type="submit" class="btn btn-default" name="humanitarian" />Beg</td>
-        </tr>  
-        {% endif %}
-        <tr>
-            <td><b>Great Leap Forward</b></td>
-            <td>The workers must produce more pig iron! Possibly increase economic growth. Possibly backfire and associate your name with mass death for centuries. Not possible in free market economies.</td>
-            <td>$100k, {{ great_leap }} HTons of Raw Materials</td>
-            <td><button type="submit" class="btn btn-default" name="greatleap" />Leap</button></td>
-        </tr>
-        
-        <tr>
-            <td><b>Encourage Foreign Investment</b></td>
-            <td>Invite rich yankees to exploit your cheap labor and resources. Slight chance of increasing economic growth... but the rest could always be nationalized later. Not available to communist countries.</td>
-            <td>$75k, {{ FI }} HTons of Raw Materials</td>
-            <td><button type="submit" class="btn btn-default" name="foreigninvestment" />Pander</button></td>
-        </tr>
-        <tr>
-            <td><b>Industrialize</b></td>
-            <td>Create a worker's paradise one sweatshop at a time. Builds a factory, which permanently increases growth by $1 million a month as long as it is supplied with 1 Mbbl of oil and 1 HTons of raw material.</td>
-            <td>{{ industry.rm }} RM, {{ industry.oil }} mbbls{% if nation.factories > 0 %}
-                {{ industry.mg }} MG {% endif %}</td>
-            <td><button type="submit" class="btn btn-default" name="industrialize" />Progress</button></td>
-        </tr>
-
-        {% if nation.factories > 0 %}
-        <tr>
-            <td><b>Shut Down Factory</b></td>
-            <td>Well that worker's paradise didn't exactly work out. Removes a factory, costs nothing but decreases approval as unemployment increases.</td>
-            <td>Reduces approval<td><button type="submit" class="btn btn-default" name="deindustrialize" />Fire</button></td>
-        </tr>
-        {% endif %}
-
-        {% if nation.closed_factories > 0 %}
-        <tr>
-            <td><b>Reopen Factory</b></td>
-            <td>Grinding up the assembly lines and using them as fertilizer was a great idea, but
-            now we need news ones! Re-opens a previously closed factory and increases approval</td>
-            <td>$1000k<td><button type="submit" class="btn btn-default" name="reindustrialize" />Renovate</button></td>
-        </tr>
-        {% endif %}
-        
-        <tr>
-            <td><b>Forced Collectivization</b></td>
-            <td>Liberate the peasants by burning down their homes, seizing their crops and forcing them into giant barracks! Signficantly decreases approval and stability, has a chance of doubling this months agricultural output. Only available to command economies.</td>
-            
-            
-            <td>Reduction in stability, approval</td>
-             
-            <td><button type="submit"  class="btn btn-default" name="collectivization" />Grow</button></td>
-        </tr>
-        <tr>
-            <td><b>Labor Discipline</b></td>
-            <td>The random executions will continue until morale improves. Produces one ton of manufactured goods for each factory in your nation, but cost rises in oil and raw materials for each time done in a single turn along with a decline in approval. Cost is less in Asia.</td>
-            <td>{{ labor_discipline }} HTons, {{ labor_discipline }} mbbls</td>
-            <td><button type="submit" class="btn btn-default" name="labordiscipline" />Work!</button></td>
-        </tr>
-        <tr>
-            <td><b>Nationalize Foreign Investment</b></td>
-            <td>Take from the rich yankees what is rightfully yours. Seizure of all foreign investment is added directly to your budget, but alienates the US and moves your nation closer towards the left. Significantly reduces stability.</td>
-            <td>Nothing!</td>
-            <td><button type="submit" class="btn btn-default" name="nationalize" />Steal</button></td>
-        </tr>
-        <tr>
-            <td><b>Privatize</b></td>
-            <td>Sell off state assets to the highest bidder. Will add 300k to your budget, move you closer to the free market, and reduce your GDP by $15 million. Significantly reduces stability.</td>
-            <td>Free!</td>
-            <td><button type="submit" class="btn btn-default" name="privatize" />Sell</button></td>
-        </tr>
-        
-        
-        <tr>
-            <td><b>IMF Loan</b></td>
-            <td>A Faustian Bargain. 100k in cold hard cash for a decrease in growth of $2 million.</td>
-            <td>Decrease in growth.</td>
-            <td><button type="submit" class="btn btn-default" name="imf" />Borrow</button></td>
-        </tr>
-        <tr>
-            <td><b>Forced Labor</b></td>
-            <td>When you want something done right, force people at gunpoint. Increases growth, only available to dictatorships. Small chance of strengthening rebels, will also decrease reputation, approval, stability and quality of life somewhat.</td>
-            <td>50k, {{ forced_labor }} HTons of raw materials</td>
-            <td><button type="submit" class="btn btn-default" name="forced" />Force</button></td>
-        </tr>
-        {% if nation.region == 'Asia' %}
-        <tr>
-            <td><b>Special Economic Zone</b></td>
-            <td>Designate a region of your country where labor laws, minimum wage, and regulations simply do not apply. Increases your growth according the current global market change. Moves you toward the Free Market. Only available in Asia to Mixed or Command economies.</td>
-            <td>100k, {{ sez }} HTons of raw materials</td>
-            <td><button type="submit" class="btn btn-default" name="sez" />Do it</button></td>
-        </tr>
-        {% endif %}
-        {% if nation.region == 'Latin America' %} <tr>
-            <td><b>Smuggle drugs into the USA</b></td>
-            <td>Mota, llello... you got it, the Gringos need it. Will give you a full turn's budget with a minimum of 500k, but a high chance of getting caught. If caught it greatly decreases your reputation and relations with the US. Must be a Latin American nation.</td>
-            <td>Nothing!</td>
-            <td><button type="submit" class="btn btn-default" name="drugs" />Deal</button></td>
-        </tr>
-        {% endif %}
-        {% if nation.region == 'Africa' %}
-        <tr>
-            <td><b>Blood Diamonds</b></td>
-            <td> Sell tiny stones with a dark past for a lot of money to De Beers. Reputation and quality of life will drop somewhat but will receive a fourth of a turn's budget with a minimum of 100k. Must be an African nation.</td>
-            <td>Nothing!</td>
-            <td><button type="submit" class="btn btn-default" name="blood"/>Sell</button></td>
-        </tr>
-        {% endif %}
-        <tr>
-            <td><b>Oil Exploration</b></td>
-            <td>Punch a bunch of holes in the ground looking for crude. Will discover more oil in the Middle East.</td>
-            <td>${{ prospect }}k</td>
-            <td><button type="submit" class="btn btn-default" name="prospect" >Prospect</button></td>
-        </tr>
-      <tr>
-            <td><b>Drill New Well</b></td>
-            <td>Drill a new well to increase oil production.</td>
-            <td>${{ wellcost }}k</td>
-            <td><button type="submit" class="btn btn-default" name="well" >Drill</button></td>
-        </tr>
-
-        {% if nation.wells > 0 %}
-        <tr>
-            <td><b>Shutdown Well</b></td>
-            <td>Closes down a well. Reduces approval as unemployment increases.</td>
-           <td>Reduces approval</td>
-            <td><button type="submit" class="btn btn-default" name="closewell" >Shutter</button></td>
-        </tr>
-        {% endif %}
-
-        {% if nation.closed_wells > 0 %}
-        <tr>
-            <td><b>Shutdown Well</b></td>
-            <td>Reopens a previously closed well. Increases approval.</td>
-           <td>600k</td>
-            <td><button type="submit" class="btn btn-default" name="openwell" >Restore</button></td>
-        </tr>
-        {% endif %}
-
-        {% if nation.economy > 33 %}
-        <tr>
-            <td><b>Subsidize Private Well</b></td>
-            <td>Offer a foreign corporation some free money to begin drilling for oil.</td>
-            <td>${{ privatewellcost }}k Foreign Investment</td>
-            <td><button type="submit" class="btn btn-default" name="privatewell"/>Offer</button></td>
-        </tr>
-        {% endif %}
-        <tr>
-            <td><b>Dig Mine</b></td>
-            <td>Ever play minecraft? It's kinda like that. Will increase raw material production by one hundred tons a month, but is limited by territory with one mine possible per 500km<sup>2</sup>.</td>
-            <td>${{ minecost }}k</td>
-            <td><button type="submit" class="btn btn-default" name="mine" >Dig</button></td>
-        </tr>
-        {% if nation.economy > 33 %}
-        <tr>
-            <td><b>Subsidize Private Mine</b></td>
-            <td>Offer a foreign corporation some free money to begin mining.</td>
-            <td>${{ privateminecost }}k Foreign Investment</td>
-            <td><button type="submit" class="btn btn-default" name="privatemine"/>
-                Offer
-            </button></td>
-        </tr>
-        {% endif %}
-
-        {% if nation.mines > 0 %}
-        <tr>
-            <td><b>Close Mine</b></td>
-            <td>Closes down a mine. Reduces approval as unemployment increases.</td>
-            <td>Reduces approval</td>
-            <td><button type="submit" class="btn btn-default" name="closemine" >Close</button></td>
-        </tr>
-        {% endif %}
-
-        {% if nation.closed_mines > 0 %}
-        <tr>
-            <td><b>Close Mine</b></td>
-            <td>Closes down a mine. Reduces approval as unemployment increases.</td>
-            <td>$600k</td>
-            <td><button type="submit" class="btn btn-default" name="openmine" >Close</button></td>
-        </tr>
-        {% endif %}
-
-        {% if nation.uranium > 0 %}
-        <tr>
-            <td><b>Develop Nuclear Reactor</b></td>
-            <td>Turn that yellow cake into magical electricity. Gives an extra $1 million growth a turn while operational and allows for the peaceful development of nuclear weapons.</td>
-            <td>$5,000k, 50 research</td>
-            <td><button type="submit" class="btn btn-default" name="reactor" />Develop</td>
-        </tr>
-        {% endif %}
-
-		
-    </form>
-        
-        </table>
+        </thead>
+        <tbody>
+        {% for policy in policies %}
+            <tr>
+                <td><b>{{ policy.name|safe }}</b></td>
+                <td>{{ policy.description|safe }}</td>
+                <td>{{ policy.render_cost|safe }}</td>
+                <td>
+                    <button class="btn btn-default" name="{{ policy.policyname|safe }}">
+                        {{ policy.button|safe }}
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
 </div>
+{% csrf_token %}
+<script>
+$(document).ready(function(){
+    $(".result").hide();
+    $(".resultimg").hide();
+    $("button").click(function(){
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "policy": this.name,
+            },
+            url: '/main/economic/',
+            datatype: "json",
+            success: updatestuff,
+        });
+    });
+});
+
+function updatestuff(x, y, z){
+    $(".result").show();
+    if (x.img !== "")
+    {
+        $(".resultimg").show();
+        $(".resultimg").attr("src", x.img);
+    }
+    else
+    {
+        $(".resultimg").hide();
+    }
+    $("#policyresult").html(x.result);
+};
+
+</script>
 {% endblock %}

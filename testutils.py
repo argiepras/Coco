@@ -41,3 +41,19 @@ def set_nation(nation, newvals):
         raise TypeError
     for field in newvals:
         setattr(nation, field, newvals[field])
+
+
+
+def snapshoot(nation):
+    #Simple snapshot for easy comparison
+    #like checking if costs are properly deducted
+    x = Snapshot()
+    for field in Nationattrs._meta.fields:
+        setattr(x, field.name, getattr(nation, field.name))
+    return x
+
+
+
+def cost_check(self, nation, snap, cost):
+    for field in cost:
+        self.assertEqual(getattr(snap, field), getattr(nation, field) + cost[field], msg=field)

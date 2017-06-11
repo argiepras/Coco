@@ -47,7 +47,7 @@ class policytests(TestCase):
             set_nation(nation, policy.cost)
             nation.save()
             self.assertTrue(policy.can_apply())
-            policy()
+            policy.enact()
             nation.refresh_from_db()
             nation.military.refresh_from_db()
             if 'continues' in policy.result:
@@ -67,7 +67,7 @@ class policytests(TestCase):
         nation.subregion = 'Ethiopia'
         budget = nation.budget
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         self.assertNotEqual(policy.result, '')
         self.assertEqual(nation.budget, budget + policy.gain['budget'])
@@ -85,16 +85,18 @@ class policytests(TestCase):
             x = nation.econdata
             budget = nation.budget
             reputation = nation.reputation
-            policy()
+            policy.enact()
             nation.refresh_from_db()
             if 'Miami' in policy.result: #success!
-                self.assertEqual(nation.budget, budget+policy.high['budget'])
+                self.assertEqual(nation.budget, budget+policy.gain['budget'])
                 break
             else:
                 if nation.reputation > 0:
                     self.assertGreater(reputation, nation.reputation)
                 else:
                     self.assertEqual(nation.reputation, 0)
+            policy = drugs(nation)
+
 
     def test_collectivization(self):
         nation = self.subject
@@ -114,7 +116,7 @@ class policytests(TestCase):
             foodproduction = nation.econdata.foodproduction
             qol = nation.qol
             approval = nation.approval
-            policy()
+            policy.enact()
             nation.refresh_from_db()
             nation.econdata.refresh_from_db()
             self.assertEqual(qol, nation.qol + policy.cost['qol'])
@@ -133,30 +135,48 @@ class policytests(TestCase):
 
 
     def test_labordiscipline(self):
-        nation = self.subject
-        nation.factories = 10
-        nation.mg = 0
-        nation.oil = 5
-        nation.save()
-        policy = labordiscipline(nation)
+        nations = nation_generator(3)
+        zero = nations[0]
+        one = nations[1]
+        ten = nations[2]
+        zero.factories = 0
+        one.factories = 1
+        ten.factories = 10
+        #First as assert that the 0 facco guy is ineligible
+        #as it requires at least 1 factory
+        policy = labordiscipline(zero)
         self.assertFalse(policy.can_apply())
-        set_nation(nation, policy.requirements)
+        #then to 1 facco
+        one.rm = 0
+        policy = labordiscipline(one)
+        self.assertFalse(policy.can_apply())
+        set_nation(one, policy.requirements)
+        one.oil = 0
+        self.assertFalse(policy.can_apply())
+        set_nation(one, policy.requirements)
         self.assertTrue(policy.can_apply())
-        policy()
-        self.assertEqual(nation.mg, 10)
-        nation.econdata.refresh_from_db()
-        self.assertEqual(nation.econdata.labor, 2)
+        one.factories = 0
+        self.assertFalse(policy.can_apply())
+        set_nation(one, policy.requirements)
+        policy.enact()
+        self.assertEqual(one.mg, 1)
+        one.econdata.refresh_from_db()
+        self.assertEqual(one.econdata.labor, 2)
 
         #now we test with research added
-        set_nation(nation, policy.requirements)
-        nation.mg = 0
-        nation.researchdata.industrialtech = 5 #+50%
+        ten.mg = 0
+        ten.researchdata.industrialtech = 5 #+50%
         #have to create a new instance for the research
         #modifiers to have an effect
-        policy = labordiscipline(nation)
-        policy()
-        nation.refresh_from_db()
-        self.assertEqual(15, nation.mg)
+        policy = labordiscipline(ten)
+        set_nation(ten, policy.cost)
+        snap = snapshoot(ten)
+        #1 facco is a requirement
+        #and such set_nation sets faccos to 1
+        policy.enact()
+        ten.refresh_from_db()
+        cost_check(self, ten, snap, policy.cost)
+        self.assertEqual(15, ten.mg)
 
 
     def test_industrialize(self):
@@ -171,7 +191,7 @@ class policytests(TestCase):
         nation.land = 10000 #no land left
         self.assertFalse(policy.can_apply())
         nation.land = 20000
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         self.assertEqual(nation.factories, 11)
         self.assertEqual(nation.rm, 0)
@@ -186,7 +206,7 @@ class policytests(TestCase):
         self.assertFalse(policy.can_apply())
         set_nation(nation, policy.requirements)
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         for field in policy.requirements:
             if field == 'approval': #should be 5 and not 0
@@ -204,7 +224,7 @@ class policytests(TestCase):
         self.assertTrue(nation.budget, policy.requirements['budget'])
         self.assertNotEqual(nation.budget, 0)
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         self.assertEqual(nation.closed_factories, 0)
         self.assertEqual(nation.factories, 1)
@@ -222,7 +242,7 @@ class policytests(TestCase):
         nation.save()
         policy = nationalize(nation) #new FI means new instance
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         nation.econdata.refresh_from_db()
         self.assertEqual(nation.budget, 500)
@@ -240,7 +260,7 @@ class policytests(TestCase):
         budget = nation.budget
         gdp = nation.gdp
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         nation.econdata.refresh_from_db()
         self.assertEqual(nation.budget, budget + policy.gain['budget'])
@@ -258,7 +278,7 @@ class policytests(TestCase):
         set_nation(nation, policy.requirements)
         self.assertGreater(nation.budget, 0)
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         self.assertGreater(nation.oilreserves, 0)
         self.assertEqual(nation.budget, 0)
@@ -272,6 +292,7 @@ class policytests(TestCase):
         self.assertGreater(cost, MEcost)
         self.assertGreater(MEgain, oilgain)
 
+
     def test_imf(self):
         nation = self.subject
         policy = imf(nation)
@@ -280,7 +301,271 @@ class policytests(TestCase):
         self.assertFalse(policy.can_apply())
         set_nation(nation, policy.requirements)
         self.assertTrue(policy.can_apply())
-        policy()
+        policy.enact()
         nation.refresh_from_db()
         self.assertEqual(nation.growth, policy.requirements['growth'] - policy.cost['growth'])
         self.assertGreater(nation.budget, budget)
+
+
+    def test_humanitarian(self):
+        nation = self.subject
+        growth = nation.growth
+        policy = humanitarian(nation)
+        nation.gdp = 350
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        nation.gdp = 200
+        self.assertTrue(policy.can_apply())
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.budget, 0)
+        self.assertGreater(nation.growth, growth)
+
+
+    def test_foreigninvestment(self):
+        nation = self.subject
+        nation.budget = 0
+        nation.rm = 0
+        nation.economy = 0
+        policy = foreigninvestment(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        self.assertFalse(policy.can_apply())
+        nation.economy = 50
+        self.assertTrue(policy.can_apply())
+        success = failure = False
+        while not success and not failure:
+            set_nation(nation, policy.requirements)
+            policy.enact()
+            nation.refresh_from_db()
+            if 'trickles' in policy.result:
+                self.assertGreater(nation.FI, 0)
+                self.assertGreater(nation.growth, 0)
+                success = True
+            elif 'unfortunately' in policy.result:
+                self.assertGreater(nation.FI, 0)
+                failure = True
+            nation.FI = nation.growth = 0
+            nation.save()
+
+
+    def test_mine(self):
+        nation = self.subject
+        nation.budget = 0
+        nation.subregion = 'China'
+        policy = mine(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        self.assertTrue(policy.can_apply())
+        #check of land costs are respected
+        nation.land = 400
+        self.assertFalse(policy.can_apply())
+        nation.land = 30000
+        minecost = policy.cost['budget']
+        nation.subregion = 'Nigeria'
+        africost = mine(nation).cost['budget']
+        self.assertGreater(minecost, africost)
+        mines = nation.mines
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.budget, 0)
+        self.assertEqual(nation.mines, mines + 1)
+
+
+    def test_closemine(self):
+        nation = self.subject
+        nation.mines = 0
+        policy = closemine(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        approval = nation.approval
+        mines = nation.mines
+        closed_mines = nation.closed_mines
+        self.assertTrue(policy.can_apply())
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.mines, mines - 1)
+        self.assertEqual(nation.closed_mines, closed_mines + 1)
+        self.assertGreater(approval, nation.approval)
+        self.assertEqual(nation.approval, approval - policy.cost['approval'])
+
+
+    def test_openmine(self):
+        nation = self.subject
+        nation.closed_mines = 0
+        policy = openmine(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        self.assertTrue(policy.can_apply())
+        mines = nation.mines
+        #check of land costs are respected
+        nation.land = 400
+        self.assertFalse(policy.can_apply())
+        nation.land = 30000
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.closed_mines, 0)
+        self.assertGreater(nation.mines, mines)
+        self.assertEqual(nation.mines, mines + 1)
+        self.assertEqual(nation.budget, 0)
+
+
+    def test_privatemine(self):
+        nation = self.subject
+        nation.FI = 0
+        nation.subregion = 'China'
+        mines = nation.mines
+        #FI = 0 lol
+
+        policy = privatemine(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        nation.economy = 10 #commies not allowed
+        self.assertFalse(policy.can_apply())
+        nation.economy = 80
+        self.assertTrue(policy.can_apply())
+        #check of land costs are respected
+        nation.land = 400
+        self.assertFalse(policy.can_apply())
+        nation.land = 30000
+
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.FI, 0)
+        regcost = policy.cost['FI']
+        nation.subregion = "Ethiopia"
+        afcost = privatemine(nation).cost['FI']
+        self.assertGreater(regcost, afcost)
+        self.assertGreater(nation.mines, mines)
+
+
+    def test_well(self):
+        nation = self.subject
+        nation.budget = 0
+        nation.subregion = 'China'
+        policy = well(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        self.assertTrue(policy.can_apply())
+        #check of land costs are respected
+        nation.land = 400
+        self.assertFalse(policy.can_apply())
+        nation.land = 30000
+        wellcost = policy.cost['budget']
+        nation.subregion = 'Arabia'
+        MEcost = well(nation).cost['budget']
+        self.assertGreater(wellcost, MEcost)
+        wells = nation.wells
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.budget, 0)
+        self.assertEqual(nation.wells, wells + 1)
+
+
+    def test_privatewell(self):
+        nation = self.subject
+        nation.FI = 0
+        nation.subregion = 'China'
+        wells = nation.wells
+        #FI = 0 lol
+
+        policy = privatewell(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        nation.economy = 10 #commies not allowed
+        self.assertFalse(policy.can_apply())
+        nation.economy = 80
+        self.assertTrue(policy.can_apply())
+        #check of land costs are respected
+        nation.land = 400
+        self.assertFalse(policy.can_apply())
+        nation.land = 30000
+
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.FI, 0)
+        regcost = policy.cost['FI']
+        nation.subregion = "Arabia"
+        MEcost = privatemine(nation).cost['FI']
+        self.assertGreater(regcost, MEcost)
+        self.assertGreater(nation.wells, wells)
+
+
+    def test_closewell(self):
+        nation = self.subject
+        nation.wells = 0
+        policy = closewell(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        approval = nation.approval
+        wells = nation.wells
+        closed_wells = nation.closed_wells
+        self.assertTrue(policy.can_apply())
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.wells, wells - 1)
+        self.assertEqual(nation.closed_wells, closed_wells + 1)
+        self.assertGreater(approval, nation.approval)
+        self.assertEqual(nation.approval, approval - policy.cost['approval'])
+
+
+    def test_openwell(self):
+        nation = self.subject
+        nation.closed_wells = 0
+        policy = openwell(nation)
+        self.assertFalse(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        self.assertTrue(policy.can_apply())
+        wells = nation.wells
+        #check of land costs are respected
+        nation.land = 400
+        self.assertFalse(policy.can_apply())
+        nation.land = 30000
+        policy.enact()
+        nation.refresh_from_db()
+        self.assertEqual(nation.closed_wells, 0)
+        self.assertGreater(nation.wells, wells)
+        self.assertEqual(nation.wells, wells + 1)
+        self.assertEqual(nation.budget, 0)
+
+
+    def test_forced(self):
+        nation = self.subject
+        nation.government = 60
+        policy = forced(nation)
+        self.assertFalse(policy.can_apply())
+        nation.government = 10
+        set_nation(nation, policy.requirements)
+        self.assertTrue(policy.can_apply())
+        snap = snapshoot(nation)
+        policy.enact()
+        nation.refresh_from_db()
+        if 'improved' in policy.result:
+            self.assertEqual(nation.growth, snap.growth + policy.gain['growth'])
+        cost_check(self, nation, snap, policy.cost)
+
+
+    def test_sez(self):
+        nation = self.subject
+        nation.subregion = "Arabia"
+        Market.objects.create()
+        policy = sez(nation)
+        self.assertFalse(policy.can_apply())
+        nation.subregion = 'China'
+        self.assertTrue(policy.can_apply())
+        set_nation(nation, policy.requirements)
+        snap = snapshoot(nation)
+        self.assertTrue(policy.can_apply())
+        policy.enact()
+        cost_check(self, nation, snap, policy.cost)
+
+
+    def test_htmlattrs(self):
+        #check if they contain the necessary description, button names
+        #and names and whatnot
+        Market.objects.get_or_create()
+        for policyname in Policy.registry:
+            policy = Policy.registry[policyname](self.subject)
+            self.assertNotEqual(policy.description, '', msg=policyname)
+            self.assertNotEqual(policy.name, '', msg=policyname)
+            self.assertNotEqual(policy.button, '', msg=policyname)

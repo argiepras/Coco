@@ -22,7 +22,10 @@ class Meta_middleware(MiddlewareMixin):
         #storing metadata for last online and multi detection
         #delegated to a celery process because dbio
         if not request.is_ajax() or not request.user.is_authenticated:
-            header = request.META['HTTP_USER_AGENT']
+            try:
+                header = request.META['HTTP_USER_AGENT']
+            except:
+                header = ''
             referral = request.META.get('REFERER')
             ip = request.META.get('REMOTE_ADDR')
             pk = request.user.pk
