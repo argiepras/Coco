@@ -174,7 +174,7 @@ class school(Policy):
             'rm': int((nation.literacy/8 + (nation.gdp/150)) * multiplier),
             'budget': int((nation.gdp/1.5) * multiplier),
         }
-        self.requirements = cost
+        self.requirements = self.cost
 
     gain = {'literacy': 5}
     name = "Construct Public School"

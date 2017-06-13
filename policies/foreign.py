@@ -4,7 +4,7 @@ class base_alignchange(Policy):
     cost = {'budget': 50, 'stability': 5}
     requirements = cost
 
-class praise_ussr(basealignchange):
+class praise_ussr(base_alignchange):
     name = "Praise USSR"
     img = "soviets.jpg"
     button = "Suck up"
@@ -20,7 +20,7 @@ class praise_ussr(basealignchange):
         super(praise_ussr, self).enact()
 
 
-class praise_us(basealignchange):
+class praise_us(base_alignchange):
     name = "Praise the United States"
     img = "usa.jpg"
     button = "Kiss ass"
@@ -36,7 +36,7 @@ class praise_us(basealignchange):
         super(praise_us, self).enact()
 
 
-class declareneutrality(basealignchange):
+class declareneutrality(base_alignchange):
     name = "Declare Neutrality"
     img = "neutrality.jpg"
     button = "Stand strong"
@@ -49,7 +49,7 @@ class declareneutrality(basealignchange):
 
     def enact(self):
         self.nation.alignment = 2
-        super(praise_us, self).enact()
+        super(declareneutrality, self).enact()
 
 
 class base_intervention(Policy):
@@ -104,7 +104,7 @@ class usaid(base_aid):
         return self.nation.alignment != 1
 
 
-class sovietaid(base_aid):
+class sovietaid (base_aid):
     cost = {'soviet_points': 10}
     requirements = cost
     name = "Appeal to the Soviets for development aid"

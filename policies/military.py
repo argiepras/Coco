@@ -13,7 +13,7 @@ class conscript(Policy):
     def enact(self):
         self.nation.military.army += 2
         trainingloss = int((200.0/self.nation.military.army if self.nation.military.army > 0 else 1))
-        self.nation.military.training, -= (trainingloss if trainingloss > 0 else 1)
+        self.nation.military.training -= (trainingloss if trainingloss > 0 else 1)
         self.nation.military.save(update_fields=['army', 'training'])
         super(conscript, self).enact()
 
@@ -31,6 +31,9 @@ class train(Policy):
     button = "Train"
     description = "Turn your half-rate peasant army into a mindless killing \
     machine. Cost is relative to the size of your army."
+
+    def extra(self):
+        return self.nation.military.army > 0
 
     def enact(self):
         if not self.can_apply():
@@ -51,7 +54,7 @@ class demobilize(Policy):
     description = "Turn your half-rate peasant army into \
     a mindless killing machine. Cost is relative to the size of your army."
     def extra(self):
-        return self.nation.army > 5
+        return self.nation.military.army > 5
 
     def enact(self):
         self.nation.military.army -= 2
@@ -121,164 +124,112 @@ class base_weapons(Policy):
         return self.nation.military.weapons < 500
 
 
-class aks(Policy):
-    cost = {'soviet_points': 8}
-    requirements = cost
-    name = "AK-47s from the Soviets"
-    button = "Ask"
-    result = "Thousands of AK-47s are airlifted straight to you from Moscow."
-    description = """Ask for a lot of the finest guns ever wielded by everyone ever. 
-    Must have good relations with the Soviets. Slight increase in technology."""
+class soviet_weapons(Policy):
+    def __init__(self, nation):
+        super(soviet_weapons, self).__init__(nation)
+        if nation.military.weapons < 500:
+            self.weps = 2
+            self.cost = {'soviet_points': 8}
+            self.name = "AK-47s from the Soviets"
+            self.result = "Thousands of AK-47s are airlifted straight to you from Moscow."
+            self.description = """Ask for a lot of the finest guns ever wielded by everyone ever. 
+                Must have good relations with the Soviets. Slight increase in technology."""
+        elif nation.military.weapons < 2000:
+            self.weps = 6
+            self.cost = {'soviet_points': 16, 'oil': 3}
+            self.name = "T-62s from the Soviets"
+            self.result = "A couple T-62s arrive on the latest freighter from Odessa"
+            self.description = """An old but sturdy main battle tank from the Soviet Union. 
+            Will blast the bourgeois pigs to hell and back. Increase in technology."""
+        else:
+            self.weps = 11
+            self.cost = {'soviet_points': 25, 'oil':  10}
+            self.name = "T-90 from the Soviet Union"
+            self.result = "A couple T-90s arrive on the latest freighter from Odessa"
+            self.description = "A powerful, modern tank. Only available to comrades of the Soviet Union. Large increase in technology."
+        self.requirements = self.cost
 
+    button = "Ask"
     def extra(self):
-        return self.nation.alignment != 3 and self.nation.military.weapons < 500
+        return self.nation.alignment != 3
 
     def enact(self):
-        self.nation.military.weapons += 2
+        self.nation.military.weapons += self.weps
         self.nation.military.save(update_fields=['weapons'])
-        super(aks, self).enact()
+        super(soviet_weapons, self).enact()
 
 
-class m14(Policy):
-    cost = {'us_points': 8}
-    requirements = cost
-    name = "M-14s from the United States"
+class us_weapons(Policy):
+    def __init__(self, nation):
+        super(us_weapons, self).__init__(nation)
+        if nation.military.weapons < 500:
+            self.weps = 2
+            self.cost = {'us_points': 8}
+            self.name = "M-14s from the United States"
+            self.result = "Thousands of M-14s are airlifted straight to you from a Nevada warehouse."
+            self.description = """The latest in American-made riflery, only available to good 
+                friends of Uncle Sam. Slight increase in technology."""
+        elif nation.military.weapons < 2000:
+            self.weps = 6
+            self.cost = {'us_points': 16, 'oil': 3}
+            self.name = "M60 Pattons from the United States"
+            self.result = "A couple of Pattons arrive on the latest freighter from LA."
+            self.description = """Named after Old Blood and Guts himself, ready to 
+                be airlifted straight to friends of freedom. Increase in technology."""
+        else:
+            self.weps = 11
+            self.cost = {'us_points': 25, 'oil':  10}
+            self.name = "M1 Abrams from the United States"
+            self.result = "A couple M1 abrams arrive on the latest freighter from LA."
+            self.description = """A powerful, modern tank. Only available to allies 
+                of the United States. Large increase in technology."""
+        self.requirements = self.cost
+
     button = "Ask"
-    result = "Thousands of M-14s are airlifted straight to you from a Nevada warehouse."
-    description = """The latest in American-made riflery, only available to good 
-    friends of Uncle Sam. Slight increase in technology."""
 
     def extra(self):
-        return self.nation.alignment != 1 and self.nation.military.weapons < 500
+        return self.nation.alignment != 1
 
     def enact(self):
-        self.nation.military.weapons += 2
+        self.nation.military.weapons += self.weps
         self.nation.military.save(update_fields=['weapons'])
-        super(m14, self).enact()
+        super(us_weapons, self).enact()
 
 
-class presidente(Policy):
-    cost = {'mg': 5}
-    requirements = {'mg': 5, 'factories': 2}
-    name = "Manufacture AK-Presidente model rifles"
+class weapons(Policy):
+    def __init__(self, nation):
+        super(weapons, self).__init__(nation)
+        if nation.military.weapons < 500:
+            self.weps = 2
+            self.cost = {'mg': 5}
+            self.requirements = {'mg': 5, 'factories': 2}
+            self.name = "Manufacture AK-Presidente model rifles"
+            self.result = "Your workers proudly stamp your face on each and every rifle."
+            self.description = """Sure it may look and operate identically to the AK-47, but your own 
+                people made it damnit! Must have a completed two factories. Slight increase in technology."""
+        elif nation.military.weapons < 2000:
+            self.weps = 7
+            self.cost = {'mg': 13, 'oil': 5}
+            self.requirements = {'mg': 13, 'oil': 5, 'factories': 4}
+            self.name = "Manufacture Istan Main Battle Tanks"
+            self.result = "Your workers proudly stamp your face on each and every tank."
+            self.description = """A fine tank made right here in the homeland. 
+                Must have a completed four factories. Increase in technology."""
+        else:
+            self.weps = 12
+            self.cost = {'mg': 18, 'oil':  13}
+            self.requirements = {'mg': 18, 'oil':  13, 'factories': 8}
+            self.name = "Manufacture Despot Main Battle Tank"
+            self.result = "Your workers proudly stamp your face on each and every tank."
+            self.description = """Oppress the battlefield with this tank of 
+                your own make. Must have a completed eight factories."""
+
     button = "Manufacture"
-    result = "Your workers proudly stamp your face on each and every rifle."
-    description = """Sure it may look and operate identically to the AK-47, but your own 
-    people made it damnit! Must have a completed two factories. Slight increase in technology."""
-
-    def extra(self):
-        return self.nation.military.weapons < 500
 
     def enact(self):
-        self.nation.military.weapons += 2
+        self.nation.military.weapons += self.weps
         self.nation.military.save(update_fields=['weapons'])
-        super(presidente, self).enact()
-
-
-class t62(Policy):
-    cost = {'soviet_points': 16, 'oil': 3}
-    requirements = cost
-    name = "T-62s from the Soviets"
-    button = "Buy"
-    result = "A couple T-62s arrive on the latest freighter from Odessa"
-    description = """An old but sturdy main battle tank from the Soviet Union. 
-    Will blast the bourgeois pigs to hell and back. Increase in technology."""
-
-    def extra(self):
-        return self.nation.alignment != 3 and \
-        self.nation.military.weapons >= 500 and self.nation.military.weapons < 2000
-
-    def enact(self):
-        self.nation.military.weapons += 6
-        self.nation.military.save(update_fields=['weapons'])
-        super(t62, self).enact()
-
-
-class m60(Policy):
-    cost = {'us_points': 16, 'oil': 3}
-    requirements = cost
-    name = "M60 Pattons from the United States"
-    button = "Buy"
-    result = "A couple of Pattons arrive on the latest freighter from LA."
-    description = """Named after Old Blood and Guts himself, ready to 
-    be airlifted straight to friends of freedom. Increase in technology."""
-
-    def extra(self):
-        return self.nation.alignment != 1 and \
-        self.nation.military.weapons >= 500 and self.nation.military.weapons < 2000
-
-    def enact(self):
-        self.nation.military.weapons += 6
-        self.nation.military.save(update_fields=['weapons'])
-        super(m60, self).enact()
-
-
-class istan(Policy):
-    cost = {'mg': 13, 'oil': 5}
-    requirements = {'mg': 13, 'oil': 5, 'factories': 4}
-    name = "Manufacture Istan Main Battle Tanks"
-    button = "Make"
-    result = "Your workers proudly stamp your face on each and every tank."
-    description = "A fine tank made right here in the homeland. Must have a completed four factories. Increase in technology."
-
-    def extra(self):
-        return self.nation.military.weapons >= 500 and self.nation.military.weapons < 2000
-
-    def enact(self):
-        self.nation.military.weapons += 7
-        self.nation.military.save(update_fields=['weapons'])
-        super(istan, self).enact()
-
-
-class t90(Policy):
-    cost = {'soviet_points': 25, 'oil':  10}
-    requirements = cost
-    name = "T-90 from the Soviet Union"
-    button = "Buy"
-    result = "A couple T-90s arrive on the latest freighter from Odessa"
-    description = "A powerful, modern tank. Only available to comrades of the Soviet Union. Large increase in technology."
-
-    def extra(self):
-        return self.nation.military.weapons >= 2000 and self.nation.alignment != 3
-
-    def enact(self):
-        self.nation.military.weapons += 11
-        self.nation.military.save(update_fields=['weapons'])
-        super(t90, self).enact()
-
-
-class m1(Policy):
-    cost = {'us_points': 25, 'oil':  10}
-    requirements = cost
-    name = "Buy M1 Abrams from the United States"
-    button = "Buy"
-    result = "A couple M1 abrams arrive on the latest freighter from LA"
-    description = "A powerful, modern tank. Only available to allies of the United States. Large increase in technology."
-
-    def extra(self):
-        return self.nation.military.weapons >= 2000 and self.nation.alignment != 1
-
-    def enact(self):
-        self.nation.military.weapons += 11
-        self.nation.military.save(update_fields=['weapons'])
-        super(m1, self).enact()
-
-
-class despot(Policy):
-    cost = {'mg': 18, 'oil':  13}
-    requirements = {'mg': 18, 'oil':  13, 'factories': 8}
-    name = "Manufacture Despot Main Battle Tank"
-    button = "Make"
-    result = "Your workers proudly stamp your face on each and every tank."
-    description = "Oppress the battlefield with this tank of your own make. Must have a completed eight factories."
-
-    def extra(self):
-        return self.nation.military.weapons >= 2000
-
-    def enact(self):
-        self.nation.military.weapons += 12
-        self.nation.military.save(update_fields=['weapons'])
-        super(despot, self).enact()
+        super(weapons, self).enact()
 
 
 class migs(Policy):
@@ -286,7 +237,7 @@ class migs(Policy):
         super(migs, self).__init__(nation)
         planes = nation.military.planes
         self.cost = {'oil': planes + 5, 'soviet_points': 11 + ((planes**2)-10)}
-        self.requirements = cost
+        self.requirements = self.cost
 
     name = "Buy MiGs"
     button = "Buy"
@@ -309,7 +260,7 @@ class f8(Policy):
         super(f8, self).__init__(nation)
         planes = nation.military.planes
         self.cost = {'oil': planes + 5, 'us_points': 11 + ((planes**2)-10)}
-        self.requirements = cost
+        self.requirements = self.cost
 
     name = "Buy F-8 Crusaders"
     button = "Buy"
@@ -369,6 +320,7 @@ class navy(Policy):
     def enact(self):
         self.nation.military.navy += 1
         self.nation.military.save(update_fields=['navy'])
+        super(navy, self).enact()
 
 
 class chems(Policy):

@@ -56,4 +56,4 @@ def snapshoot(nation):
 
 def cost_check(self, nation, snap, cost):
     for field in cost:
-        self.assertEqual(getattr(snap, field), getattr(nation, field) + cost[field], msg=field)
+        self.assertEqual(getattr(snap, field), getattr(nation, field) + cost[field], msg='%s not subtracting' % field)

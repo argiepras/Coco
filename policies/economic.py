@@ -195,10 +195,11 @@ class labordiscipline(Policy):
 class industrialize(Policy):
     def __init__(self, nation):
         super(industrialize, self).__init__(nation)
+        faccos = nation.factories + nation.closed_factories
         self.cost = {
-            'rm': nation.factories * (100 if nation.region() != 'Asia' else 75) + (50 if nation.region() != 'Asia' else 38),
-            'oil': nation.factories * (50 if nation.region() != 'Asia' else 38) + (25 if nation.region() != 'Asia' else 19),
-            'mg': nation.factories * (2 if nation.region() != 'Asia' else 2 * 0.75),
+            'rm': faccos * (100 if nation.region() != 'Asia' else 75) + (50 if nation.region() != 'Asia' else 38),
+            'oil': faccos * (50 if nation.region() != 'Asia' else 38) + (25 if nation.region() != 'Asia' else 19),
+            'mg': faccos * (2 if nation.region() != 'Asia' else 2 * 0.75),
         }
         self.requirements = self.cost
         self.description = """Create a worker's paradise one sweatshop at a time. Builds a factory, 

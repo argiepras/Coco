@@ -29,7 +29,7 @@ class policytests(TestCase):
         nation.rm = 10
         nation.save()
         self.assertEqual(gl.can_apply(), True)
-        gl()
+        gl.enact()
         self.assertNotEqual(gl.result, '')
         #check if cost is subtracted properly
         nation.refresh_from_db()
@@ -197,6 +197,15 @@ class policytests(TestCase):
         self.assertEqual(nation.rm, 0)
         self.assertEqual(nation.oil, 0)
         self.assertEqual(nation.mg, 0)
+
+        #check that closed factories are counted as well
+        policy = industrialize(nation)
+        cost = policy.cost
+        nation.closed_factories = 1
+        policy = industrialize(nation) #have grab a new instance
+        #because cost is calculated at creation
+        for field in cost:
+            self.assertNotEqual(cost[field], policy.cost[field])
 
 
     def test_deindustrialize(self):
@@ -558,14 +567,3 @@ class policytests(TestCase):
         self.assertTrue(policy.can_apply())
         policy.enact()
         cost_check(self, nation, snap, policy.cost)
-
-
-    def test_htmlattrs(self):
-        #check if they contain the necessary description, button names
-        #and names and whatnot
-        Market.objects.get_or_create()
-        for policyname in Policy.registry:
-            policy = Policy.registry[policyname](self.subject)
-            self.assertNotEqual(policy.description, '', msg=policyname)
-            self.assertNotEqual(policy.name, '', msg=policyname)
-            self.assertNotEqual(policy.button, '', msg=policyname)
