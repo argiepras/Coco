@@ -8,10 +8,10 @@ import nation.variables as v
 
 class generaltests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()[0]
+        self.subject = nation_generator()
 
     def test_arrest(self):
-        nation = nation_generator()[0]
+        nation = nation_generator()
         policy = arrest(nation)
         #default nations can arrest until they turn blue in the face
         self.assertTrue(policy.can_apply())
@@ -29,7 +29,7 @@ class generaltests(TestCase):
 
 
     def test_releasing(self):
-        nation = nation_generator()[0]
+        nation = nation_generator()
         policy = release(nation)
         #same as above lol, just in reverse
         self.assertTrue(policy.can_apply())
@@ -47,7 +47,7 @@ class generaltests(TestCase):
 
 
     def test_martial_law(self):
-        nation = nation_generator()[0]
+        nation = nation_generator()
         policy = martial(nation)
         #again, fresh nations can do it
         self.assertTrue(policy.can_apply())
@@ -68,6 +68,23 @@ class generaltests(TestCase):
         cost_check(self, nation, snap, policy.cost)
         self.assertGreater(nation.military.army, army)
 
+    
     def test_elections(self):
-        nation = nation_generator()[0]
-        policy = elections
+        nation = nation_generator()
+        policy = elections(nation)
+        self.assertTrue(policy.can_apply())
+        #only requirements are budgetary
+        nation.budget = 0
+        self.assertFalse(policy.can_apply())
+        nation.refresh_from_db()
+        snap = snapshoot(nation)
+        self.assertTrue((policy.can_apply()))
+        policy.enact()
+        nation.refresh_from_db()
+        cost_check(self, nation, snap, policy.cost)
+        self.assertGreater(nation.government, snap.government)
+        self.assertGreater(nation.approval, snap.approval)
+
+
+    def test_housing(self):
+        nation = nation_generator()

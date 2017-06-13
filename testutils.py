@@ -24,7 +24,7 @@ def nation_generator(amount=1):
         Researchdata.objects.create(nation=q)
         q.IPs.create(IP=q.creationip)
         nations.append(q)
-    return nations
+    return (nations if amount > 1 else nations[0])
 
 
 def namegen():

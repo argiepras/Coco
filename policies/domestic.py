@@ -97,7 +97,7 @@ class elections(Policy):
             has of course rigged it so you stay in power... but be careful next time! Stability drops."
             self.cost.update({'stability': random.randint(0, 10)})
             self.img = ''
-        super(enact, self).enact()
+        super(elections, self).enact()
 
 
 class housing(Policy):
