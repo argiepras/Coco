@@ -19,7 +19,7 @@ class arrest(Policy):
 
     def enact(self):
         chance = random.randint(1, 10)
-        if chance > 5 and nation.rebels > 0:
+        if chance > 5 and self.nation.rebels > 0:
             self.result = "You arrest the opposition. Turns out some of \
             them were working with the rebels! Rebel strength decreases."
             self.cost.update({'rebels': 1})
@@ -48,7 +48,7 @@ class release(Policy):
             self.result = "You release the prisoners, but some of them go on to join the rebels!"
         else:
             self.result = "You release the prisoners and everything seems a bit freer."
-        super(arrest, self).enact()
+        super(release, self).enact()
 
 
 class martial(Policy):
