@@ -20,6 +20,8 @@ class generaltests(TestCase):
         Market.objects.get_or_create()
         for policyname in Policy.registry:
             policy = Policy.registry[policyname](self.subject)
-            self.assertNotEqual(policy.description, '', msg=policyname)
-            self.assertNotEqual(policy.name, '', msg=policyname)
-            self.assertNotEqual(policy.button, '', msg=policyname)
+            self.assertNotEqual(policy.description, '', msg='%s need a valid description' % policyname)
+            self.assertNotEqual(policy.name, '', msg='%s need a valid name' % policyname)
+            self.assertNotEqual(policy.button, '', msg='%s needs a button name' % policyname)
+            self.assertNotEqual(policy.render_cost(), '', msg="%s cost shouldn't be emptystring" % policyname)
+

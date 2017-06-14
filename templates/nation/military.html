@@ -1,10 +1,6 @@
 {% extends 'nation/base.html' %}
 {% block content %}
-<div class="container"
-        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-        <script src="http://code.jquery.com/jquery.js"></script>
-        <script src="bootstrap/js/bootstrap.min.js"></script>
-
+<div class="container">
  <table class="table table-hover table-bordered"><tr>
   <td><a href="{% url 'nation:economic' %}"><h2><center>Economic</center></h2></a></td>
   <td><a href="{% url 'nation:domestic' %}"><h2><center>Domestic</center></h2></a></td>
@@ -14,49 +10,11 @@
   </tr>
 </table>
 
-
-<center><h2>Military Policy</h2>
-<img src="/static/img/military.png" /><br /><br />
-
-{% if result %}
-    <div class="result">
-        {% if img %}
-            <img src="{{ img }}">
-        {% endif %}
-        <p class="spacer-small">{{ result }}</p>
-    </div>
-{% endif %}
-
-    <a href="#" data-toggle="tooltip" data-placement="left" title="Your budget increases every ten minutes, reaching 0.10% of your GDP ($(cash)k) after 12 hours. You may save up to 0.20% of your GDP ($(cash)k).">
-    Available budget: ${{ stats.budget }}k <i class="icon-question-sign"></i></a>
+    <center><h2>Military Policy</h2></center>
+    <img src="/static/img/military.png">
     <br /><br />
-    <form method="POST">{% csrf_token %}
-    <table class="table table-hover">
-    
-         <tr>
-            <td><b>Action</b></td>
-            <td><b>Description</b></td>
-            <td><b>Cost</b></td>
-            <td><b></b></td>
-        </tr>
-        {% if nation.military.chems < 10 %}
-        <tr>
-            <td><b>Develop Chemical Weapons</b></td>
-            <td>The Geneva Protocol is just a mere piece of paper, and your military NEEDS some Sarin and Mustard Gas... just in case. Decreases reputation, takes five successful developments to actually create usuable chemical weapons.</td>
-            <td>$500k, 5 research</td>
-            <td><button type="submit" class="btn btn-default" name="chem" />Cook</button></td>
-        </tr>
-        {% endif %}
-        {% if nation.military.reactor == 20 %}
-		<tr>
-            <td><b>Develop Nuclear Weapon</b></td>
-            <td>The Big One. Eviscerate an entire nation with the single push of a button with one of these babies. Requires ten uranium to produce a single nuclear weapon.</td>
-            <td>$100,000k, 500 research</td>
-            <td><button type="submit" class="btn btn-default" name="nuke" />Build Nuke</td> 
-        </tr>
-		{% endif %}
-    </form>
-   </table>
+
+     {% include 'nation/policy.html' %}
    
 </div>
    {% endblock %}

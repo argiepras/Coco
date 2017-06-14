@@ -21,15 +21,30 @@ def econ_policies(request):
 
 
 def militarypolicies(request):
-    pass
+    if request.is_ajax():
+        return ajax_handling(request)
+    from .military import Policy
+    nation = request.user.nation
+    policies = get_policies(Policy.registry, nation, 'military')
+    return render(request, 'nation/economics.html', {'policies': policies})
 
 
 def domesticpolicies(request):
-    pass
+    if request.is_ajax():
+        return ajax_handling(request)
+    from .domestic import Policy
+    nation = request.user.nation
+    policies = get_policies(Policy.registry, nation, 'domestic')
+    return render(request, 'nation/economics.html', {'policies': policies})
 
 
 def foreignpolicies(request):
-    pass
+    if request.is_ajax():
+        return ajax_handling(request)
+    from .foreign import Policy
+    nation = request.user.nation
+    policies = get_policies(Policy.registry, nation, 'foreign')
+    return render(request, 'nation/economics.html', {'policies': policies})
 
 
 def ajax_handling(request):

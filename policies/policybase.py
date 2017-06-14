@@ -101,7 +101,7 @@ class Policy(object):
         mod = ', '
         for field in v.resources:
             if field in self.cost:
-                desc += v.pretty(self.copst.pop(field), field, True) + mod
+                desc += v.pretty(self.cost.pop(field), field, True) + mod
         if self.cost:
             for field in self.cost:
                 if not field in v.policycost_descriptions:

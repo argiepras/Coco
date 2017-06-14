@@ -1,0 +1,68 @@
+<div class="result">
+    <img class="resultimg" src="">
+    <p class="spacer-small" id="policyresult"></p>
+</div>
+
+    <a href="#" data-toggle="tooltip" data-placement="left" title="Your budget increases every ten minutes, reaching 0.10% of your GDP (${{ nation.gdp }}k) after 12 hours. You may save up to 0.20% of your GDP (${{ nation.gdp|add:nation.gdp }}k).">
+    Available budget: ${{ stats.budget }}k <i class="icon-question-sign"></i></a>
+    <br /><br />
+
+    
+    
+    <table class="table table-hover">
+        <thead>
+            <td><b>Action</b></td>
+            <td><b>Description</b></td>
+            <td><b>Cost</b></td>
+            <td><b></b></td>
+        </thead>
+        <tbody>
+        {% for policy in policies %}
+            <tr>
+                <td><b>{{ policy.name|safe }}</b></td>
+                <td>{{ policy.description|safe }}</td>
+                <td>{{ policy.render_cost|safe }}</td>
+                <td>
+                    <button class="btn btn-default" name="{{ policy.policyname|safe }}">
+                        {{ policy.button|safe }}
+                    </button>
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% csrf_token %}
+<script>
+$(document).ready(function(){
+    $(".result").hide();
+    $(".resultimg").hide();
+    $("button").click(function(){
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "policy": this.name,
+            },
+            url: '/main/economic/',
+            datatype: "json",
+            success: updatestuff,
+        });
+    });
+});
+
+function updatestuff(x, y, z){
+    $(".result").show();
+    if (x.img !== "")
+    {
+        $(".resultimg").show();
+        $(".resultimg").attr("src", x.img);
+    }
+    else
+    {
+        $(".resultimg").hide();
+    }
+    $("#policyresult").html(x.result);
+};
+
+</script>

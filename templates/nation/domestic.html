@@ -11,38 +11,11 @@
   </tr>
 </table>
 
-     <center><h2>Domestic Policy</h2>
+     <center><h2>Domestic Policy</h2></center>
     {% load static %}
 <img src="/static/img/domestic.png" /><br /><br />
 
-{% if result %}
-    <div class="result">
-        {% if img %}
-            <img src="{{ img }}">
-        {% endif %}
-        <p class="spacer-small">{{ result }}</p>
-    </div>
-{% endif %}
-    <br />
-    <a href="#" data-toggle="tooltip" data-placement="left" title="Your budget increases every ten minutes, reaching 0.10% of your GDP (${{ nation.gdp }}k) after 12 hours. You may save up to 0.20% of your GDP (${{ nation.gdp|add:nation.gdp }}k).">
-    Available budget: ${{ stats.budget }}k <i class="icon-question-sign"></i></a>
-    <br /><br />
-    
+     {% include 'nation/policy.html' %}
 
-    <table class="table table-hover">
-         <thead>
-            <th><b>Action</b></th>
-            <th><b>Description</b></th>
-            <th><b>Cost</b></th>
-            <th><b></b></th>
-        </thead>
-        <tbody>
-            {% for policy in policies %}
-                
-            {% endfor %}
-   </table>
-   
-   
-   </div>
-
+</div>
 {% endblock %}
