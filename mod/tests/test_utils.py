@@ -13,13 +13,12 @@ class iptests(TestCase):
 
     @classmethod
     def setUpTestData(cls):
-        cls.subject = nation_generator(1)[0]
+        cls.subject = nation_generator()
         #cls.subject.creationip = cls.ips[0].
 
 
     def test_nationgen(self):
-        x = nation_generator(1)
-        x = x[0]
+        x = nation_generator()
         self.assertIsNotNone(x.settings)
         self.assertIsNotNone(x.military)
         self.assertIsNotNone(x.econdata)

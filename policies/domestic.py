@@ -65,6 +65,7 @@ class martial(Policy):
         self.nation.military.army += 10
         self.nation.military.training += 5
         self.nation.military.save(update_fields=['army', 'training'])
+        super(martial, self).enact()
 
 
 class elections(Policy):
@@ -105,6 +106,7 @@ class housing(Policy):
         super(housing, self).__init__(nation)
         self.result = 'The people are overjoyed at their new cement box! Government popularity increases.'
         self.cost = {'budget': nation.gdp/2, 'economy': 2}
+        self.requirements = {'budget': nation.gdp/2}
         self.gain = {'approval': 10}
         if random.randint(1, 10) > 6:
             self.gain.update({'qol': 2})
@@ -127,7 +129,8 @@ class housing(Policy):
 class wage(Policy):
     def __init__(self, nation):
         super(wage, self).__init__(nation)
-        self.cost = {'growth': int((nation.gdp*1.05)/400), 'economy': 2}
+        gl = int((nation.gdp*1.05)/400)
+        self.cost = {'growth': (gl if gl > 0 else 1), 'economy': 2}
         self.requirements = {'growth': -5}
         self.gain = {'approval': 21}
         if random.randint(1, 10) > 8:
@@ -191,7 +194,7 @@ class school(Policy):
 class university(Policy):
     def __init__(self, nation):
         super(university, self).__init__(nation)
-        total = nation.universities 
+        total = nation.universities + nation.closed_universities
         self.cost = {
             'rm': (total*100+50 if nation.region() != 'Asia' else total*75+38),
             'oil': (total*50+25 if nation.region() != 'Asia' else total*38+19),
@@ -200,21 +203,21 @@ class university(Policy):
         self.requirements = self.cost
 
     def extra(self):
-        return self.nation.farmland() >= v.landcost['universities']
+        return self.nation.farmland() >= self.nation.landcost('universities')
 
     gain = {'universities': 1}
     name = 'Found University'
     button = 'Teach'
     img = 'university.jpg'
     result = "Your students take to the classrooms!"
-    description = """Distract your annoying dissident eggheads with a few \
-    shiny new buildings to pontificate to each other in. Provides 4 research \
-    per turn, but consumes 1 mg per turn. Also provides $1 million in growth per \
+    description = """Distract your annoying dissident eggheads with a few 
+    shiny new buildings to pontificate to each other in. Provides 4 research 
+    per turn, but consumes 1 mg per turn. Also provides $1 million in growth per 
     turn. Each university decreases the cost of raising literacy."""
 
 
 class closeuni(Policy):
-    cost = {'univiersities': 1}
+    cost = {'universities': 1}
     requirements = cost
     gain = {'closed_universities': 1}
     costdesc = "Free!"
@@ -278,12 +281,13 @@ class cult(Policy):
         self.cost = {'budget': 500, 'government': nation.government}
         self.requirements = {'budget': 500, 'government': 41}
 
+    gain = {'approval': 15}
     name = "Cult of Personality"
     button = "Bask"
     img = "cult.jpg"
     result = 'Oh How The People Love Me. I Am Their Guardian \
     And Protector From Want And Fear. What A Great Leader I Am.'
-    description = "The Great and Glorious Leader Provides For All. \
-    He was Born Under a Smiling Sun and Rides a Pegasus On His Days \
-    Off. Dear Leader Has Never Lost a Game of Ping-Pong. Increases \
-    popularity, makes your country instantly a dictatorship."
+    description = """The Great and Glorious Leader Provides For All. 
+    He was Born Under a Smiling Sun and Rides a Pegasus On His Days 
+    Off. Dear Leader Has Never Lost a Game of Ping-Pong. Increases 
+    popularity, makes your country instantly a dictatorship."""

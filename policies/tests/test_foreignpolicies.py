@@ -7,7 +7,7 @@ import nation.variables as v
 
 class policytests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()[0]
+        self.subject = nation_generator()
 
 
     def test_praise_ussr(self):

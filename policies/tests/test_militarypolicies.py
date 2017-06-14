@@ -7,7 +7,7 @@ import nation.variables as v
 
 class policytests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()[0]
+        self.subject = nation_generator()
 
 
     def test_conscription(self):
@@ -111,7 +111,7 @@ class policytests(TestCase):
 
 
     def relation_weapons(self, testingpolicy, relations):
-        nation = nation_generator()[0]
+        nation = nation_generator()
         policy = testingpolicy(nation)
         self.assertFalse(policy.can_apply())
         setattr(nation, relations, 100)
@@ -169,7 +169,7 @@ class policytests(TestCase):
 
 
     def relation_planes(self, testingpolicy, relations):
-        nation = nation_generator()[0]
+        nation = nation_generator()
         #default nations do not have the necessary resources to
         #buy planes right out of the gate
         policy = testingpolicy(nation)
@@ -244,11 +244,9 @@ class policytests(TestCase):
         nation.save()
         ships = nation.military.navy
         snap = snapshoot(nation)
-        print nation.mg
         policy.enact()
         nation.refresh_from_db()
         nation.military.refresh_from_db()
-        print nation.mg
         cost_check(self, nation, snap, policy.cost)
         self.assertGreater(nation.military.navy, ships)
         self.assertEqual(nation.military.navy, ships+1)
