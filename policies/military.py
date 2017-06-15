@@ -107,6 +107,7 @@ class gasrebels(Policy):
     requirements = {'rebels': 1}
     name = "Gas the rebel scum!"
     button = "Gas"
+    costdesc = "Nothing"
     result = """Your attacks decimate the rebels, forcing what few 
     remain into hiding. However photographs of civilian casualties 
     soon circulate through international media, and foreigners 

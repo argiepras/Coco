@@ -14,6 +14,7 @@ class policytests(TestCase):
         nation = self.subject
         #default nations should be able to praise the ussr
         policy = praise_ussr(nation)
+        print policy.cost
         self.assertTrue(policy.can_apply())
         nation.alignment = 1
         self.assertFalse(policy.can_apply())

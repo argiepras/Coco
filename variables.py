@@ -73,7 +73,8 @@ policycost_descriptions = {
     'soviet_points': "USSR relation points",
     'research': 'research',
     'uranium': 'ton of uranium',
-    'FI': 'foreign investment'
+    'FI': 'foreign investment',
+    'growth': 'million growth'
 }
 
 #for free market offers

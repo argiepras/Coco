@@ -44,11 +44,27 @@ def atomic_transaction(modeltype, pk, actions, targetpk=False):
             #first we do stuff
             for field in actions:
                 if actions[field]['action'] is 'subtract':
-                    target.__dict__[field] -= actions[field]['amount']
-                    subject.__dict__[field] += actions[field]['amount']
+                    setattr(
+                        target, 
+                        field, 
+                        getattr(target, field) - actions[field]['amount']
+                    )
+                    setattr(
+                        subject, 
+                        field, 
+                        getattr(subject, field) + actions[field]['amount']
+                    )
                 else:
-                    target.__dict__[field] += actions[field]['amount']
-                    subject.__dict__[field] -= actions[field]['amount']
+                    setattr(
+                        target, 
+                        field, 
+                        getattr(target, field) + actions[field]['amount']
+                    )
+                    setattr(
+                        subject, 
+                        field, 
+                        getattr(subject, field) - actions[field]['amount']
+                    )
                 #then we assemble a list of fields to update
                 updatelist.append(field)
             target.save(update_fields=updatelist)
@@ -56,14 +72,31 @@ def atomic_transaction(modeltype, pk, actions, targetpk=False):
             subject = modeltype.objects.select_for_update(nowait=True).get(pk=pk)
             for field in actions:
                 if actions[field]['action'] is 'subtract':
-                    subject.__dict__[field] -= actions[field]['amount']
+                    setattr(
+                        subject, 
+                        field, 
+                        getattr(subject, field) - actions[field]['amount']
+                    )
                 elif actions[field]['action'] is 'add':
-                    subject.__dict__[field] += actions[field]['amount']
+                    setattr(
+                        subject, 
+                        field, 
+                        getattr(subject, field) + actions[field]['amount']
+                    )
                 elif actions[field]['action'] is 'call':
                     subject.__dict__[field]()
                 else:
-                    subject.__dict__[field] = actions[field]['amount']
+                    setattr(
+                        subject, 
+                        field, 
+                        actions[field]['amount']
+                    )
                 #then we assemble a list of fields to update
+                #except for property fields
+                #properties can't be saved to the database
+                #but they're prefixed with _
+                if 'property' in str(type(getattr(subject.__class__, field))):
+                    field = '_%s' % field
                 updatelist.append(field)
         subject.save(update_fields=updatelist)
 

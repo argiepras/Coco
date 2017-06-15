@@ -1,10 +1,8 @@
 from .policybase import Policy
 
-class base_alignchange(Policy):
+class praise_ussr(Policy):
     cost = {'budget': 50, 'stability': 5}
     requirements = cost
-
-class praise_ussr(base_alignchange):
     name = "Praise USSR"
     img = "soviets.jpg"
     button = "Suck up"
@@ -20,7 +18,9 @@ class praise_ussr(base_alignchange):
         super(praise_ussr, self).enact()
 
 
-class praise_us(base_alignchange):
+class praise_us(Policy):
+    cost = {'budget': 50, 'stability': 5}
+    requirements = cost
     name = "Praise the United States"
     img = "usa.jpg"
     button = "Kiss ass"
@@ -36,7 +36,9 @@ class praise_us(base_alignchange):
         super(praise_us, self).enact()
 
 
-class declareneutrality(base_alignchange):
+class declareneutrality(Policy):
+    cost = {'budget': 50, 'stability': 5}
+    requirements = cost
     name = "Declare Neutrality"
     img = "neutrality.jpg"
     button = "Stand strong"

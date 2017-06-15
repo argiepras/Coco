@@ -101,13 +101,21 @@ class Policy(object):
         mod = ', '
         for field in v.resources:
             if field in self.cost:
-                desc += v.pretty(self.cost.pop(field), field, True) + mod
-        if self.cost:
+                desc += v.pretty(self.cost[field], field, True) + mod
+        othercostfields = []
+        for field in self.cost:
+            if field in v.resources:
+                continue
+            else:
+                othercostfields.append(field)
+        if othercostfields:
             for field in self.cost:
                 if not field in v.policycost_descriptions:
                     continue
                 if field == "FI":
                     appendage = '$%sk' % self.cost[field]
+                elif field == "growth":
+                    appendage = '$%s' % self.cost[field]
                 else:
                     appendage = '%s' % self.cost[field]
                 desc += '%s %s' % (appendage, v.policycost_descriptions[field]) + mod
