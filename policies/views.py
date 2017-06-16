@@ -40,7 +40,7 @@ def domesticpolicies(request):
     from .domestic import Policy
     nation = request.user.nation
     policies = get_policies(Policy.registry, nation, 'domestic')
-    return render(request, 'nation/economics.html', {'policies': policies})
+    return render(request, 'nation/domestic.html', {'policies': policies})
 
 @login_required
 @nation_required
@@ -51,7 +51,7 @@ def foreignpolicies(request):
     from .foreign import Policy
     nation = request.user.nation
     policies = get_policies(Policy.registry, nation, 'foreign')
-    return render(request, 'nation/economics.html', {'policies': policies})
+    return render(request, 'nation/foreign.html', {'policies': policies})
 
 
 #use atomic transactions for every database call that potentially writes to it
