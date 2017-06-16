@@ -287,7 +287,7 @@ class aircraft(Policy):
     contextual = False
     name = "Manufacture Aircraft"
     button = "Make"
-    result = "The finest of American death machines are flown in from Nevada!"
+    result = "Several cropdusters are rigged with machine guns!"
     description = """If the US and USSR won't let you have their planes, well you 
     can make your own damn planes! Requires at least three factories."""
 

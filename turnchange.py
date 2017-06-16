@@ -96,7 +96,7 @@ def alliance_healthcost(alliance, membercount):
 def alliance_freedomcost(alliance):
     cost = 0
     if alliance.initiatives.freedom:
-        totlit = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('literacy'))['literacy__sum']
+        totlit = alliance.members.filter(deleted=False, vacation=False).aggregate(Sum('_literacy'))['_literacy__sum']
         cost = int(round(totlit/50.0))
     return (1 if cost < 1 and alliance.initiatives.freedom else cost)
 
@@ -423,10 +423,10 @@ def researchgain_unis(nation):
 def researchgain_alliance(nation):
     if nation.has_alliance():
         if nation.alliance.initiatives.freedom:
-            averages = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Avg('universities'), Avg('literacy'))
+            averages = nation.alliance.members.filter(deleted=False, vacation=False).aggregate(Avg('universities'), Avg('_literacy'))
             count = nation.alliance.members.filter(deleted=False, vacation=False).count()
             avg_unis = averages['universities__avg']
-            avg_lit = averages['literacy__avg']
+            avg_lit = averages['_literacy__avg']
             bonus = avg_unis * (sqrt(avg_lit)/2) * (1 + count/100.0)
             return int(round(bonus))
     return 0

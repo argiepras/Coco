@@ -2,6 +2,7 @@ from nation.models import *
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import JsonResponse
+from django.db import transaction
 import nation.utilities as utils
 from nation.decorators import nation_required, novacation
 import nation.variables as v
@@ -19,7 +20,9 @@ def econ_policies(request):
     policies = get_policies(Policy.registry, nation, 'economic')
     return render(request, 'nation/economics.html', {'policies': policies})
 
-
+@login_required
+@nation_required
+@novacation
 def militarypolicies(request):
     if request.is_ajax():
         return ajax_handling(request)
@@ -28,7 +31,9 @@ def militarypolicies(request):
     policies = get_policies(Policy.registry, nation, 'military')
     return render(request, 'nation/economics.html', {'policies': policies})
 
-
+@login_required
+@nation_required
+@novacation
 def domesticpolicies(request):
     if request.is_ajax():
         return ajax_handling(request)
@@ -37,7 +42,9 @@ def domesticpolicies(request):
     policies = get_policies(Policy.registry, nation, 'domestic')
     return render(request, 'nation/economics.html', {'policies': policies})
 
-
+@login_required
+@nation_required
+@novacation
 def foreignpolicies(request):
     if request.is_ajax():
         return ajax_handling(request)
@@ -47,23 +54,26 @@ def foreignpolicies(request):
     return render(request, 'nation/economics.html', {'policies': policies})
 
 
+#use atomic transactions for every database call that potentially writes to it
+@transaction.atomic
 def ajax_handling(request):
     from .economic import Policy
     from . import domestic
     from . import military
     from . import foreign
-    policy = Policy.registry[request.POST['policy']](request.user.nation)
-    if policy.can_apply():
-        policy.enact()
-        rval = policy.json()
+    nation = Nation.objects.select_for_update().get(user=request.user)
+    if request.POST['policy'] in Policy.registry:
+        policy = Policy.registry[request.POST['policy']](nation)
+        if policy.can_apply():
+            policy.enact()
+            rval = policy.json()
+        else:
+            rval = {'result': "It won't work.", 'img': ''}
+        if policy.can_apply() == False and policy.contextual == False:
+            rval = {'result': policy.result, 'img': policy.img}
     else:
-        rval = {'result': "It won't work."}
-    if policy.can_apply() == False and policy.contextual == False:
-        rval = {'result': policy.result, 'img': policy.img}
-    print rval
+        rval = {'result': "It won't work.", 'img': ''}
     return JsonResponse(rval)
-
-
 
 
 def get_policies(registry, nation, ptype):

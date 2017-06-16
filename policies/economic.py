@@ -85,6 +85,7 @@ class blood(Policy):
     requirements = {'qol': 2, 'reputation': 10}
     name = "Blood Diamonds"
     button = "Sell"
+    costdesc = "Nothing!"
 
     def extra(self):
         return self.nation.region() == 'Africa' and self.nation.econdata.diamonds >= 1
@@ -244,6 +245,7 @@ class deindustrialize(Policy):
     img = "http://i.imgur.com/QerllfI.jpg"
     result = "Thousands lose their jobs!"
     name = "Shut Down Factory"
+    costdesc = "Nothing!"
     description = """Well that worker's paradise didn't exactly work out. Removes a factory, 
     costs nothing but decreases approval as unemployment increases.""" 
     button = "Fire"

@@ -108,9 +108,9 @@ def research(rtype, tier):
 def can_attack(nation, target):
     if target.vacation:
         reason = "This nation is inactive!"
-    elif War.objects.filter(attacker=nation, over=False).exists():
+    elif nation.offensives.filter(over=False).exists():
         reason = "You are already attacking someone!"
-    elif War.objects.filter(Q(attacker=nation, defender=target)|Q(attacker=target, defender=nation), over=False).exists():
+    elif nation.offensives.filter(defender=target, over=False).exists() or nation.defensives.filter(attacker=target, over=False).exists():
         reason = "We are already at war!"   
     elif not regioncheck(nation, target):
         reason = "This nation is not within our power projection range!"
@@ -120,11 +120,11 @@ def can_attack(nation, target):
         reason = "This nation is too weak to attack!"
     elif nation == target:
         reason = "You can't attack yourself!"
-    elif War.objects.filter(attacker=nation, over=True).exists():
+    elif nation.offensives.filter(over=True).exists():
         reason = "You have already declared war once in the last 2 months!"
     elif target.protection > timezone.now():
         reason = "They have recently lost a war and are recovering!"
-    elif War.objects.filter(defender=target, over=False).exists():
+    elif target.defensives.filter(over=False).exists():
         reason = "They are already fighting a defensive war!"
     else:
         reason = ''
@@ -202,16 +202,16 @@ def reset():
         gdp=300,
         budget=1000,
         trade_balance=0,
-        approval=51,
-        stability=51,
-        literacy=51,
-        healthcare=51,
-        qol=51,
+        _approval=51,
+        _stability=51,
+        _literacy=51,
+        _healthcare=51,
+        _qol=51,
         growth=5,
         rebels=0,
-        reputation=51,
-        government=50,
-        economy=50,
+        _reputation=51,
+        _government=50,
+        _economy=50,
         land=30000,
         oil=15,
         rm=30,
@@ -219,15 +219,15 @@ def reset():
         FI=0,
         food=100,
         uranium=0,
-        soviet_points=0,
-        us_points=0,
+        _soviet_points=0,
+        _us_points=0,
         mines=3,
         closed_mines=0,
         wells=0,
         closed_wells=0,
         factories=0,
         closed_factories=0,
-        manpower=100,
+        _manpower=100,
         alignment=2,
         research=0,
         universities=0,
