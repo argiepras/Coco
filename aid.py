@@ -1,15 +1,16 @@
-from nation.models import Nation, Econdata, Military
+from nation.models import Nation, Econdata, Military, Market
 from nation.variables import min_land
 from django.http import JsonResponse
-from nation.decorators import nation_required, novacation
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, F
 from django.db import transaction
+from django.utils import timezone
 
 import nation.utilities as utils
 import nation.news as news
 import nation.variables as v
 from nation.forms import aidform
+
 
 @login_required
 def incoming(request):
@@ -42,7 +43,6 @@ def delegate(request):
     return JsonResponse({'result': result})
 
 
-
 def send_aid(*args, **kwargs):
     nation = kwargs.pop('nation')
     target = kwargs.pop('target')
@@ -72,28 +72,24 @@ def send_aid(*args, **kwargs):
                 tariff = (int(aid_amount * 0.1) if tariff > 0 else 0)
                 tb = aid_amount
             nation.__dict__[resource] -= aid_amount
-            target.__dict__[resource] -= aid_amount
+            target.__dict__[resource] += aid_amount
             nation.trade_balance -= tb
             target.trade_balance += tb
             news.aidnews(nation, target, resource, aid_amount)
             #to decrease clutter, merge aidlogs < 10 minutes old
             #so instead of 2x $9999k aid logs, it's 1x $19998k log
-            nation.outgoing_aidspam.create(resource=resource, reciever=target, amount=aid_amount)
-            try: 
-                aidlog = nation.outgoing_aid.all().get(resource=resource, reciever=target, 
-                    timestamp__gte=v.now() - timezone.timedelta(minutes=10))
-                aidlog.amount += aid_amount
-                aidlog.timestamp = v.now()
-                aidlog.save()
-            except:
-                nation.outgoing_aid.create(reciever=target, resource=resource, amount=aid_amount)
-            result = "%s has recieved %s!" % (target.name, v.pretty(aid_amount, request.POST['aid']))
+            nation.outgoing_aidspam.create(resource= resource, reciever=target, amount=aid_amount)
+            result = "%s has recieved %s!" % (target.name, v.pretty(aid_amount, POST['aid']))
             #feeeeees :D
+            uf = [resource, 'trade_balance']
             if tariff > 0:
                 result += " But the differences between our systems resulted in $%sk in tariffs!" % tariff
                 nation.budget -= tariff
-            nation.save(update_fields=[resource, 'trade_balance'])
-            target.save(update_fields=[resource, 'trade_balance'])
+                if resource != 'budget':
+                    uf.append('budget')
+            nation.save(update_fields=uf)
+            target.save(update_fields=uf)
+            log_aid(nation, target, resource, aid_amount)
     else:
         result = "Invalid"
     return result
@@ -120,6 +116,7 @@ def give_weapons(*args, **kwargs):
             nation.reputation -= 2
             nation.save(update_fields=['_reputation'])
         news.sending_weapons(nation, target)
+        log_aid(nation, target, 'weapons', 5)
         result = "The weapons are packed in crates and shipped off. The UN didn't seem too happy."
     return result
 
@@ -144,6 +141,7 @@ def cede(*args, **kwargs):
         target.save(update_fields=['land'])
         result = "We cede the land and lose respect of the people!"
         news.ceding_territory(nation, target)
+        log_aid(nation, target, 'land', 100)
     return result
 
 
@@ -163,7 +161,7 @@ def expeditionary(*args, **kwargs):
         target.military.save(update_fields=['army'])
         Econdata.objects.filter(nation__pk=nation.pk).update(expedition=True)
         news.aidnews(nation, target, 'troops', 10)
-        nation.outgoing_aid.create(reciever=target, resource='troops', amount=10)
+        log_aid(nation, target, 'troops', 10)
         result = "10k of our active personnel are shipped off to %s" % target.name
     return result
 
@@ -179,6 +177,7 @@ def research(*args, **kwargs):
         nation.save(update_fields=['research'])
         target.save(update_fields=['research'])
         news.aidnews(nation, target, 'research', 50)
+        log_aid(nation, target, 'research', 50)
         result = "50 research gets transferred to %s!" % target.name
     return result
 
@@ -195,5 +194,26 @@ def uranium(*args, **kwargs):
         nation.save(update_fields=['uranium', '_reputation'])
         target.save(update_fields=['uranium'])
         news.uraniumaid(nation, target)
+        log_aid(nation, target, 'uranium', 1)
         result = "You send off the yellow cake to %s" % target.name
-    return result
+    return result   
+
+
+def log_aid(nation, target, resource, amount):
+    query = nation.outgoing_aid.filter(
+        resource=resource,
+        reciever=target,
+        timestamp__gte=v.now() - timezone.timedelta(minutes=10))
+    if query.exists():
+        query.update(amount=F('amount') + amount)
+    else:
+        nation.outgoing_aid.create(reciever=target, resource=resource, amount=amount)
+
+    #now for action logging
+    query = nation.actionlogs.filter(
+        action='Sent %s' % resource, 
+        timestamp__gte=v.now() - timezone.timedelta(minutes=10))
+    if query.exists():
+        query.update(amount=F('amount') + 1)
+    else:
+        nation.actionlogs.create(action='Sent %s' % resource)   

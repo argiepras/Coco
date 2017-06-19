@@ -14,9 +14,11 @@ class test_aid(TestCase):
 
     def test_uranium_aid(self):
         self.sending_stuff('uranium', 1, uranium)
+        self.log_check(self.sender, self.recipient)
 
     def test_research_aid(self):
         self.sending_stuff('research', 50, research)
+        self.log_check(self.sender, self.recipient)
 
     def sending_stuff(self, resource, amount, aidfunc):
         send = self.sender
@@ -70,6 +72,7 @@ class test_aid(TestCase):
         else:
             self.assertEqual(training, rec.military.training, msg="Training should remain the same")
         self.assertGreater(rec.news.all().count(), newscount, msg="Newsitem should be created")
+        self.log_check(send, rec)
 
 
     def test_ceding(self):
@@ -96,7 +99,7 @@ class test_aid(TestCase):
         self.assertGreater(reference, send.land, msg="Land didn't get subtracted")
         self.assertGreater(rec.land, reference, msg="Land didn't get added")
         self.assertGreater(rec.news.all().count(), newscount, msg="Newsitem should be created")
-
+        self.log_check(send, rec)
 
 
     def test_sending_weapons(self):
@@ -126,6 +129,7 @@ class test_aid(TestCase):
         self.assertTrue(result != '')
         self.assertGreater(rep_ref, send.reputation, msg="reputation didn't subtract")
         self.assertGreater(rec.news.all().count(), newscount, msg="Newsitem should be created")
+        self.log_check(send, rec)
 
     
     def test_sending_weapons_opposite_alignments(self):
@@ -155,34 +159,86 @@ class test_aid(TestCase):
         from nation.variables import resources
         for resource in resources:
             self.vanilla_aid(resource)
+            self.aid_tariffs(resource, 'alignment', 1)
+            self.aid_tariffs(resource, 'economy', 27)
+            self.spamming(resource)
 
 
     def vanilla_aid(self, resource):
         #all aid should behave the same so single, recyclable function should work just fine
-        send = self.sender
-        rec = self.recipient
+        send = nation_generator()
+        send.mg = 10
+        send.save()
+        rec = nation_generator()
+        rec.mg = 10
+        rec.save()
         send_snap = snapshoot(send)
         rec_snap = snapshoot(rec)
         newscount = rec.news.all().count()
         #vanilla nations for now
 
-        payload = {resource: send.__dict__[resource]*2}
+        payload = {resource: send.__dict__[resource]*2, 'aid': resource}
         args = {'nation': send, 'target': rec, 'POST': payload}
         #expected failure
         result = send_aid(**args)
         refresh(send, rec)
-        self.assertTrue(result != '', args="Result shouldn't be empty")
+        self.assertTrue(result != '', msg="Result shouldn't be empty")
+        self.assertTrue(result != 'invalid', msg="Result shouldn't be invalid")
         self.assertEqual(getattr(send, resource), getattr(send_snap, resource), msg="Failed %s aid shouldn't send" % resource)
         self.assertEqual(getattr(rec, resource), getattr(rec_snap, resource), msg="Failed %s aid shouldn't send" % resource)
         self.assertEqual(rec.news.all().count(), newscount, msg="newscount shouldn't increase for a failure")
 
-
-        payload = {resource: send.__dict__[resource]}
+        payload = {resource: send.__dict__[resource], 'aid': resource}
         args = {'nation': send, 'target': rec, 'POST': payload}
-        #expected failure
+        #expected success
         result = send_aid(**args)
         refresh(send, rec)
-        self.assertTrue(result != '', args="Result shouldn't be empty")
-        self.assertLesser(getattr(send, resource), getattr(send_snap, resource), msg="Failed %s aid should've sent" % resource)
-        self.assertGreater(getattr(rec, resource), getattr(rec_snap, resource), msg="Failed %s aid should've sent" % resource)
-        self.assertGreater(rec.news.all().count(), newscount, msg="newscount shouldn't increase for a failure")
+        self.assertTrue(result != '', msg="Result shouldn't be empty")
+        self.assertTrue(result != 'invalid', msg="Result shouldn't be invalid")
+        self.assertLess(getattr(send, resource), getattr(send_snap, resource), msg="Failed %s aid should've sent" % resource)
+        self.assertGreater(getattr(rec, resource), getattr(rec_snap, resource), msg="Failed %s aid should've been recieved" % resource)
+        self.assertGreater(rec.news.all().count(), newscount, msg="newscount should increase")
+        self.log_check(send, rec)
+
+
+    def aid_tariffs(self, resource, t_type, t_val):
+        send = nation_generator()
+        rec = nation_generator()
+        setattr(send, resource, 500)
+        setattr(rec, resource, 500)
+        send.budget = 5000
+        setattr(send, t_type, t_val)
+        setattr(rec, t_type, t_val * 3)
+        send_snap = snapshoot(send)
+        rec_snap = snapshoot(rec)
+        send.save()
+        rec.save()
+
+        payload = {resource: 100, 'aid': resource}
+        send_aid(**{'nation': send, 'target': rec, 'POST': payload})
+        refresh(send, rec)
+        if resource == 'budget':
+            self.assertGreater(send_snap.budget - 100, send.budget, msg="Tariff should subtract for %s" % t_type)
+        else:
+            self.assertGreater(send_snap.budget, send.budget, msg="Tariff should subtract for %s" % t_type)
+
+    
+    def spamming(self, resource):
+        send = nation_generator()
+        send.mg = 20
+        send.save()
+        rec = nation_generator()
+        rec.mg = 20
+        rec.save()
+
+        for p in xrange(10):
+            send_aid(**{'nation': send, 'target': rec, 'POST': {resource: 1, 'aid': resource}})
+        self.assertEqual(rec.incoming_aid.all().count(), 1, msg="Spamming %s aid should only give 1 log entry" % resource)
+        self.assertEqual(send.outgoing_aid.all().count(), 1, msg="Spamming %s aid should only give 1 log entry" % resource)
+        self.assertEqual(send.actionlogs.all().count(), 1, msg="Spamming %s should only generate 1 actionlog entry" % resource)
+
+
+    def log_check(self, send, rec):
+        self.assertGreater(send.outgoing_aid.all().count(), 0, msg="outgoing aidlogs should be created")
+        self.assertGreater(rec.incoming_aid.all().count(), 0, msg="Incoming aidlogs should be created")
+        self.assertGreater(send.actionlogs.all().count(), 0, msg="Actionlogs should be created")
