@@ -24,6 +24,15 @@ def uraniumaid(sender, target):
     target.news.create(content="We have recieved 1 ton of uranium from %s!" % link)
 
 
+def sending_weapons(sender, target):
+    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
+    target.news.create(content="We have recieved 5 weapons from %s!" % link)
+
+
+def ceding_territory(sender, target):
+    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
+    target.news.create(content="%s has ceded 100km<sup>2</sup> of territory to us!" % link)
+
 
 ################################
 #### War related news items ####

@@ -112,6 +112,13 @@ class Baseattrs(models.Model):
             setattr(self, attr, value)
         return set_any
 
+    def attrsetter_negative(attr):
+        def set_any(self, value):
+            value = (100 if value > 100 else value)
+            value = (-100 if value < -100 else value)
+            setattr(self, attr, value)
+        return set_any
+
     def attrgetter(attr):
         def get_any(self):
             return self.__dict__[attr]
@@ -126,8 +133,8 @@ class Baseattrs(models.Model):
     reputation = property(attrgetter('_reputation'), attrsetter('_reputation'))
     government = property(attrgetter('_government'), attrsetter('_government'))
     economy = property(attrgetter('_economy'), attrsetter('_economy'))
-    soviet_points = property(attrgetter('_soviet_points'), attrsetter('_soviet_points'))
-    us_points = property(attrgetter('_us_points'), attrsetter('_us_points'))
+    soviet_points = property(attrgetter('_soviet_points'), attrsetter_negative('_soviet_points'))
+    us_points = property(attrgetter('_us_points'), attrsetter_negative('_us_points'))
     manpower = property(attrgetter('_manpower'), attrsetter('_manpower'))
 
     class Meta:

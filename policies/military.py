@@ -344,3 +344,22 @@ class chems(Policy):
             self.nation.military.chems += 2
             self.nation.military.save(update_fields=['chems'])
         super(chems, self).enact()
+
+
+class nuke(Policy):
+    cost = {'uranium': 20, 'budget': 100000, 'research': 200}
+    requirements = cost
+
+    result = 'You have a nuke.'
+    button = "build"
+    img = "http://i.imgur.com/wLtwYXi.jpg"
+    description = "nukes baby"
+    name = "NUKE "
+
+    def extra(self):
+        return self.nation.military.reactor == 20
+
+
+    def enact(self):
+        self.nation.military.nukes += 1
+        self.nation.military.save(update_fields=['nukes'])

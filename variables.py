@@ -19,6 +19,8 @@ def vacationtimer():
 
 resources = ['budget', 'rm', 'oil', 'mg', 'food']
 
+#minimum amount of land a nation should have
+min_land = 10000
 
 delay = 10 
 commlimit = 2
