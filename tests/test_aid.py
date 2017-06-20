@@ -177,18 +177,19 @@ class test_aid(TestCase):
         newscount = rec.news.all().count()
         #vanilla nations for now
 
-        payload = {resource: send.__dict__[resource]*2, 'aid': resource}
+        payload = {'amount': send.__dict__[resource]*2, 'resource': resource}
         args = {'nation': send, 'target': rec, 'POST': payload}
         #expected failure
         result = send_aid(**args)
         refresh(send, rec)
         self.assertTrue(result != '', msg="Result shouldn't be empty")
-        self.assertTrue(result != 'invalid', msg="Result shouldn't be invalid")
+        self.assertTrue(result != 'invalid resource', msg="POST data is invalid")
+        self.assertTrue(result == 'You cannot send off more than you have!', msg="POST data is invalid")
         self.assertEqual(getattr(send, resource), getattr(send_snap, resource), msg="Failed %s aid shouldn't send" % resource)
         self.assertEqual(getattr(rec, resource), getattr(rec_snap, resource), msg="Failed %s aid shouldn't send" % resource)
         self.assertEqual(rec.news.all().count(), newscount, msg="newscount shouldn't increase for a failure")
 
-        payload = {resource: send.__dict__[resource], 'aid': resource}
+        payload = {'amount': send.__dict__[resource], 'resource': resource}
         args = {'nation': send, 'target': rec, 'POST': payload}
         #expected success
         result = send_aid(**args)
@@ -214,7 +215,7 @@ class test_aid(TestCase):
         send.save()
         rec.save()
 
-        payload = {resource: 100, 'aid': resource}
+        payload = {'amount': 100, 'resource': resource}
         send_aid(**{'nation': send, 'target': rec, 'POST': payload})
         refresh(send, rec)
         if resource == 'budget':
@@ -232,7 +233,7 @@ class test_aid(TestCase):
         rec.save()
 
         for p in xrange(10):
-            send_aid(**{'nation': send, 'target': rec, 'POST': {resource: 1, 'aid': resource}})
+            send_aid(**{'nation': send, 'target': rec, 'POST': {'amount': 1, 'resource': resource}})
         self.assertEqual(rec.incoming_aid.all().count(), 1, msg="Spamming %s aid should only give 1 log entry" % resource)
         self.assertEqual(send.outgoing_aid.all().count(), 1, msg="Spamming %s aid should only give 1 log entry" % resource)
         self.assertEqual(send.actionlogs.all().count(), 1, msg="Spamming %s should only generate 1 actionlog entry" % resource)
@@ -242,3 +243,24 @@ class test_aid(TestCase):
         self.assertGreater(send.outgoing_aid.all().count(), 0, msg="outgoing aidlogs should be created")
         self.assertGreater(rec.incoming_aid.all().count(), 0, msg="Incoming aidlogs should be created")
         self.assertGreater(send.actionlogs.all().count(), 0, msg="Actionlogs should be created")
+
+
+    def test_nukes(self):
+        send = nation_generator()
+        rec = nation_generator()
+        #vanilla nation have 0 nukes so calling it right off the bat should yield a failure
+        result = nukes(**{'nation': send, 'target': rec})
+        self.assertTrue(result != '')
+        refresh(send, rec, related=['military'])
+        self.assertEqual(send.military.nukes, 0, msg="Shouldn't have nukes")
+        self.assertEqual(rec.military.nukes, 0, msg="Shouldn't have nukes")
+
+        send.military.nukes = 1
+        send.reputation = 100
+        send.save()
+        send.military.save()
+        result = nukes(**{'nation': send, 'target': rec})
+        self.assertEqual(send.military.nukes, 0, msg="Shouldn't have nukes after transfer")
+        self.assertEqual(rec.military.nukes, 1, msg="Nuke didn't transfer")
+        self.assertGreater(100, send.reputation, msg="Reputation didn't subtract")
+        self.log_check(send, rec)

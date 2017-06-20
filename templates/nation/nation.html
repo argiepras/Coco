@@ -3,19 +3,13 @@
 {% load basetags %}
 {% load humanize %}
 
-        <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">
-        <script src="http://code.jquery.com/jquery.js"></script>
-        <script src="bootstrap/js/bootstrap.min.js"></script>
               <center>
 
             <p><i class="lead">{{ target.show_descriptor|descriptor }}</i></p>
               <p id="nationtitle"><b>{{ target.name }}</b></p>
 
-    {% if result %}
-        <div class="result">
-            {{ result }}
-        </div>
-    {% endif %}
+    
+        <div class="result"></div>
 
     <img src="{{ flag }}" height="170">
 
@@ -561,126 +555,217 @@
         </p>
     <table class="table">
     {% if aidform.budget %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Wire Cash</td>
             <td>${{ aidform.budget }}k</td>
             <td>
-                <button type="submit" class="btn btn-default" name="aid" value="budget">Wire</button>
+                <button onclick="money()" class="btn btn-default" name="aid" value="budget">Wire</button>
             </td>
         </tr>
-    </form>
         {% endif %}
     {% if nation.military.army > 10 %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Send 10k man expeditionary force</td>
             <td></td>
             <td>
-                <button type="submit" class="btn btn-default" name="expeditionary">Send</button>
+                <button id="aid" class="btn btn-default" name="expeditionary">Send</button>
             </td>
         </tr>
-    </form>
     {% endif %}
     {% if aidform.oil %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Ship Oil</td>
             <td>{{ aidform.oil }} Mbbl(s)</td>
             <td>
-                <button type="submit" class="btn btn-default" name="aid" value="oil">Ship</button>
+                <button onclick="oil()" class="btn btn-default" name="aid" value="oil">Ship</button>
             </td>
         </tr>
-    </form>
     {% endif %}
     {% if aidform.rm %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Ship raw materials</td>
             <td>{{ aidform.rm }} hundred tons</td>
             <td>
-                <button type="submit" class="btn btn-default" name="aid" value="rm">Ship</button>
+                <button onclick="rm()" class="btn btn-default" name="aid" value="rm">Ship</button>
             </td>
         </tr>
-    </form>
     {% endif %}
     {% if aidform.food %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Ship Food</td>
             <td>{{ aidform.food }} thousand tons</td>
             <td>
-                <button type="submit" class="btn btn-default" name="aid" value="food">Ship</button>
+                <button onclick="food()" class="btn btn-default" name="aid" value="food">Ship</button>
             </td>
         </tr>
-    </form>
     {% endif %}
     {% if aidform.mg %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Ship manufactured goods</td>
             <td>{{ aidform.mg }} tons</td>
             <td>
-                <button type="submit" class="btn btn-default" name="aid" value="mg">Ship</button>
+                <button onclick="mg()" class="btn btn-default" name="aid" value="mg">Ship</button>
             </td>
         </tr>
-    </form>
     {% endif %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Cede 100km of Territory</td>
             <td>
                 Ceding territory will result in a significant decline in stability and approval in your country.
             </td>
             <td>
-                <button type="submit" class="btn btn-default" name="cede">Cede</button>
+                <button class="btn btn-default aid" name="cede">Cede</button>
             </td>
         </tr>
-    </form>
     {% if nation.military.weapons > 5 %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Provide 5 Weapons</td>
             <td>Weapons trade reduces your reputation.</td>
             <td>
-                <button type="submit" class="btn btn-default" name="giveweapons">Smuggle</button>
+                <button class="btn btn-default aid" name="weapons">Smuggle</button>
             </td>
         </tr>
-    </form>
     {% endif %}
     {% if nation.research >= 50 %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Provide 50 Research</td>
             <td></td>
             <td>
-                <button type="submit" class="btn btn-default" name="research">Share</button>
+                <button class="btn btn-default aid" name="research">Share</button>
             </td>
         </tr>
-    </form>
     {% endif %}
     {% if nation.uranium %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Send 1 ton of uranium</td>
-            <td>Trade in uranium will reduce reputation.</td>
+            <td>Trading uranium will reduce reputation.</td>
             <td>
-                <button type="submit" class="btn btn-default" name="uranium">Send</button>
+                <button class="btn btn-default aid" name="uranium">Send</button>
             </td>
         </tr>
     {% endif %}
-    {% if nukes %}
-    <form method="POST"> {% csrf_token %}
         <tr>
             <td>Transfer Nuclear Weapon</td>
             <td>Nuclear proliferation will result in a very large reduction in reputation.</td>
             <td>
-                <button type="submit" class="btn btn-default" name="nuke">Send</button>
+                <button class="btn btn-default aid" name="nuke">Send</button>
             </td>
         </tr>
-    </form>
-    {% endif %}
     </table>
 </form>
 {% endif %}
+
+<script>
+    $(document).ready(function(){
+        $(".result").hide();
+        $(".aid").click(function(){
+            $.ajax({
+                method: "POST",
+                data: {
+                    "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                    "action": this.name,
+                    "target": {{ target.user.pk }},
+                },
+                url: '/api/aid/',
+                datatype: "json",
+                before: set_load,
+                success: updatestuff,
+            });
+        });
+    });
+
+    function updatestuff(x, y, z){
+        $(".result").show();
+        $(".result").html(x.result);
+    };
+
+    function set_load(){
+        $(".result").show();
+        $(".result").html("loading");
+    }
+
+    function money() {
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "action": "aid",
+                "resource": "budget",
+                "target": {{ target.user.pk }},
+                "amount": $("#id_budget").val(),
+            },
+            url: '/api/aid/',
+            datatype: "json",
+            before: set_load, 
+            success: updatestuff,
+        })
+    }
+    function rm() {
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "action": "aid",
+                "resource": "rm",
+                "target": {{ target.user.pk }},
+                "amount": $("#id_rm").val(),
+            },
+            url: '/api/aid/',
+            datatype: "json",
+            before: set_load,
+            success: updatestuff,
+        })
+    }
+    function oil() {
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "action": "aid",
+                "resource": "oil",
+                "target": {{ target.user.pk }},
+                "amount": $("#id_oil").val(),
+            },
+            url: '/api/aid/',
+            datatype: "json",
+            before: set_load,
+            success: updatestuff,
+        })
+    }
+    function mg() {
+
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "action": "aid",
+                "resource": "mg",
+                "target": {{ target.user.pk }},
+                "amount": $("#id_mg").val(),
+            },
+            url: '/api/aid/',
+            datatype: "json",
+            before: set_load,
+            success: updatestuff,
+        })
+    }
+    function food() {
+        $.ajax({
+            method: "POST",
+            data: {
+                "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
+                "action": "aid",
+                "resource": "food",
+                "target": {{ target.user.pk }},
+                "amount": $("#id_food").val(),
+            },
+            url: '/api/aid/',
+            datatype: "json",
+            before: set_load,
+            success: updatestuff,
+        })
+    }
+</script>
+
+
 {% endblock %}

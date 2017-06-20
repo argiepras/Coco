@@ -9,15 +9,15 @@ from django.utils import timezone
 import nation.utilities as utils
 import nation.news as news
 import nation.variables as v
-from nation.forms import aidform
+from nation.forms import ajaxaidform
 
 
 @login_required
 def incoming(request):
     #takes incoming aid requests in AJAX format
     #checks if sender and recipient are even eligible
-    #then we either deny the request or hand control to the appropriate function 
-    if Nation.objects.actives(Q(user__pk=request.POST['target']), user=request.user).exists():
+    #then we either deny the request or hand control to the appropriate function
+    if Nation.objects.actives().filter(Q(user__pk=request.POST['target'])|Q(user=request.user)).exists():
         return delegate(request)
     return JsonResponse({'result': "'no'"})
 
@@ -29,13 +29,19 @@ def delegate(request):
         'cede': cede,
         'expedition': expeditionary,
         'uranium': uranium,
-        'research': research
+        'research': research,
+        'nuke': nukes,
     }
-    nation = Nation.objects.select_for_update().actives().get(user=request.user)
-    target = Nation.objects.select_for_update().actives().get(user__pk=request.POST['target'])
+    mils = ['nuke', 'weapons', 'expedition']
+    if request.POST['action'] in mils:
+        nation = Nation.objects.select_for_update().select_related('military').get(user=request.user)
+        target = Nation.objects.select_for_update().select_related('military').get(user__pk=request.POST['target'])
+    else:
+        nation = Nation.objects.select_for_update().get(user=request.user)
+        target = Nation.objects.select_for_update().get(user__pk=request.POST['target'])
     if nation.pk == target.pk:
         return JsonResponse({'result': '"no"'})
-    if request.POST['action'] in option:
+    if request.POST['action'] in options:
         args = {'nation': nation, 'target': target, 'POST': request.POST}
         result = options[request.POST['action']](**args)
     else:
@@ -47,11 +53,11 @@ def send_aid(*args, **kwargs):
     nation = kwargs.pop('nation')
     target = kwargs.pop('target')
     POST = kwargs.pop('POST')
-    form = aidform(nation, POST)
+    form = ajaxaidform(nation, POST)
     if form.is_valid():
-        resource = POST['aid']
-        if resource in v.resources and type(form.cleaned_data[resource]) == type(int()):
-            aid_amount = form.cleaned_data[resource]
+        resource = form.cleaned_data['resource']
+        if resource in v.resources:
+            aid_amount = form.cleaned_data['amount']
             if nation.outgoing_aidspam.filter(
                 reciever=target, 
                 resource=resource, 
@@ -79,7 +85,7 @@ def send_aid(*args, **kwargs):
             #to decrease clutter, merge aidlogs < 10 minutes old
             #so instead of 2x $9999k aid logs, it's 1x $19998k log
             nation.outgoing_aidspam.create(resource= resource, reciever=target, amount=aid_amount)
-            result = "%s has recieved %s!" % (target.name, v.pretty(aid_amount, POST['aid']))
+            result = "%s has recieved %s!" % (target.name, v.pretty(aid_amount, resource))
             #feeeeees :D
             uf = [resource, 'trade_balance']
             if tariff > 0:
@@ -90,8 +96,13 @@ def send_aid(*args, **kwargs):
             nation.save(update_fields=uf)
             target.save(update_fields=uf)
             log_aid(nation, target, resource, aid_amount)
+        else:
+            result = "invalid resurce"
     else:
-        result = "Invalid"
+        try:
+            result = form.errors.as_data()['amount'][0][0]
+        except:
+            result = "invalid resource"
     return result
 
 
@@ -163,6 +174,24 @@ def expeditionary(*args, **kwargs):
         news.aidnews(nation, target, 'troops', 10)
         log_aid(nation, target, 'troops', 10)
         result = "10k of our active personnel are shipped off to %s" % target.name
+    return result
+
+
+def nukes(*args, **kwargs):
+    nation = kwargs.pop('nation')
+    target = kwargs.pop('target')
+    if nation.military.nukes == 0:
+        result = "You have no nukes to send!"
+    else:
+        nation.reputation -= 50
+        nation.save(update_fields=['_reputation'])
+        nation.military.nukes -= 1
+        target.military.nukes += 1
+        nation.military.save(update_fields=['nukes'])
+        target.military.save(update_fields=['nukes'])
+        news.nukesent(nation, target)
+        log_aid(nation, target, 'nukes', 1)
+        result = "A nuclear bomb is carefully disgused and transported to %s" % target.name
     return result
 
 

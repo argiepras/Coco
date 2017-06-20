@@ -54,12 +54,12 @@ minland = 10000
 #Flavor text for sending aid
 _pretty = {
     'budget': "money",
-    'rm': 'Tons of raw materials',
-    'oil': 'mbbls of black gold',
-    'mg': 'Tons of manufactured goods',
-    'food': 'Tons of our best food',
+    'rm': 'of raw materials',
+    'oil': 'of black gold',
+    'mg': 'of manufactured goods',
+    'food': 'of our best food',
     'troops': 'of our most average servicemen',
-    'research': 'units of research',
+    'research': 'of research',
 }
 
 units = {

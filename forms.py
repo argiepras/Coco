@@ -12,6 +12,24 @@ class aidform(forms.Form):
                     widget=forms.NumberInput(attrs={'size': '4', 'placeholder': '0'}))
 
 
+class ajaxaidform(forms.Form):
+    def __init__(self, nation, *args, **kwargs):
+        super(ajaxaidform, self).__init__(*args, **kwargs)
+        self.nation = nation #so the clean method can use it
+        x = []
+        for resource in v.resources:
+            x.append((resource, resource))
+        self.fields['resource'] = forms.ChoiceField(choices=x)
+    amount = forms.IntegerField(min_value=0)
+
+    def clean(self):
+        cleaned_data = super(ajaxaidform, self).clean()
+        if not cleaned_data:
+            return  cleaned_data
+        if cleaned_data.get("amount") > getattr(self.nation, cleaned_data.get("resource")):
+            self.add_error('amount', 'You cannot send off more than you have!')
+        return cleaned_data
+
 
 class searchform(forms.Form):
     nation = forms.CharField(max_length=50, min_length=1, widget=forms.TextInput(attrs={

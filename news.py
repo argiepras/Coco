@@ -12,26 +12,25 @@ from .models import *
 from .forms import *
 from . import utilities as utils
 
+def link_me(nation):
+    return '<a href="%s"><b>%s</b></a>' % (nation.get_absolute_url(), nation.name)
 
 def aidnews(sender, reciever, resource, amount):
-    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
     flavor = v.pretty(amount, resource).replace('our', 'their') #someone is not sending us n of our best food
-    newsitem = "We have recieved %s from %s! How generous!" % (flavor, link)
+    newsitem = "We have recieved %s from %s! How generous!" % (flavor, link_me(sender))
     reciever.news.create(content=newsitem)
 
-def uraniumaid(sender, target):
-    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
-    target.news.create(content="We have recieved 1 ton of uranium from %s!" % link)
+def nukesent(sender, target):
+    target.news.create(content="We have recieved a nuclear bomb from %s!" % link_me(sender))
 
+def uraniumaid(sender, target):
+    target.news.create(content="We have recieved 1 ton of uranium from %s!" % link_me(sender))
 
 def sending_weapons(sender, target):
-    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
-    target.news.create(content="We have recieved 5 weapons from %s!" % link)
-
+    target.news.create(content="We have recieved 5 weapons from %s!" % link_me(sender))
 
 def ceding_territory(sender, target):
-    link = '<a href="%s"><b>%s</b></a>' % (sender.get_absolute_url(), sender.name)
-    target.news.create(content="%s has ceded 100km<sup>2</sup> of territory to us!" % link)
+    target.news.create(content="%s has ceded 100km<sup>2</sup> of territory to us!" % link_me(sender))
 
 
 ################################
