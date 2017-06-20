@@ -415,110 +415,7 @@ def nationpage(request, idnumber):
     #POST handling
     result = ''
     if request.method == "POST" and nation:
-        actions = {}
-        if 'aid' in request.POST and not nation.vacation:
-            form = aidform(nation, request.POST)
-            if form.is_valid():
-                resource = request.POST['aid']
-                if resource in v.resources and type(form.cleaned_data[resource]) == type(int()):
-                    aid_amount = form.cleaned_data[resource]
-                    if nation.outgoing_aidspam.filter(
-                        reciever=target, 
-                        resource=resource, 
-                        amount=aid_amount, 
-                        timestamp__gte=v.now() - timezone.timedelta(minutes=10)
-                            ).count() > 5:
-                        return HttpResponse('no')
-                    market = Market.objects.latest('pk')
-                    tariff = 0
-                    if (nation.economy < 33 and target.economy > 66) or (target.economy < 33 and nation.economy > 66):
-                        tariff += 10
-                    if (nation.alignment == 3 and target.alignment == 1) or (target.alignment == 3 and nation.alignment  == 1):
-                        tariff += 10
-                    nation.__dict__[resource] -= aid_amount
-                    actions.update({resource: {'action': 'add', 'amount': aid_amount}})
-                    if resource != 'budget':
-                        tariff = aid_amount * tariff
-                        actions.update({'trade_balance': {'action': 'add', 'amount': market.__dict__['%sprice' % resource] * aid_amount}})
-                    else:
-                        tariff = (int(aid_amount * 0.1) if tariff > 0 else 0)
-                        actions.update({'trade_balance': {'action': 'add', 'amount': aid_amount}})
-                    utils.atomic_transaction(Nation, nation.pk, actions, target.pk)
-                    news.aidnews(nation, target, resource, aid_amount)
-                    #to decrease clutter, merge aidlogs < 10 minutes old
-                    #so instead of 2x $9999k aid logs, it's 1x $19998k log
-                    nation.outgoing_aidspam.create(resource=resource, reciever=target, amount=aid_amount)
-                    try: 
-                        aidlog = nation.outgoing_aid.all().get(resource=resource, reciever=target, 
-                            timestamp__gte=v.now() - timezone.timedelta(minutes=10))
-                        aidlog.amount += aid_amount
-                        aidlog.timestamp = v.now()
-                        aidlog.save()
-                    except:
-                        nation.outgoing_aid.create(reciever=target, resource=resource, amount=aid_amount)
-                    result = "%s has recieved %s!" % (target.name, v.pretty(aid_amount, request.POST['aid']))
-                    #feeeeees :D
-                    if tariff > 0:
-                        result += " But the differences between our systems resulted in $%sk in tariffs!" % tariff
-                        utils.atomic_transaction(Nation, nation.pk, {'budget': {'action': 'subtract', 'amount': tariff}})
-
-        elif 'expeditionary' in request.POST and not nation.vacation:
-            if nation.econdata.expedition:
-                result = "You have already sent an expeditionary force this turn!"
-            elif utils.opposing_alignments(nation, target):
-                result = "We cannot send troops to nations aligned with the %s!" % v.alignment[target.alignment]
-            elif nation.military.army < 10:
-                result = "You do not have enough active personnel for this!"
-            else:
-                actions = {'army': {'action': 'add', 'amount': 10}}
-                utils.atomic_transaction(Military, nation.military.pk, actions, target.military.pk)
-                Econdata.objects.filter(nation__pk=nation.pk).update(expedition=True)
-                news.aidnews(nation, target, 'troops', 10)
-                nation.outgoing_aid.create(reciever=target, resource='troops', amount=10)
-                result = "10k of our active personnel are shipped off to %s" % target.name
-
-        elif 'cede' in request.POST and not nation.vacation:
-            if nation.land < 10100:
-                result = "You do not have enough land to cede!"
-            elif nation.region() != target.region():
-                result = "We cannot cede land to a country in a different part of the world!"
-            elif nation.stability < 20 or nation.approval < 20:
-                result = "The people already hate you! Ceding land might result in your death!"
-            elif nation.econdata.cedes == 3:
-                result = "We can't cede land more than 3 times a month!"
-            else:
-                action = {
-                    'stability': {'action': 'add', 'amount': utils.attrchange(nation.stability, -10)},
-                    'approval': {'action': 'add', 'amount': utils.attrchange(nation.approval, -10)},
-                    'land': {'action': 'subtract', 'amount': 100},
-                    }
-                tgtaction = {'land': {'action': 'add', 'amount': 100}}
-                utils.atomic_transaction(Nation, nation.pk, action)
-                utils.atomic_transaction(Nation, target.pk, tgtaction)
-                result = "We cede the land and lose respect of the people!"
-
-        elif 'giveweapons' in request.POST and not nation.vacation:
-            if nation.military.weapons < 15:
-                result = "We barely have any weapons as it is! We can't give any away!"
-            elif utils.opposing_alignments(nation, target):
-                result = "We cannot give weapons to nations aligned with the %s!" % v.alignment
-            elif nation.military.weapons < 100 and target.military.weapons > 300:
-                result = "Our equipment is worthless compared to what they have!"
-            else:
-                action = {'weapons': {'action': 'add', 'amount': 5}}
-                utils.atomic_transaction(Military, nation.military.pk, action, target.military.pk)
-                reploss = True
-                if nation.has_alliance() and target.has_alliance():
-                    if nation.alliance == target.alliance and nation.alliance.initiatives.weapontrade:
-                        reploss = False
-
-                result = "The weapons are packed in crates and shipped off."
-                if reploss:
-                    result += " The UN didn't seem too happy."
-                    action = {'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -2)}}
-                    utils.atomic_transaction(Nation, nation.pk, action)
-
-        elif 'comm' in request.POST:
+        if 'comm' in request.POST:
             form = commform(request.POST)
             if form.is_valid():
                 if nation.sent_comms.all().filter(timestamp__gte=v.now()-time.timedelta(seconds=v.delay)).count() > v.commlimit:
@@ -528,26 +425,8 @@ def nationpage(request, idnumber):
                     nation.sent_comms.create(message=form.cleaned_data['message'], recipient=target)
                     result = "Comm sent!"
             else:
-                result = "%s" % form.errors
+                result = "%s" % form.error
 
-        elif 'research' in request.POST and not nation.vacation:
-            if nation.research < 50:
-                result = "stop it"
-            else:
-                action = {'research': {'action': 'add', 'amount': 50}}
-                utils.atomic_transaction(Nation, nation.pk, action, target.pk)
-                news.aidnews(nation, target, 'research', 50)
-                result = "50 research gets transferred to %s!" % target.name
-
-        elif 'uranium' in request.POST and not nation.vacation:
-            if nation.uranium < 1:
-                result = "You do not have any uranium!"
-            else:
-                action = {'uranium': {'action': 'add', 'amount': 1}}
-                utils.atomic_transaction(Nation, nation.pk, action, target.pk)
-                utils.atomic_transaction(Nation, nation.pk, {'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -5)}})
-                news.uraniumaid(nation, target)
-                result = "You send off the yellow cake to %s" % target.name
 
         elif 'infiltrate' in request.POST and not nation.vacation:
             form = spyselectform(nation, request.POST)
@@ -707,7 +586,6 @@ def nationpage(request, idnumber):
             'spyselectform': spyselectform(nation),
         })
         request.user.nation = nation #rebind original nation instance
-    print request.COOKIES
     return render(request, 'nation/nation.html', context)
 
 
@@ -1060,20 +938,12 @@ def settings(request):
         elif 'set_autoplay' in request.POST:
             form = autoplayform(request.POST)
             if form.is_valid():
-                print form.cleaned_data['autoplay']
-                print nation.settings.autoplay
                 if form.cleaned_data['autoplay'] == 'on':
-                    print "turning on"
                     nation.settings.autoplay = True
                 else:
-                    print "turning off"
                     nation.settings.autoplay = False
-                print nation.settings.autoplay
                 nation.settings.save()
-                print nation.settings.autoplay
                 nation.settings.refresh_from_db()
-                print "refreshed"
-                print nation.settings.autoplay
                 result = "Autoplay setting has been updated"
 
     if nation.settings.donor:

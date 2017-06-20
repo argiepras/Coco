@@ -57,3 +57,15 @@ def snapshoot(nation):
 def cost_check(self, nation, snap, cost):
     for field in cost:
         self.assertEqual(getattr(snap, field), getattr(nation, field) + cost[field], msg='%s not subtracting' % field)
+
+
+
+def refresh(*args, **kwargs):
+    related = False
+    if 'related' in kwargs:
+        related = kwargs.pop('related')
+    for nation in args:
+        nation.refresh_from_db()
+        if related:
+            for model in related:
+                getattr(nation, model).refresh_from_db()
