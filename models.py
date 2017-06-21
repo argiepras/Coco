@@ -187,7 +187,7 @@ class Nation(Nationattrs):
     subregion = models.CharField(max_length=25, default="Carribean")
     objects = Actives()
     def __unicode__(self):
-        return u"nation: %s" % self.name
+        return u"%s" % self.name
 
     def atwar(self):
         return self.offensives.filter(over=False).exists() or self.defensives.filter(over=False).exists()
