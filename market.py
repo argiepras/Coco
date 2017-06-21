@@ -114,8 +114,8 @@ def offers(request, page):
     econ = (nation.economy / 33 if nation.economy < 98 else 2)
     offers = Marketoffer.objects.annotate(
         econ=Case(
-            When(nation__economy__gt=98, then=Value(2)), 
-            When(nation__economy__lt=98, then=F('nation__economy')/33),
+            When(nation___economy__gt=98, then=Value(2)), 
+            When(nation___economy__lt=98, then=F('nation___economy')/33),
             output_field=IntegerField()
                 ) #end case
             ).annotate(
