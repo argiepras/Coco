@@ -108,8 +108,8 @@ def new_nation(request):
                 index=index,
                 name=form.cleaned_data['name'],
                 creationip=request.META.get('REMOTE_ADDR'),
-                government=form.cleaned_data['government'],
-                economy=form.cleaned_data['economy'],
+                _government=form.cleaned_data['government'],
+                _economy=form.cleaned_data['economy'],
                 subregion=form.cleaned_data['subregion'])
             Settings.objects.create(nation=nation)
             IP.objects.create(nation=nation, IP=request.META.get('REMOTE_ADDR'))
@@ -704,9 +704,10 @@ def nation404(request):
 @login_required
 @novacation
 def research(request):
+    import json
     nation = Nation.objects.select_related('researchdata').get(user=request.user)
     context = {}
-    cost, budgetcost = researchcost(nation)
+    cost = researchcost(nation)
     if request.method == 'POST':
         img = "/static/research/"
         if nation.research < cost:
@@ -716,31 +717,26 @@ def research(request):
                 if field.name in request.POST:
                     img += request.POST[field.name] + '.jpg'
                     context.update({'img': img, 'result': v.researchflavor[field.name]})
-                    budgetcost = (budgetcost if field.name == 'foodtech' else 0)
                     rndactions = {field.name: {'action': 'add', 'amount': 1}}
                     actions = {
                         'research': {'action': 'subtract', 'amount': cost},
-                        'budget': {'action': 'subtract', 'amount': budgetcost},
                         }
                     utils.atomic_transaction(Nation, nation.pk, actions)
                     utils.atomic_transaction(Researchdata, nation.researchdata.pk, rndactions)
-                    if budgetcost:
-                        nation.actionlogs.create(action='researched %s' % field.name, 
-                            cost=budgetcost, total_cost='%s research' % cost)
-                    else:
-                        nation.actionlogs.create(action='researched %s' % field.name, total_cost='%s research' % cost)
+                    nation.actionlogs.create(
+                        action='researched %s' % field.name, 
+                        cost=json.dumps({'research': cost}))
                     #refresh data
                     request.user.nation.refresh_from_db()
                     nation.researchdata.refresh_from_db()
-                    cost, budgetcost = researchcost(nation)
-    context.update({'cost': cost, 'budgetcost': budgetcost, 'research': nation.researchdata})
+                    cost = researchcost(nation)
+    context.update({'cost': cost, 'research': nation.researchdata})
     return render(request, 'nation/research.html', context)
 
 def researchcost(nation):
     research = nation.researchdata.research()*25+25
     research = (research if 0 < research else 15)
-    budgetcost = (nation.researchdata.foodtech**2)*int(sqrt(nation.gdp))+250*nation.researchdata.foodtech
-    return research, budgetcost
+    return research
 
 
 def mapview(request):
@@ -790,8 +786,8 @@ def statistics(request, page):
     for stat in wantedmilstats:
         stats.update({stat: Military.objects.filter(nation__deleted=False, nation__vacation=False).aggregate(Sum(stat))['%s__sum' % stat]})
 
-    commands = Nation.objects.actives().filter(economy__lte=33).count()
-    mixed = Nation.objects.actives().filter(economy__lte=66).count() - commands
+    commands = Nation.objects.actives().filter(_economy__lte=33).count()
+    mixed = Nation.objects.actives().filter(_economy__lte=66).count() - commands
     capitalists = Nation.objects.actives().count() - mixed
     stats.update({'commands': commands, 'mixed': mixed, 'capitalists': capitalists})
 
@@ -799,7 +795,7 @@ def statistics(request, page):
     for gob in v.government:
         goober = v.government[gob].lower().replace(' ', '_')
         gob = (gob+1)*20
-        stats.update({goober: Nation.objects.filter(government__gt=prevgob, government__lte=gob).count()})
+        stats.update({goober: Nation.objects.filter(_government__gt=prevgob, _government__lte=gob).count()})
         prevgob = gob
 
 
