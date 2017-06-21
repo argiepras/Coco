@@ -419,13 +419,34 @@ class Military(models.Model):
     army = models.IntegerField(default=20)
     navy = models.IntegerField(default=0)
     planes = models.IntegerField(default=0)
-    training = models.IntegerField(default=50)
+    _training = models.IntegerField(default=50)
     weapons = models.IntegerField(default=10)
     chems = models.IntegerField(default=0) #moves from 0-10
     reactor = models.IntegerField(default=0) #moves from 0 to 20 
     nukes = models.IntegerField(default=0)
     def __unicode__(self):
         return "%ss military data" % self.nation.name
+
+    def attrsetter(attr):
+        def set_any(self, value):
+            value = (100 if value > 100 else value)
+            value = (0 if value < 0 else value)
+            setattr(self, attr, value)
+        return set_any
+
+    def attrsetter_negative(attr):
+        def set_any(self, value):
+            value = (100 if value > 100 else value)
+            value = (-100 if value < -100 else value)
+            setattr(self, attr, value)
+        return set_any
+
+    def attrgetter(attr):
+        def get_any(self):
+            return self.__dict__[attr]
+        return get_any
+
+    manpower = property(attrgetter('_training'), attrsetter('_training'))
 
     def to_next(self):
         tiers = []

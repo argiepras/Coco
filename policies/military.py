@@ -42,7 +42,7 @@ class train(Policy):
             self.result = "Your men are the elite of the elite, there is no need to train them further!"
         else:
             self.nation.military.training += 10
-            self.nation.military.save(update_fields=['training'])
+            self.nation.military.save(update_fields=['_training'])
             self.img = "train.jpg"
             super(train, self).enact()
 
