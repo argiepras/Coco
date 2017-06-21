@@ -14,7 +14,7 @@ class conscript(Policy):
         self.nation.military.army += 2
         trainingloss = int((200.0/self.nation.military.army if self.nation.military.army > 0 else 1))
         self.nation.military.training -= (trainingloss if trainingloss > 0 else 1)
-        self.nation.military.save(update_fields=['army', 'training'])
+        self.nation.military.save(update_fields=['army', '_training'])
         super(conscript, self).enact()
 
 

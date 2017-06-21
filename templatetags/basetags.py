@@ -177,6 +177,7 @@ def manpower(mp):
 register.filter('manpower', manpower)
 
 def training(tlevel):
+    tlevel = int(tlevel)
     tlevel = (tlevel if tlevel > 0 else 1)
     tlevel = (tlevel/20 if tlevel % 20 != 0 else tlevel/20-1)
     return mark_safe(v.training[tlevel])

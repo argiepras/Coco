@@ -446,7 +446,7 @@ class Military(models.Model):
             return self.__dict__[attr]
         return get_any
 
-    manpower = property(attrgetter('_training'), attrsetter('_training'))
+    training = property(attrgetter('_training'), attrsetter('_training'))
 
     def to_next(self):
         tiers = []
