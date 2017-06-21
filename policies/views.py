@@ -29,7 +29,7 @@ def militarypolicies(request):
     from .military import Policy
     nation = request.user.nation
     policies = get_policies(Policy.registry, nation, 'military')
-    return render(request, 'nation/economics.html', {'policies': policies})
+    return render(request, 'nation/military.html', {'policies': policies})
 
 @login_required
 @nation_required
