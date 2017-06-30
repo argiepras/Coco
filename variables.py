@@ -79,6 +79,22 @@ policycost_descriptions = {
     'growth': 'million growth'
 }
 
+policyinsufficient = {
+    'us_points': "US relation points",
+    'soviet_points': "USSR relation points",
+    'research': 'research',
+    'uranium': 'uranium',
+    'FI': 'foreign investment',
+    'budget': 'money',
+    'rm': 'raw materials',
+    'oil': 'oil',
+    'mg': 'manufactured goods',
+    'food': 'food',
+    'army': 'troops',
+    'weapons': 'weapons',
+}
+
+
 #for free market offers
 _marketpretty = {
     'budget': 'money',

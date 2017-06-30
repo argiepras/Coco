@@ -89,17 +89,17 @@ class Actives(models.Manager):
         return self.get_queryset().filter(vacation=False, reset=False, deleted=False)
 
 class Baseattrs(models.Model):
-    _approval = models.IntegerField(default=51)
-    _stability = models.IntegerField(default=51)
-    _literacy = models.IntegerField(default=51)
-    _healthcare = models.IntegerField(default=51)
-    _qol = models.IntegerField(default=51)
-    _reputation = models.IntegerField(default=51)
-    _government = models.IntegerField(default=50)
-    _economy = models.IntegerField(default=50) #0 = commie 100 = capitalist
-    _soviet_points = models.IntegerField(default=0)
-    _us_points = models.IntegerField(default=0)
-    _manpower = models.IntegerField(default=100)
+    _approval = models.IntegerField(default=51, verbose_name='approval')
+    _stability = models.IntegerField(default=51, verbose_name='stability')
+    _literacy = models.IntegerField(default=51, verbose_name='literacy')
+    _healthcare = models.IntegerField(default=51, verbose_name='healthcare')
+    _qol = models.IntegerField(default=51, verbose_name='quality of life')
+    _reputation = models.IntegerField(default=51, verbose_name='reputation')
+    _government = models.IntegerField(default=50, verbose_name='government')
+    _economy = models.IntegerField(default=50, verbose_name='economy') #0 = commie 100 = capitalist
+    _soviet_points = models.IntegerField(default=0, verbose_name='USSR relation points')
+    _us_points = models.IntegerField(default=0, verbose_name='US relation points')
+    _manpower = models.IntegerField(default=100, verbose_name='manpower')
 
     #the following code lets us access overflowable attributes and set them freely
     #without risking the actual overflow
@@ -149,9 +149,9 @@ class Nationattrs(Baseattrs):
     rebels = models.IntegerField(default=0)
     land = models.IntegerField(default=30000)
     oil = models.IntegerField(default=15)
-    rm = models.IntegerField(default=30)
-    mg = models.IntegerField(default=0)
-    FI = models.IntegerField(default=0)
+    rm = models.IntegerField(default=30, verbose_name="raw materials")
+    mg = models.IntegerField(default=0, verbose_name="manufactured goods")
+    FI = models.IntegerField(default=0, verbose_name="foreign investment")
     food = models.IntegerField(default=100)
     uranium = models.IntegerField(default=0)
     oilreserves = models.IntegerField(default=0)
@@ -1065,7 +1065,7 @@ class Aidlog(models.Model):
 class Aid(models.Model):
     sender = models.ForeignKey(Nation, related_name="outgoing_aidspam", on_delete=models.SET_NULL, null=True, blank=True)
     reciever = models.ForeignKey(Nation, related_name="incoming_aidspam", on_delete=models.SET_NULL, null=True, blank=True)
-    resource = models.CharField(max_length=7)
+    resource = models.CharField(max_length=20)
     amount = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
 

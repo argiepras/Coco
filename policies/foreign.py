@@ -1,6 +1,10 @@
 from .policybase import Policy
 
 class praise_ussr(Policy):
+    def __init__(self, nation):
+        super(praise_ussr, self).__init__(nation)
+        if nation.alignment == 1:
+            self.contextual = True
     cost = {'budget': 50, 'stability': 5}
     requirements = cost
     name = "Praise USSR"
@@ -13,12 +17,20 @@ class praise_ussr(Policy):
     def extra(self):
         return self.nation.alignment != 1 #can't realign if commie already
 
+    def errors(self):
+        if self.nation.alignment == 1:
+            return "We're already aligned with the soviet union!"
+
     def enact(self):
         self.nation.alignment = 1
         super(praise_ussr, self).enact()
 
 
 class praise_us(Policy):
+    def __init__(self, nation):
+        super(praise_us, self).__init__(nation)
+        if nation.alignment == 3:
+            self.contextual = True
     cost = {'budget': 50, 'stability': 5}
     requirements = cost
     name = "Praise the United States"
@@ -37,6 +49,10 @@ class praise_us(Policy):
 
 
 class declareneutrality(Policy):
+    def __init__(self, nation):
+        super(declareneutrality, self).__init__(nation)
+        if nation.alignment == 2:
+            self.contextual = True
     cost = {'budget': 50, 'stability': 5}
     requirements = cost
     name = "Declare Neutrality"
@@ -63,6 +79,10 @@ class base_intervention(Policy):
 
 
 class soviet_intervention(base_intervention):
+    def __init__(self, nation):
+        super(soviet_intervention, self).__init__(nation)
+        if nation.alignment == 3:
+            self.contextual = True
     cost = {'soviet_points': 35}
     requirements = cost
     img = 'sovietintervention.jpg'
@@ -74,12 +94,18 @@ class soviet_intervention(base_intervention):
     def extra(self):
         return self.nation.alignment != 3
 
+    def errors(self):
+        if not self.extra():
+            return 'Must not be a capitalist pig!'
+
 
 class us_intervention(base_intervention):
     def __init__(self, nation):
         super(us_intervention, self).__init__(nation)
         self.cost = {'us_points': (35 if nation.region() != 'Latin America' else 25)}
         self.requirements = self.cost
+        if nation.alignment == 1:
+            self.contextual = True
     img = 'usintervention.jpg'
     result = "10k Americans troops arrive to spread freedom and blow stuff up."
     name = "Appeal to the United States for intervention"
@@ -89,11 +115,20 @@ class us_intervention(base_intervention):
     def extra(self):
         return self.nation.alignment != 1
 
+    def errors(self):
+        if not self.extra():
+            return "Not available to communist swines!"
+
 class base_aid(Policy):
     gain = {'growth': 5}
     button = "Beg"
 
+
 class usaid(base_aid):
+    def __init__(self, nation):
+        super(usaid, self).__init__(nation)
+        if nation.alignment == 1:
+            self.contextual = True
     cost = {'us_points': 10}
     requirements = cost
     name = "Appeal to the Soviets for development aid" 
@@ -102,11 +137,20 @@ class usaid(base_aid):
     stuff in the name of freedom because freedom isn't free or something."
     description = "Ask our capitalist allies to give us a little \
     taste of McDonalds. Will increase growth by $5 million."
+
     def extra(self):
         return self.nation.alignment != 1
 
+    def errors(self):
+        if not self.extra():
+            return "America won't deal with communists!"
 
-class sovietaid (base_aid):
+
+class sovietaid(base_aid):
+    def __init__(self, nation):
+        super(sovietaid, self).__init__(nation)
+        if nation.alignment == 3:
+            self.contextual = True
     cost = {'soviet_points': 10}
     requirements = cost
     name = "Appeal to the Soviets for development aid"
@@ -115,8 +159,13 @@ class sovietaid (base_aid):
     comrades shower us with the glorious benefits of socialism."
     description = "Ask our comrades to give us a little taste \
     of communism. Will increase growth by $2 million."
+
     def extra(self):
         return self.nation.alignment != 3
+
+    def errors(self):
+        if not self.extra():
+            return "The soviet union ignores your inquiries"
 
 
 class create_alliance(Policy):

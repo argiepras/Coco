@@ -16,6 +16,7 @@ class arrest(Policy):
     description = """These imputent fools do nothing but criticize. Shut them up. \
     Your government will become more authoritarian. Chance of decreasing rebels. \
     Slightly increases stability but a small decrease in reputation."""
+    error_overrides = {'government': 'All dissidents have already been arrested!'}
 
     def enact(self):
         chance = random.randint(1, 10)
@@ -41,6 +42,10 @@ class release(Policy):
     def extra(self):
         return self.nation.government < 100
 
+    def errors(self):
+        if self.nation.government == 100:
+            return 'Our prisons are already empty!'
+
     def enact(self):
         chance = random.randint(1, 10)
         if chance > 6:
@@ -59,12 +64,13 @@ class martial(Policy):
     name = "Declare martial law"
     button = "Declare"
     description = "Dissent cannot be tolerated in wartime! Move decisively \
-    authoritarian, increase military size. Decreases stability and reputation."
+    authoritarian, increase military size. Decreases stability and reputation. Only available to dictatorships."
+    error_overrides = {'government': 'We are not a dictatorship!'}
 
     def enact(self):
         self.nation.military.army += 10
         self.nation.military.training += 5
-        self.nation.military.save(update_fields=['army', 'training'])
+        self.nation.military.save(update_fields=['army', '_training'])
         super(martial, self).enact()
 
 
@@ -125,6 +131,12 @@ class housing(Policy):
     def extra(self):
         return utils.econsystem(self.nation.economy) < 2 and self.nation.approval < 100
 
+    def errors(self):
+        if utils.econsystem(self.nation.economy) == 2:
+            return "Not available in free markets"
+        elif self.nation.approval == 100:
+            return "We already have more houses than people!"
+
 
 class wage(Policy):
     def __init__(self, nation):
@@ -144,6 +156,12 @@ class wage(Policy):
     def extra(self):
         return utils.econsystem(self.nation.economy) > 0
 
+    def errors(self):
+        if utils.econsystem(self.nation.economy) == 0:
+            return "As an egalitarian paradise we have abolished wages!"
+        elif self.nation.growth < self.requirements['growth']:
+            return "Not enough growth to support higher wages!"
+
     img = 'minimum.jpg'
     name = "Raise Minimum Wage"
     button = "Raise"
@@ -160,6 +178,10 @@ class freefood(Policy):
 
     def extra(self):
         return self.nation.approval < 100
+
+    def errors(self):
+        if self.nation.approval == 100:
+            return "Our people are fat enough as it is!"
 
     gain = {'approval': 10, 'economy': -5}
     img = 'freefood.jpg'
@@ -205,6 +227,10 @@ class university(Policy):
     def extra(self):
         return self.nation.farmland() >= self.nation.landcost('universities')
 
+    def errors(self):
+        if not self.extra():
+            return "Not enough unused land!"
+
     gain = {'universities': 1}
     name = 'Found University'
     button = 'Teach'
@@ -217,6 +243,7 @@ class university(Policy):
 
 
 class closeuni(Policy):
+    contextual = True
     cost = {'universities': 1}
     requirements = cost
     gain = {'closed_universities': 1}
@@ -229,6 +256,7 @@ class closeuni(Policy):
 
 
 class reopenuni(Policy):
+    contextual = True
     cost = {'closed_universities': 1, 'budget': 1000}
     requirements = cost
     gain = {'universities': 1}
@@ -248,6 +276,10 @@ class hospital(Policy):
     def extra(self):
         return self.nation.healthcare < 100
 
+    def errors(self):
+        if self.nation.healthcare == 100:
+            return "Our healthcare is already the best in the world!"
+
     gain = {'healthcare': 10}
     name = "Construct Free Hospital"
     button = "Build"
@@ -266,6 +298,10 @@ class medicalresearch(Policy):
     def extra(self):
         return self.nation.healthcare < 100
 
+    def errors(self):
+        if self.nation.healthcare == 100:
+            return "We've run out of guinea pigs!"
+
     gain = {'healthcare': 10}
     name = "Fund Medical Research"
     img = "hospital.jpg"
@@ -281,6 +317,8 @@ class cult(Policy):
         self.cost = {'budget': 500, 'government': nation.government}
         self.requirements = {'budget': 500, 'government': 41}
 
+
+    error_overrides = {'government': 'You are already loved by your people!'}
     gain = {'approval': 15}
     name = "Cult of Personality"
     button = "Bask"

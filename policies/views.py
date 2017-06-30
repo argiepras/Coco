@@ -70,9 +70,11 @@ def ajax_handling(request):
         else:
             rval = {'result': "It won't work.", 'img': ''}
         if policy.can_apply() == False and policy.contextual == False:
+            print "result: %s" % policy.result
             rval = {'result': policy.result, 'img': policy.img}
     else:
         rval = {'result': "It won't work.", 'img': ''}
+    print rval
     return JsonResponse(rval)
 
 

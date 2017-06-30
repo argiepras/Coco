@@ -18,6 +18,11 @@ class great_leap(Policy):
     def extra(self):
         return self.nation.economy <= 66
 
+    def errors(self):
+        if not self.extra():
+            return "Not possible in a free market!"
+
+
     def enact(self):
         chance = random.randint(1, 10)
         if chance > 4:
@@ -81,6 +86,8 @@ class blood(Policy):
         self.description = """Sell tiny stones with a dark past for a lot of money to De Beers. 
             Reputation and quality of life will drop somewhat but will 
             receive $%sk""" % self.gain['budget']
+
+    contextual = True
     cost = {'qol': 2, 'reputation': 6}
     requirements = {'qol': 2, 'reputation': 10}
     name = "Blood Diamonds"
@@ -105,6 +112,7 @@ class drugs(Policy):
         but a high chance of getting caught. If caught it greatly decreases your reputation and 
         relations with the US.""" % self.gain['budget']
 
+    contextual = True
     name = "Smuggle drugs into the USA"
     button = "Deal"
     costdesc = "Nothing!"
@@ -168,12 +176,12 @@ class labordiscipline(Policy):
         super(labordiscipline, self).__init__(nation)
         c = nation.factories * 2 * nation.econdata.labor
         self.cost = {
-            'oil': (c if nation.region != 'Asia' else int(c*0.75)),
-            'rm': (c if nation.region != 'Asia' else int(c*0.75)),
+            'oil': (c if nation.region() != 'Asia' else int(c*0.75)),
+            'rm': (c if nation.region() != 'Asia' else int(c*0.75)),
         }
         self.requirements = {'approval': 20, 'factories': 1}
         self.requirements.update(self.cost) #avoids writing the oil/rm dict twice
-        self.cost.update({'approval': -10})
+        self.cost.update({'approval': 10})
         self.gain =  {'mg': nation.factories + mgbonus(nation, nation.factories)} #apply tech bonus
         #add dynamic descriptions so a person can always tell how much they'll get in return
         gain = round(float(self.gain['mg']) / (nation.factories if nation.factories > 0 else 1))
@@ -188,6 +196,11 @@ class labordiscipline(Policy):
     img = "http://i.imgur.com/ZAxmwGG.jpg"
     name = "Labor Discipline"
     button = "Work!"
+
+    def errors(self):
+        if self.nation.factories < 1:
+            return "We need at least 1 factory to do this!"
+
     def enact(self):
         super(labordiscipline, self).enact()
         Econdata.objects.filter(nation=self.nation).update(labor=F('labor') + 1)
@@ -207,7 +220,6 @@ class industrialize(Policy):
     which permanently increases growth by $1 million a month as long as it is supplied with 
     1 Mbbl of oil and 1 HTons of raw material. Requires %skm<sup>2</sup> free land""" % nation.landcost('factories')
 
-    contextual = False #always show build industry option
     gain = {'factories': 1}
     name = "Industrialize"
     button = "Progress"
@@ -241,6 +253,7 @@ class deindustrialize(Policy):
         self.requirements.update(self.cost)
         self.cost.update({'approval': 5})
 
+    contextual = True
     gain = {'closed_factories': 1}
     img = "http://i.imgur.com/QerllfI.jpg"
     result = "Thousands lose their jobs!"
@@ -252,6 +265,7 @@ class deindustrialize(Policy):
 
 
 class reindustrialize(Policy):
+    contextual = True
     cost = {'closed_factories': 1, 'budget': 1000}
     requirements = cost
     gain = {'factories': 1}
@@ -265,7 +279,7 @@ class reindustrialize(Policy):
 class nationalize(Policy):
     def __init__(self, nation):
         super(nationalize, self).__init__(nation)
-        self.cost = {'FI': nation.FI, 'qol': 3, 'stability': 10, 'economy': 50}
+        self.cost = {'FI': nation.FI, 'qol': 3, 'stability': 15, 'economy': 50}
         self.gain = {'budget': nation.FI}
         self.description = """Take from the rich yankees what is rightfully yours. 
         Seizure of all foreign investment, $%sk, is added directly to your budget, 
@@ -280,6 +294,12 @@ class nationalize(Policy):
     costdesc = 'Nothing!'
     def extra(self): #base class is not set up for related models
         return self.nation.econdata.nationalize == 0 and utils.econsystem(self.nation.economy) != 0
+
+    def errors(self):
+        if self.nation.econdata.nationalize > 0:
+            return "You can only nationalize or privatize once per turn!"
+        elif utils.econsystem(self.nation.economy) == 0:
+            return "There is nothing left to nationalize!"
 
     def enact(self):
         super(nationalize, self).enact()
@@ -309,6 +329,12 @@ class privatize(Policy):
 
     def extra(self):
         return self.nation.econdata.nationalize == 0 and self.nation.economy < 66
+
+    def errors(self):
+        if self.nation.econdata.nationalize > 0:
+            return "You can only nationalize or privatize once per turn!"
+        elif self.nation.economy >= 66:
+            return "There are no state assets to privatize!"
 
     def enact(self):
         super(privatize, self).enact()
@@ -350,8 +376,12 @@ class imf(Policy):
     button = "Borrow"
     description = "A Faustian Bargain. 100k in cold hard cash for a decrease in growth of $2 million."
 
+    def errors(self):
+        if self.nation.alignment < 1:
+            return "The IMF won't lend to pinkos!"
 
 class humanitarian(Policy):
+    contextual = True
     cost = {'budget': 75}
     requirements = cost
     gain = {'growth': 1}
@@ -387,6 +417,10 @@ class foreigninvestment(Policy):
     def extra(self):
             return utils.econsystem(self.nation.economy) > 0 #no commies allowed
 
+    def errors(self):
+            if not self.extra():
+                return "No investors will invest in a planned economy!"
+
     def enact(self):
         chance = random.randint(1, 10)
         if chance > 7:
@@ -412,6 +446,10 @@ class mine(Policy):
     def extra(self):
         return self.nation.farmland() >= self.nation.landcost('mines')
 
+    def errors(self):
+        if not self.extra():
+            return "Not enough unused land!"
+
     gain = {'mines': 1}
     img = "mine2.jpg"
     result = "Your new mine increases raw material production by a hundred tons a month."
@@ -433,8 +471,14 @@ class privatemine(mine):
     def extra(self):
         return utils.econsystem(self.nation.economy) > 0 and self.nation.farmland() >= self.nation.landcost('mines')
 
+    def errors(self):
+        if self.nation.farmland() < self.nation.landcost('mines'):
+            return "Not enough unused land!"
+        elif utils.econsystem(self.nation.economy) == 0:
+            return "Foreign corporations refuse to invest in communist economies"
 
 class closemine(Policy):
+    contextual = True
     cost = {'approval': 5, 'mines': 1}
     requirements ={'mines': 1, 'approval': 10}
     gain = {'closed_mines': 1}
@@ -447,6 +491,7 @@ class closemine(Policy):
 
 
 class openmine(Policy):
+    contextual = True
     gain = {'mines': 1, 'approval':  5}
     requirements = {'closed_mines': 1, 'budget': 500}
     cost = requirements
@@ -467,6 +512,10 @@ class well(Policy):
 
     def extra(self):
         return self.nation.farmland() >= self.nation.landcost('wells')
+
+    def errors(self):
+        if not self.extra():
+            return "Not enough unused land!"
 
     gain = {'wells': 1}
     img = "oil.jpg"
@@ -491,6 +540,7 @@ class privatewell(well):
 
 
 class closewell(Policy):
+    contextual = True
     cost = {'approval': 5, 'wells': 1}
     requirements = {'approval': 10, 'wells': 1}
     gain = {'closed_wells': 1}
@@ -503,6 +553,7 @@ class closewell(Policy):
 
 
 class openwell(Policy):
+    contextual = True
     gain = {'approval':  5, 'wells': 1}
     requirements = {'closed_wells': 1, 'budget': 600}
     cost = requirements
@@ -559,6 +610,7 @@ class sez(Policy):
         self.gain = {'growth': market.change, 'economy': 2}
         self.low = {'approval': -5}
 
+    contextual = True
     name = "Special Economic Zone"
     button = "Do it"
     description = """Designate a region of your country where labor laws, minimum wage, and 

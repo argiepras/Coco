@@ -213,7 +213,7 @@ def milturn(debug=False):
         nation__vacation=False, 
         nation__deleted=False, 
         nation__reset=False, 
-        training__gt=0).update(training=F('training') - 1)
+        _training__gt=0).update(_training=F('_training') - 1)
     return econturn()
 
 

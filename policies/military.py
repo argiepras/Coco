@@ -10,6 +10,10 @@ class conscript(Policy):
     description = "Time to serve! Increase size of military at \
     the cost of economic growth, reduction in training and depletion of manpower."
 
+    def errors(self):
+        if self.nation.growth < 1:
+            return "Growth is too low!"
+
     def enact(self):
         self.nation.military.army += 2
         trainingloss = int((200.0/self.nation.military.army if self.nation.military.army > 0 else 1))
@@ -26,7 +30,6 @@ class train(Policy):
         self.cost = {'budget': trainingcost}
         self.requirements = self.cost
 
-    contextual = False
     name = "Train your Conscripts"
     button = "Train"
     description = "Turn your half-rate peasant army into a mindless killing \
@@ -34,6 +37,12 @@ class train(Policy):
 
     def extra(self):
         return self.nation.military.army > 0
+
+    def errors(self):
+        if self.nation.military.army == 0:
+            return "We need an army to train!"
+        elif self.nation.military.training == 100:
+            return "Your men are the elite of the elite, there is no need to train them further!"
 
     def enact(self):
         if not self.can_apply():
@@ -53,8 +62,13 @@ class demobilize(Policy):
     costdesc = "Nothing!"
     description = "Turn your half-rate peasant army into \
     a mindless killing machine. Cost is relative to the size of your army."
+    
     def extra(self):
         return self.nation.military.army > 5
+
+    def errors(self):
+        if self.nation.military.army <= 5:
+            return "We can't reduced our military further! Peasants might get ideas!"
 
     def enact(self):
         self.nation.military.army -= 2
@@ -76,10 +90,16 @@ class attackrebels(Policy):
     name = "Attack the rebel scum!"
     button = "Attack"
     description = """Launch an offensive against the rebels. 
-    Might suffer casualties. Slight decrease in reputation"""
+    Might suffer casualties."""
 
     def extra(self):
         return self.nation.military.army > 0
+
+    def errors(self):
+        if self.nation.military.army == 0:
+            return "We have no army with which to attack!"
+        elif self.nation.rebels == 0:
+            return "There are no rebels to attack!"
 
     def enact(self):
         chance = random.randint(1, 10)
@@ -104,6 +124,9 @@ class gasrebels(Policy):
             'rebels': (nation.rebels*0.25 if nation.rebels*0.25 > 2 else 2),
             'reputation': 15
         }
+        if nation.military.chems != 10:
+            self.contextual = True
+
     requirements = {'rebels': 1}
     name = "Gas the rebel scum!"
     button = "Gas"
@@ -119,10 +142,7 @@ class gasrebels(Policy):
     def extra(self):
         return self.nation.military.chems == 10
 
-
-class base_weapons(Policy):
-    def extra(self):
-        return self.nation.military.weapons < 500
+    #no errors function needed because contextual is set to true when no chems
 
 
 class soviet_weapons(Policy):
@@ -149,10 +169,16 @@ class soviet_weapons(Policy):
             self.result = "A couple T-90s arrive on the latest freighter from Odessa"
             self.description = "A powerful, modern tank. Only available to comrades of the Soviet Union. Large increase in technology."
         self.requirements = self.cost
+        if nation.alignment == 3:
+            self.contextual = True
 
     button = "Ask"
     def extra(self):
         return self.nation.alignment != 3
+
+    def errors(self):
+        if self.nation.alignment == 3:
+            return "Not available to capitalist pigs!"
 
     def enact(self):
         self.nation.military.weapons += self.weps
@@ -185,11 +211,17 @@ class us_weapons(Policy):
             self.description = """A powerful, modern tank. Only available to allies 
                 of the United States. Large increase in technology."""
         self.requirements = self.cost
+        if nation.alignment == 1:
+            self.contextual = True
 
     button = "Ask"
 
     def extra(self):
         return self.nation.alignment != 1
+
+    def errors(self):
+        if self.nation.alignment == 1:
+            return "Not available to filthy communists!"
 
     def enact(self):
         self.nation.military.weapons += self.weps
@@ -225,7 +257,12 @@ class weapons(Policy):
             self.description = """Oppress the battlefield with this tank of 
                 your own make. Must have a completed eight factories."""
 
+
     button = "Manufacture"
+
+    def errors(self):
+        if self.nation.factories < self.requirements['factories']:
+            return "We need more factories!"
 
     def enact(self):
         self.nation.military.weapons += self.weps
@@ -239,6 +276,8 @@ class migs(Policy):
         planes = nation.military.planes
         self.cost = {'oil': planes + 5, 'soviet_points': 11 + ((planes**2)-10)}
         self.requirements = self.cost
+        if nation.alignment == 3:
+            self.contextual = True
 
     name = "Buy MiGs"
     button = "Buy"
@@ -249,6 +288,12 @@ class migs(Policy):
 
     def extra(self):
         return self.nation.alignment != 3 and self.nation.military.planes < 10
+
+    def errors(self):
+        if self.nation.alignment == 3:
+            return "Not available to capitalist pigs!"
+        elif self.nation.military.planes == 10:
+            return "Our airforce is already maxed!"
 
     def enact(self):
         self.nation.military.planes += 1
@@ -262,6 +307,8 @@ class f8(Policy):
         planes = nation.military.planes
         self.cost = {'oil': planes + 5, 'us_points': 11 + ((planes**2)-10)}
         self.requirements = self.cost
+        if nation.alignment == 1:
+            self.contextual = True
 
     name = "Buy F-8 Crusaders"
     button = "Buy"
@@ -271,6 +318,12 @@ class f8(Policy):
 
     def extra(self):
         return self.nation.alignment != 1 and self.nation.military.planes < 10
+
+    def errors(self):
+        if self.nation.alignment == 1:
+            return "Not available to communist scum!"
+        elif self.nation.military.planes == 10:
+            return "Our airforce is already maxed!"
 
     def enact(self):
         self.nation.military.planes += 1
@@ -284,7 +337,6 @@ class aircraft(Policy):
         planes = nation.military.planes
         self.cost = {'oil': planes + 5, 'mg': 11 + ((planes**2)/2)}
         self.requirements = {'oil': planes + 5, 'mg': 11 + ((planes**2)/2), 'factories': 3}
-    contextual = False
     name = "Manufacture Aircraft"
     button = "Make"
     result = "Several cropdusters are rigged with machine guns!"
@@ -293,6 +345,12 @@ class aircraft(Policy):
 
     def extra(self):
         return self.nation.military.planes < 10
+
+    def errors(self):
+        if self.nation.military.planes == 10:
+            return "Our airforce is already maxed!"
+        elif self.nation.factories < 3:
+            return "Not enough factories to support plane production!"
 
     def enact(self):
         self.nation.military.planes += 1
@@ -318,6 +376,12 @@ class navy(Policy):
     def extra(self):
         return self.nation.military.navy < 100
 
+    def errors(self):
+        if self.nation.military.navy == 100:
+            return "We can't support a larger navy!"
+        elif self.nation.factories < 2:
+            return "We need more factories to produce ships!"
+
     def enact(self):
         self.nation.military.navy += 1
         self.nation.military.save(update_fields=['navy'])
@@ -325,9 +389,12 @@ class navy(Policy):
 
 
 class chems(Policy):
+    def __init__(self, nation):
+        super(chems, self).__init__(nation)
+        if nation.military.chems == 10:
+            self.contextual = True
     cost = {'budget': 500, 'reputation': 10, 'research': 5}
     requirements = cost
-
     name = "Develop Chemical Weapons"
     button = "Cook"
     description = """The Geneva Protocol is just a mere piece of paper, 
@@ -338,6 +405,10 @@ class chems(Policy):
     def extra(self):
         return self.nation.military.chems < 10
 
+    def errors(self):
+        if self.nation.military.chems == 10:
+            return "We already have chemical weapons!"
+
     def enact(self):
         chance = random.randint(1, 10)
         if chance > 4:
@@ -347,14 +418,18 @@ class chems(Policy):
 
 
 class nuke(Policy):
-    cost = {'uranium': 20, 'budget': 100000, 'research': 200}
+    def __init__(self, nation):
+        super(nuke, self).__init__(nation)
+        if not self.extra():
+            self.contextual = True
+    cost = {'uranium': 10, 'budget': 100000, 'research': 200}
     requirements = cost
 
     result = 'You have a nuke.'
     button = "build"
     img = "http://i.imgur.com/wLtwYXi.jpg"
     description = "nukes baby"
-    name = "NUKE "
+    name = "NUKE"
 
     def extra(self):
         return self.nation.military.reactor == 20

@@ -35,6 +35,7 @@ class generaltests(TestCase):
         for ptype in ['economic', 'military', 'foreign', 'domestic']:
             policies = get_policies(Policy.registry, self.subject, ptype)
             for policy in policies:
+                self.assertFalse(hasattr(policy, 'error'), msg="Should be errors, not error")
                 self.assertTrue(policy.can_apply() or policy.contextual == False, msg="%s shouldn't be included" % policy.name)
 
 

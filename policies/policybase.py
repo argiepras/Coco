@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import nation.variables as v
 import json
+from nation.models import Baseattrs
 
 class PolicyMeta(type):
     # we use __init__ rather than __new__ here because we want
@@ -30,7 +31,7 @@ class Policy(object):
         self.nation = nation
 
     __metaclass__ = PolicyMeta
-    contextual = True #hides the policy when you can't use it
+    contextual = False #hides the policy when you can't use it
     img = ''
     cost = {}
     gain = {}
@@ -39,6 +40,8 @@ class Policy(object):
     description = ''
     name = ''
     costdesc = ''
+    basefail = False
+    error_overrides = {}
 
     def image(self, url):
         self.img = '/static/img/' + url
@@ -56,36 +59,21 @@ class Policy(object):
 
         self.nation.save()
 
-    def can_apply(self): #is supplemented with extra() when it's not as simple 
-                         #as a simple comparison like this
+    def check(self): #is supplemented with extra() when it's not as simple 
+        #as a simple comparison like this
         for field in self.requirements:
             if getattr(self.nation, field) < self.requirements[field]:
+                self.basefail = True
                 return False
         if hasattr(self, 'extra'):
             return self.extra()
         return True
 
-    def _eligible(self): #not in use
-        """
-            determines if a policy can be executed by a given nation
-            uses a big ol dict to make the determination; formed as such
-            {
-                'nation': {'field': value},
-                'related': {
-                                'settings': {'field': value},
-                                'military': {'field': value},
-                        }
-            }
-        """    
-        for field in self.requirements['nation']:
-            if getattr(self.nation, field) < self.requirements['nation'][field]:
-                return False
-        if 'related' in self.requirements: #if requirements need variables from related models
-            for target in self.requirements['related']:
-                model = getattr(self.nation, target)
-                for field in self.requirements['related'][target]:
-                    if getattr(model, field) < self.requirements['related'][target][field]:
-                        return False
+    def can_apply(self):
+        if not self.check():
+            self.result = self.render_insufficient_cost()
+            self.img = ''
+        return self.check()
 
     def enact(self):
         self._log()
@@ -149,4 +137,89 @@ class Policy(object):
     def json(self):
         return {'result': self.result, 'img': self.img}
 
+    def render_insufficient_cost(self):
+        if hasattr(self, 'errors'):
+            result = self.errors()
+            if result:
+                return result
 
+        result = 'Not enough '
+        lacking = []
+
+        for field in self.requirements:
+            if self.requirements[field] > getattr(self.nation, field) and field in v.policyinsufficient:
+                lacking.append(field)
+
+        if lacking:
+            for field in lacking:
+                index = lacking.index(field)
+                if index+1 == len(lacking):
+                    mod = ''
+                elif index+1 == len(lacking) - 1:
+                    mod = ' and '
+                else:
+                    mod = ', '
+                desc = v.policyinsufficient[field]
+                result += '%s%s' % (desc, mod)
+        else:
+
+            result = ''
+                #if the lacking stat isn't a resource, like approval or qol
+                #we assemble a different error message
+            lacking = []
+            for field in self.requirements:
+                if self.requirements[field] > getattr(self.nation, field) and hasattr(Baseattrs, field):
+                    if field in self.error_overrides:
+                        return self.error_overrides[field]
+                    field = '_%s' % field
+                    lacking.append(Baseattrs._meta.get_field(field).verbose_name)
+
+            for field in lacking:
+                index = lacking.index(field)
+                if index+1 == len(lacking):
+                    mod = ''
+                elif index+1 == len(lacking) - 1:
+                    mod = 'and '
+                else:
+                    mod = ', '
+                result += '%s%s' % (field, mod)
+            if len(lacking) > 1:
+                result += ' are too low!'
+            else:
+                result += ' is too low!'
+        return result
+
+
+
+"""
+            keys = field.split('__')
+            if len(keys) == 1:
+                if getattr(self.nation, field) < self.requirements[field]:
+                    self.basefail = True
+                    return False
+            else:
+                if len(keys) == 2:
+                    model = self.nation
+                    modifier = keys[1]
+                    key = keys[0]
+                else:
+                    model = getattr(self.nation, keys[0])
+                    modifier = keys[2]
+                    key = keys[1]
+
+                if modifier == 'gt':
+                    if getattr(model, key) < self.requirements[field]:
+                        return False
+                elif modifier == 'gte':
+                    if getattr(model, key) <= self.requirements[field]:
+                        return False
+                elif modifier == 'lte':
+                    if getattr(model, key) >= self.requirements[field]:
+                        return False
+                elif modifier == 'lt': 
+                    if getattr(model, key) > self.requirements[field]:
+                        return False 
+                elif modifier == 'eq':
+                    if getattr(model, key) != self.requirements[field]:
+                        return False
+            """
