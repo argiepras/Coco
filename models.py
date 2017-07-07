@@ -875,12 +875,10 @@ class Application(models.Model):
 class Permissiontemplate(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="templates", on_delete=models.CASCADE)
     title = models.CharField(max_length=30, default="member")
-    officer = models.BooleanField(default=False)
-    founder = models.BooleanField(default=False)
     rank_choices = (
-        (0, 0),
-        (1, 1),
-        (2, 2),
+        (0, 0), #rank is the numerical, hiercihcal (spelling) representatio
+        (1, 1), #0 is founder, 1 through 4 is officer
+        (2, 2), #and finnaly 
         (3, 3),#YES I KNOW IT SAYS 4 NEXT TO 5
         (4, 4),#5 is regular member
         (5, 5)) #rank is to establish hierarchy, also lower ranks can't delete higher ranks
@@ -896,7 +894,6 @@ class Permissiontemplate(models.Model):
     officer_comm = models.BooleanField(default=False)
     see_stats = models.BooleanField(default=False)
     delete_log = models.BooleanField(default=False)
-    founder = models.BooleanField(default=False)#if true, treats everything as true
     invite = models.BooleanField(default=False)
     banking = models.BooleanField(default=False)
     initiatives = models.BooleanField(default=False)

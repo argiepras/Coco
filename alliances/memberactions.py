@@ -57,3 +57,20 @@ def deposit():
             else:
                 result = "Can't deposit that much!"
 
+
+def invite(nation, alliance, action):
+    try:
+        invite = alliance.invites.filter(nation=nation)
+    except:
+        return "You do not have an invitation from this alliance!"
+    if action = "accept":
+        return accept_invite(nation, alliance)
+    return reject_invite(nation, alliance)
+
+
+def accept_invite(nation, alliance):
+    if alliance.invites.filter(nation=nation).exists()
+    
+
+def reject_invite():
+    pass
