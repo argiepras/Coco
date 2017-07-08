@@ -22,15 +22,21 @@ class Alliance(models.Model):
         super(Alliance, self).__init__(*args, **kwargs)
         self.averagegdp = self.members.filter(vacation=False, reset=False, deleted=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
     name = models.CharField(max_length=30)
+    founder = models.CharField(max_length=30, default="admin")
     description = models.CharField(max_length=1000, default="You can change this description in the alliance control panel")
     flag = models.CharField(max_length=100, default="/static/alliance/default.png")
     foibonus = models.IntegerField(default=0)
-    comm_on_applicants = models.BooleanField(default=True)
     anthem = models.CharField(max_length=15, default="eFTLKWw542g")
-    accepts_applicants = models.BooleanField(default=True)
     icon = models.CharField(max_length=40, default="/static/alliance/defaulticon.png")
+    #settings type things
+    accepts_applicants = models.BooleanField(default=True)
+    event_on_incoming = models.BooleanField(default=True) #news event is generated when someone applies
+    event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
+    event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
+
     def __unicode__(self):
         return u"%s alliance" % self.name
+
     def get_absolute_url(self):
         return reverse('alliance:alliance_page', kwargs={'alliancepk': (str(self.pk))})
 
@@ -732,7 +738,6 @@ class Marketofferlog(models.Model):
 #### ALLIANCE SHIT ####
 #######################
 
-
 class Initiatives(models.Model):
     alliance = models.OneToOneField(Alliance, on_delete=models.CASCADE)
     focus = models.CharField(max_length=4)
@@ -766,11 +771,6 @@ class Memberstats(models.Model):
     nation = models.OneToOneField(Nation, on_delete=models.CASCADE)
     alliance = models.ForeignKey(Alliance, related_name="memberstats", on_delete=models.CASCADE)
     budget = models.IntegerField(default=0)
-    oil = models.IntegerField(default=0)
-    rm = models.IntegerField(default=0)
-    mg = models.IntegerField(default=0)
-    food = models.IntegerField(default=0)
-    research = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now) #functions as join time
 
 #limits are either total or per nation
@@ -835,8 +835,6 @@ class Bankstats(models.Model):
             self.__dict__[field] = stats[field]
 
 
-                
-
 
 class Invite(models.Model):
     nation = models.ForeignKey(Nation, related_name='invites', on_delete=models.CASCADE)
@@ -844,6 +842,7 @@ class Invite(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="outstanding_invites", on_delete=models.CASCADE)
     def __unicode__(self):
         return u"Invitation to %s from %s" % (self.nation.name, self.alliance.name)
+
 
 class Alliancedeclaration(models.Model):
     nation = models.ForeignKey(Nation, related_name="alliance_declarations")
@@ -863,6 +862,7 @@ class Alliancechat(models.Model):
     timestamp = models.DateTimeField(default=v.now)
     content = models.CharField(max_length=500)
 
+
 class Application(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="applications", on_delete=models.CASCADE)
     nation = models.ForeignKey(Nation, related_name="applications", on_delete=models.CASCADE)
@@ -872,17 +872,7 @@ class Application(models.Model):
         return u"%ss application to %s" % (self.nation.name, self.alliance.name)
 
 
-class Permissiontemplate(models.Model):
-    alliance = models.ForeignKey(Alliance, related_name="templates", on_delete=models.CASCADE)
-    title = models.CharField(max_length=30, default="member")
-    rank_choices = (
-        (0, 0), #rank is the numerical, hiercihcal (spelling) representatio
-        (1, 1), #0 is founder, 1 through 4 is officer
-        (2, 2), #and finnaly 
-        (3, 3),#YES I KNOW IT SAYS 4 NEXT TO 5
-        (4, 4),#5 is regular member
-        (5, 5)) #rank is to establish hierarchy, also lower ranks can't delete higher ranks
-    rank = models.IntegerField(default=5, choices=rank_choices)
+class Basetemplate(models.Model):
     call_for_election = models.BooleanField(default=False)
     kick = models.BooleanField(default=False)
     kick_officer = models.BooleanField(default=False)
@@ -902,6 +892,20 @@ class Permissiontemplate(models.Model):
     create_template = models.BooleanField(default=False)
     change_template = models.BooleanField(default=False)
     delete_template = models.BooleanField(default=False)
+    class Meta:
+        abstract = True
+
+class Permissiontemplate(Basetemplate):
+    alliance = models.ForeignKey(Alliance, related_name="templates", on_delete=models.CASCADE)
+    title = models.CharField(max_length=30, default="member")
+    rank_choices = (
+        (0, 0), #rank is the numerical, hiercihcal (spelling) representatio
+        (1, 1), #0 is founder, 1 through 4 is officer
+        (2, 2), #and finnaly 
+        (3, 3),#YES I KNOW IT SAYS 4 NEXT TO 5
+        (4, 4),#5 is regular member
+        (5, 5)) #rank is to establish hierarchy, also lower ranks can't delete higher ranks
+    rank = models.IntegerField(default=5, choices=rank_choices)
     def __unicode__(self):
         return u"%s template" % self.title
 
@@ -916,10 +920,14 @@ class Permissiontemplate(models.Model):
         if not formdata.has_key('permset'):
             self.officer = True
 
-    def founded(self):
-        for field in self._meta.fields[7:]:
-            self.__dict__[field.name] = True
-        self.save()
+    def save(self, *args, **kwargs):
+        if self.alliance.templates.all().count() == 0:
+            for field in Basetemplate._meta.fields:
+                setattr(getattr(self, field.name), field.name, True)
+            self.rank = 0
+            self.title = 'Founder'
+        super(Permissiontemplate, self).save(*args, **kwargs)
+
 
 class Permissions(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="permissions", on_delete=models.CASCADE)

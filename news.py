@@ -12,8 +12,8 @@ from .models import *
 from .forms import *
 from . import utilities as utils
 
-def link_me(nation):
-    return '<a href="%s"><b>%s</b></a>' % (nation.get_absolute_url(), nation.name)
+def link_me(model):
+    return '<a href="%s"><b>%s</b></a>' % (model.get_absolute_url(), model.name)
 
 def aidnews(sender, reciever, resource, amount):
     flavor = v.pretty(amount, resource).replace('our', 'their') #someone is not sending us n of our best food
@@ -222,6 +222,26 @@ def invited(invitee, alliance):
 def initiative_recalled(nation, initiative):
     txt = "The alliance bank has run out of funds and as a consequence the %s initiative has been recalled!" % initiative
     nation.news.create(content=txt)
+
+def applicant_events(officer, notification_squad, modifier, applicants):
+    base = "%s has %s " % (link_me(officer), modifier)
+    linkified = []
+    for app in applicants:
+        linkified.append(link_me(app))
+    if len(applicants) == 1:
+        txt = base + "%ss application." % linkified[0]
+    else:
+        txt = base + "applications from %s." % (utils.string_list(linkified))
+    squad_update(notification_squad, txt)
+
+def invite_events(invitee, notification_squad, modifier):
+    txt = '%s has %s our invitation.' % (link_me(invitee), modifier)
+    squad_update(notification_squad, txt)
+
+#This saves about 1 line of code
+def squad_update(notification_squad, txt):
+    for member in notification_squad:
+        member.news.create(content=txt)
 
 def acceptedapplication(nation, alliance):
     link = '<a href="%s"><b>%s</b></a>' % (alliance.get_absolute_url(), alliance.name)

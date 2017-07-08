@@ -226,7 +226,6 @@ def applications(request):
     context.update({
         'applications': applications,
         'alliance': alliance,
-
     })
     return render(request, 'alliance/applications.html', context)
 
@@ -665,37 +664,27 @@ def newalliance(request):
     context = {}
     if request.POST:
         if 'create' in request.POST:
-            nation = request.user.nation
-            form = newallianceform(request.POST)
-            if nation.budget < 150:
-                context.update({'result': "You cannot afford this!"})
-            else:
-                if form.is_valid():
-                    data = form.cleaned_data
-                    if Alliance.objects.filter(name__iexact=form.cleaned_data['name']).exists():
-                        result = "There is already an alliance with that name!"
-                        return render(request, 'alliance/new.html', {'allianceform': newallianceform(), 'result': result})
-                    
-                    alliance = Alliance.objects.create(name=form.cleaned_data['name'],
-                        description=form.cleaned_data['description'])
-                    Initiatives.objects.create(alliance=alliance)
-                    Memberstats.objects.create(alliance=alliance, nation=nation)
-                    Bank.objects.create(alliance=alliance)
-                    Bankstats.objects.create(alliance=alliance)
-                    #founder permission set
-                    founder = Permissiontemplate.objects.create(alliance=alliance, title=form.cleaned_data['founder_title'], 
-                        rank=0)
-                    founder.founded()
-                    #base officer
-                    Permissiontemplate.objects.create(alliance=alliance, title='officer',
-                        kick=True, mass_comm=True, invite=True, applicants=True, rank=3, promote=True)
-                    #member template
-                    alliance.templates.create(rank=5, title=form.cleaned_data['member_title'])
-                    Permissions.objects.create(member=nation, alliance=alliance, template=founder)
-                    Nation.objects.filter(pk=nation.pk).update(alliance=alliance)
-                    action = {'budget': {'action': 'subtract', 'amount': 150}}
-                    utils.atomic_transaction(Nation, nation.pk, action)
-                    return redirect('alliance:main')
+            with transaction.atomic():
+                nation = Nation.objects.get(user=request.user)
+                form = newallianceform(request.POST)
+                if nation.budget < 150:
+                    context.update({'result': "You cannot afford this!"})
+                else:
+                    if form.is_valid():
+                        data = form.cleaned_data
+                        if Alliance.objects.filter(name__iexact=form.cleaned_data['name']).exists():
+                            result = "There is already an alliance with that name!"
+                            return render(request, 'alliance/new.html', {'allianceform': newallianceform(), 'result': result})
+                        
+                        alliance = Alliance.objects.create(
+                            name=form.cleaned_data['name'],
+                            description=form.cleaned_data['description'],
+                            founder=nation.name)
+                        #founder permission set
+                        #base officer
+                        nation.budget -= 150
+                        nation.save(update_fields=['budget'])
+                        return redirect('alliance:main')
     form = newallianceform()
     return render(request, 'alliance/new.html', {'allianceform': form})
 
@@ -706,13 +695,7 @@ def chat(request, page):
     alliance = nation.alliance
     result = False
     if request.method == "POST":
-        if "post" in request.POST:
-            form = declarationform(request.POST)
-            if form.is_valid():
-                alliance.chat.create(nation=nation, content=form.cleaned_data['message'])
-                result = "Message posted!"
-            else:
-                result = form.errors
+        pass
     if result:
         context.update({'result': result})
 

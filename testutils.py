@@ -27,6 +27,9 @@ def nation_generator(amount=1):
     return (nations if amount > 1 else nations[0])
 
 
+def alliance_generator(founder=nation_generator(), amount=1):
+    x = Alliance.objects.create(name=namegen())
+
 def namegen():
     return ''.join(choice(string.ascii_letters) for x in range(8))
 

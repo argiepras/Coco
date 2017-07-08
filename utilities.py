@@ -388,3 +388,21 @@ def econsystem(econ):
         return 1
     else:
         return 2
+
+
+def string_list(iterable, field=False):
+    #returns a neatly formatted string from a list
+    #ie from ['1', '2', '3', '4'] you'll get
+    #'1, 2, 3 and 4'
+    #or '1 and 2' from ['1', '2']
+    for entry in iterable:
+        index = iterable.index(entry)
+        if index+1 == len(iterable):
+            mod = ''
+        elif index+1 == len(iterable) - 1:
+            mod = 'and '
+        else:
+            mod = ', '
+        if field:
+            entry = getattr(entry, field)
+        result += '%s%s' % (entry, mod)
