@@ -40,6 +40,19 @@ class Alliance(models.Model):
     def get_absolute_url(self):
         return reverse('alliance:alliance_page', kwargs={'alliancepk': (str(self.pk))})
 
+    def notification_squad(self, permission, exclusion=False):
+        if not hasattr(Basetemplate, permission):
+            raise ValueError
+        var = 'permissions__template__' + permission
+        squad = self.members.filter(
+        (Q(permissions__template__rank__lt=5)&Q(**{var: True}))|Q(permissions__template__rank=0)
+        #(rank > 5 and applicants == True) or rank == 0
+        #founder rank overrides other requirements
+        )
+        if exclusion != False:
+            squad = squad.exclude(pk=exclusion)
+        return squad
+
     def add_member(self, nation, founder=False):
         nation.invites.all().delete()
         nation.applications.all().delete()

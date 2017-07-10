@@ -1,5 +1,5 @@
 import nation.news as news
-
+from nation.alliance.forms import declarationform
 
 
 def kick():
@@ -80,25 +80,29 @@ def accept_applicant(nation, applications):
     applicants = []
     for application in applications:
         alliance.add_member(applicant.nation)
-        news.accepted_application(application.nation, alliance)
+        news.acceptedapplication(application.nation, alliance)
         application.delete()
         applicants.append(application.nation)
 
     if alliance.event_on_applicants:
         generate_applicantevents(nation, applicants, 'accepted')
 
+    return  "The selected applicants are now members!"
 
 def reject_applicants(nation, applications):
     alliance = nation.alliance
     applicants = []
     for application in applications:
         alliance.add_member(applicant.nation)
-        news.accepted_application(application.nation, alliance)
+        news.rejectedapplication(application.nation, alliance)
         application.delete()
         applicants.append(application.nation)
 
     if alliance.event_on_applicants:
         generate_applicantevents(nation, applicants, 'rejected')
+
+    return "The selected applicants have been rejected!"
+
 
 def generate_applicantevents(nation, applicants, modifier):
     notifiers = nation.alliance.members.filter(
@@ -108,3 +112,16 @@ def generate_applicantevents(nation, applicants, modifier):
         ).exclude(pk=nation.pk) #won't send notifications to the actioner
     news.applicant_events(nation, notifiers, modifier,  applicants)
 
+
+
+#alliance declaration stuff
+#officers only
+def declare(nation, POST):
+    if nation.permissions.is_officer():
+        form = declarationform(POST)
+        if form.is_valid():
+            nation.alliance.declarations.create(nation=nation, content=form.cleaned_data['message'])
+            return "Declaration made!"
+        else:
+            return "A declaration must be between 5 and 400 characters"
+    return "Only available to officers"

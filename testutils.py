@@ -28,7 +28,8 @@ def nation_generator(amount=1):
 
 
 def alliance_generator(founder=nation_generator(), amount=1):
-    x = Alliance.objects.create(name=namegen())
+    return Alliance.objects.create(name=namegen(), founder=founder.name)
+
 
 def namegen():
     return ''.join(choice(string.ascii_letters) for x in range(8))

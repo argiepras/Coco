@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.db.models import Count, Q
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import *
-from django.utils import timezone 
+from django.utils import timezone
+from django.views.generic.base import TemplateView
+from django.views.generic.list import ListView
 from django.db import transaction
 from django.contrib.auth.models import User
 
@@ -23,124 +24,6 @@ def main(request):
     alliance = nation.alliance
     context = {}
     result = ''
-    if request.method == 'POST':
-        if 'leave' in request.POST:
-            alliance.kick(nation)
-            result = "You say your goodbyes before being tossed by security."
-            if alliance.members.all().count() - 1 == 0:  #member that just left isn't counted
-                alliance.delete()                        #for whatever reason
-            return alliancepage(request, alliance.pk, result)
-        
-        elif 'resign' in request.POST:
-            if nation.permissions.panel_access():
-                if alliance.members.all().count() == 1:
-                    alliance.kick(nation)
-                    alliance.delete()
-                    return redirect('nation:main')
-                else:
-                    if alliance.permissions.filter(heir=True).count() > 0:
-                        heir = alliance.permissions.get(heir=True)
-                    elif alliance.permissions.filter(template__rank__gt=5).count() > 0:
-                        for n in range(1, 5):
-                            if alliance.permissions.filter(template__rank__gt=n).count() > 0:
-                                heir = alliance.permissions.filter(template__rank__gt=n).order_by('?')[0]
-                                break
-                    else:
-                        heir = alliance.permissions.all().order_by('?')[0]
-                    heir.template = alliance.templates.get(rank=0)
-                    heir.save()
-                membertemplate = alliance.templates.get(rank=5)
-                nation.permissions.template = membertemplate
-                nation.permissions.save(update_fields=['template'])
-                result = "Resignation gets handed over and you assume the role of an ordinary member"
-        
-        elif 'deposit' in request.POST:
-            form = depositform(nation, request.POST)
-            if form.is_valid():
-                if form.cleaned_data['empty']:
-                    result = "You can't deposit nothing!"
-                else:
-                    form.cleaned_data.pop('empty')
-                    actions = {}
-                    depositactions = {}
-                    for field in form.cleaned_data:
-                        actions.update({field: {'action': 'subtract', 'amount': form.cleaned_data[field]}})
-                        depositactions.update({field: {'action': 'add', 'amount': form.cleaned_data[field]}})
-                    utils.atomic_transaction(Nation, nation.pk, actions)
-                    utils.atomic_transaction(Bank, alliance.bank.pk, depositactions)
-                    banklogging(nation, actions, True)
-                    result = "Deposited!"
-            else:
-                result = "Can't deposit that much!"
-                
-
-        elif 'withdraw' in request.POST and nation.permissions.can_withdraw():
-            form = withdrawform(nation, request.POST)
-            if form.is_valid():
-                if form.cleaned_data['empty']:
-                    result = "You can't withdraw nothing!"
-                else:
-                    form.cleaned_data.pop('empty')
-                    actions = {} #moving to nation
-                    withdraws = {} #setting bankstats for limiting
-                    withdrawactions = {} #moving from bank
-                    for field in form.cleaned_data:
-                        actions.update({field: {'action': 'add', 'amount': form.cleaned_data[field]}})
-                        withdrawactions.update({field: {'action': 'subtract', 'amount': form.cleaned_data[field]}})
-                        withdraws.update({field: F(field) + form.cleaned_data[field]})
-
-                    #atomic transactions for rollback if error happens
-                    with transaction.atomic():
-                        utils.atomic_transaction(Nation, nation.pk, actions)
-                        utils.atomic_transaction(Bank, alliance.bank.pk, withdrawactions)
-                        if nation.alliance.bank.limit:
-                            if nation.alliance.bank.per_nation:
-                                qfilter = {'nation': nation}
-                            else:
-                                qfilter = {'alliance': nation.alliance}
-                            Memberstats.objects.select_for_update().filter(**qfilter).update(**withdraws)
-                    banklogging(nation, actions, False)
-                    result = "Withdrawal has been made!"
-            else:
-                result = "You can't withdraw more than your limit!"
-
-
-        elif 'kick' in request.POST and nation.permissions.kickpeople():
-            pks = request.POST.getlist('ids')
-            kickees = alliance.members.all().select_related('permissions').filter(pk__in=pks)
-            if not nation.permissions.template.kick or not nation.permissions.template.kick_officer:
-                result = "You can't kick anyone! Stop this!"
-            elif len(kickees):
-                result = "You didn't select any members to kick!"
-            else:
-                tmp = 'But you do not have permission to kick '
-                errs = ''
-                for kickee in kickees:
-                    if nation.permissions.can_kick(kickee):
-                        alliance.kick(kickee)
-                        news.kicked(kickee, alliance)
-                    else:
-                        errs += "%s, "
-                    result = "Selected members have been purged from our ranks!"
-                if errs != '':
-                    result +=  tmp + errs[:-2]
-
-        if 'masscomm' in request.POST:
-            form = masscommform(request.POST)
-            if form.is_valid():
-                if request.POST['masscomm'] == 'everyone' and nation.permissions.can_masscomm():
-                    members = alliance.members.all()
-                    for member in members:
-                        member.comms.create(sender=nation, masscomm=True, message=form.cleaned_data['message'])
-                    nation.sent_comms.create(masscomm=True, message=form.cleaned_data['message'])
-                    result = "Mass comm sent!"
-                elif request.POST['masscomm'] == 'leadership' and nation.permissions.can_officercomm():
-                    members = alliance.members.all()
-                    for member in members:
-                        member.comms.create(sender=nation, leadership=True, message=form.cleaned_data['message'])
-                    nation.sent_comms.create(leadership=True, message=form.cleaned_data['message'])
-                    result = "Leadership comm sent!"
-                nation.actionlogging('mass commed')
 
     context.update({
         'result': result,
@@ -225,24 +108,172 @@ def alliancepage(request, alliancepk, msg=False):
 
 @login_required
 @nation_required
-def alliancerankings(request, page):
+def alliancerankings(request):
     #this big chunk retrieves alliances ordered by highest membercount
-    context = {}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     alliances = Alliance.objects.annotate(membercount=Count('members')).order_by('-membercount')
-    paginator = Paginator(alliances, 10)
-    page = int(page)
-    try:
-        alliancelist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        alliancelist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        alliancelist = paginator.page(paginator.num_pages)
-
-    context.update({
+    paginator, alliancelist = utils.paginate_me(alliances, 10, page)
+    context = {
         'pages': utils.pagination(paginator, alliancelist),
         'alliances': alliancelist,
-        })    
+        }
     return render(request, 'alliance/rankings.html', context)
 
+@login_required
+@nation_required
+def alliancedeclarations(request):
+    context = {'declarationform': declarationform()}
+    nation = request.user.nation
+    if request.method == 'POST':
+        if not nation.has_alliance():
+            context.update({'result': "You need to be in an alliance to post here!"})
+        else:
+            context.update({'result': declare(nation, request.POST)})
+            
+    page = (request.GET['page'] if 'page' in request.GET else 1)
+    declarations = Alliancedeclaration.objects.select_related('nation', 'nation__settings', 'alliance').all().order_by('-pk')
+    paginator, declist = utils.paginate_me(declarations, 10, page)
+
+    context.update({
+        'pages': utils.pagination(paginator, declist),
+        'declarations': declist, 
+    })
+    return render(request, 'alliance/declarations.html', context)
+
+
+
+@alliance_required
+def chat(request):
+    context = {}
+    nation = request.user.nation
+    alliance = nation.alliance
+    result = False
+    if request.method == "POST":
+        pass
+    if result:
+        context.update({'result': result})
+    page = (request.GET['page'] if 'page' in request.GET else 1)
+    chats = Alliancechat.objects.select_related('nation').filter(alliance=alliance).order_by('-pk')
+    paginator, chatslist = utils.paginate_me(chats, 10, page)
+    context.update({
+        'chatlist': chatslist, 
+        'decform': declarationform(),
+        'alliance': alliance,
+        })
+    return render(request, 'alliance/chat.html', context)
+
+
+
+@login_required
+@nation_required
+def newalliance(request):
+    if request.user.nation.has_alliance():
+        return redirect('alliance:main')
+    context = {}
+    if request.POST:
+        if 'create' in request.POST:
+            with transaction.atomic():
+                nation = Nation.objects.get(user=request.user)
+                form = newallianceform(request.POST)
+                if nation.budget < 150:
+                    context.update({'result': "You cannot afford this!"})
+                else:
+                    if form.is_valid():
+                        data = form.cleaned_data
+                        if Alliance.objects.filter(name__iexact=form.cleaned_data['name']).exists():
+                            result = "There is already an alliance with that name!"
+                            return render(request, 'alliance/new.html', {'allianceform': newallianceform(), 'result': result})
+                        
+                        alliance = Alliance.objects.create(
+                            name=form.cleaned_data['name'],
+                            description=form.cleaned_data['description'],
+                            founder=nation.name)
+                        #founder permission set
+                        #base officer
+                        nation.budget -= 150
+                        nation.save(update_fields=['budget'])
+                        return redirect('alliance:main')
+    form = newallianceform()
+    return render(request, 'alliance/new.html', {'allianceform': form})
+
+    return render(request, 'alliance/chat.html', context)
+
+
+
+@login_required
+@nation_required
+@alliance_required
+def invites(request):
+    context = {}
+    result = False
+    nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
+        'alliance__outstanding_invites', 'alliance__outstanding_invites__nation', 'alliance__outstanding_invites__inviter').get(user=request.user)
+    alliance = nation.alliance
+    permissions = nation.permissions
+    if not permissions.panel_access():
+        return redirect('alliance:main')
+    if not permissions.can_invites():
+        return render(request, 'alliance/notallowed.html')
+
+    if request.method == 'POST':
+        if 'revoke' in request.POST:
+            if request.POST['revoke'] == 'all':
+                alliance.outstanding_invites.all().delete()
+                result = "All outstanding invites have been revoked!"
+            elif request.POST['revoke'] == 'some':
+                alliance.outstanding_invites.all().filter(pk__in=request.POST.getlist('ids')).delete()
+                result = "Selected invites have been revoked!"
+            else:
+                invite = alliance.outstanding_invites.all().filter(pk=request.POST['revoke']).get()
+                result = "Invite to %s has been revoked!"
+                invite.delete()
+        if result:
+            context.update({'result': result})
+    invites = Invite.objects.select_related('nation').filter(alliance=alliance)
+    context.update({'invites': invites})
+    return render(request, 'alliance/invites.html', context)
+
+@login_required
+@nation_required
+@alliance_required
+def applications(request):
+    context = {}
+    result = False
+    nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
+        'alliance__applications', 'alliance__applications__nation').get(user=request.user)
+    alliance = nation.alliance
+    permissions = nation.permissions
+    if not permissions.panel_access():
+        return redirect('alliance:main')
+    if not permissions.can_applicants():
+        return render(request, 'alliance/notallowed.html')
+
+    if request.method == 'POST':
+        pass
+    if result:
+        context.update({'result': result})
+    applications = Application.objects.select_related('nation').filter(alliance=alliance)
+    context.update({
+        'applications': applications,
+        'alliance': alliance,
+    })
+    return render(request, 'alliance/applications.html', context)
+
+
+
+
+def initiative_display(initiatives):
+    inits = [] #initiative display, less html
+    for init in v.initiativedisplay:
+        app = {
+            'status': initiatives.__dict__[init], 
+            'txt': v.initiativedisplay[init]['display'],
+            'tooltip': v.initiativedisplay[init]['tooltip'],
+            'initiative': init,
+            }
+        if initiatives.__dict__['%s_timer' % init] > timezone.now():
+            app.update({'timer': initiatives.__dict__['%s_timer' % init] - timezone.now()})
+        else:
+            app.update({'timer': False})
+        inits.append(app)
+    return inits

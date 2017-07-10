@@ -1,4 +1,4 @@
-
+from nation.models import 
 
 def leave(nation):
     if nation.alliance.members.all().count() == 1:
@@ -65,12 +65,32 @@ def invite(nation, alliance, action):
         return "You do not have an invitation from this alliance!"
     if action = "accept":
         return accept_invite(nation, alliance)
-    return reject_invite(nation, alliance)
+    return reject_invite(nation, alliance, invite)
 
 
 def accept_invite(nation, alliance):
-    if alliance.invites.filter(nation=nation).exists()
+    alliance.add_member(nation)
+    #automatically deletes the invite
+    if alliance.event_on_invite:
+        news.invite_event(nation, alliance.notification_squad('invite'), 'accepted')
     
 
-def reject_invite():
-    pass
+def reject_invite(nation, alliance, invite):
+    invite.delete()
+    if alliance.event_on_invite:
+        news.invite_event(nation, alliance.notification_squad('invite'), 'rejected')
+
+
+
+def post_chat(nation, POST):
+    #don't need to check for alliance because that's taken care of in the view
+    form = declarationform(request.POST)
+        if form.is_valid():
+            alliance.chat.create(nation=nation, content=form.cleaned_data['message'])
+            result = "Message posted!"
+        else:
+            result = "Must be between 5 and 400 characters"
+    return result
+
+
+
