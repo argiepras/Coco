@@ -1,13 +1,14 @@
-from nation.models import 
+from .forms import declarationform
+import nation.variables as v
 
 def leave(nation):
     if nation.alliance.members.all().count() == 1:
         nation.alliance.delete()
         return "Alliance has been disbanded"
     nation.alliance.kick(nation)
-    return result = "You say your goodbyes before being tossed by security."
+    return "You say your goodbyes before being tossed by security."
 
-
+"""
 def withdraw():
     form = withdrawform(nation, request.POST)
             if form.is_valid():
@@ -56,14 +57,14 @@ def deposit():
                     result = "Deposited!"
             else:
                 result = "Can't deposit that much!"
-
+"""
 
 def invite(nation, alliance, action):
     try:
         invite = alliance.invites.filter(nation=nation)
     except:
         return "You do not have an invitation from this alliance!"
-    if action = "accept":
+    if action == "accept":
         return accept_invite(nation, alliance)
     return reject_invite(nation, alliance, invite)
 
@@ -84,12 +85,18 @@ def reject_invite(nation, alliance, invite):
 
 def post_chat(nation, POST):
     #don't need to check for alliance because that's taken care of in the view
-    form = declarationform(request.POST)
-        if form.is_valid():
-            alliance.chat.create(nation=nation, content=form.cleaned_data['message'])
-            result = "Message posted!"
+    form = declarationform(POST)
+    if form.is_valid():
+        message = form.cleaned_data['message']
+        if nation.alliance.chat.filter(nation=nation, content__iexact=message, timestamp__gte=v.onlineleaders()).exists():
+            #onlineleaders is a 10 minute time delta
+            #this is to avoid spamming
+            result = "Please don't spam"
         else:
-            result = "Must be between 5 and 400 characters"
+            nation.alliance.chat.create(nation=nation, content=form.cleaned_data['message'])
+            result = "Message posted!"
+    else:
+        result = "Must be between 5 and 400 characters"
     return result
 
 

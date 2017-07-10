@@ -13,6 +13,7 @@ import nation.news as news
 from nation.decorators import alliance_required, nation_required
 import nation.utilities as utils
 import nation.turnchange as turnchange
+from . import memberactions as ma
 
 @login_required
 @nation_required
@@ -160,14 +161,13 @@ def chat(request):
     alliance = nation.alliance
     result = False
     if request.method == "POST":
-        pass
-    if result:
-        context.update({'result': result})
+        context.update({'result': ma.post_chat(nation, request.POST)})
     page = (request.GET['page'] if 'page' in request.GET else 1)
     chats = Alliancechat.objects.select_related('nation').filter(alliance=alliance).order_by('-pk')
     paginator, chatslist = utils.paginate_me(chats, 10, page)
     context.update({
         'chatlist': chatslist, 
+        'pages': utils.pagination(paginator, chatslist),
         'decform': declarationform(),
         'alliance': alliance,
         })

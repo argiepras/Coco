@@ -1,8 +1,7 @@
 {% extends 'nation/base.html' %}
 {% block content %}
-{% load humanize %}
 <div class="container">
-<h2 style="margin: 50px">{{ alliance.name }} Chat</h2>
+<h2 style="margin: 50px">{{ alliance.name }} chatter</h2>
 
 {% if result %}
     <div class="result">
@@ -15,19 +14,9 @@
 
 <div> 
 <ul class="pagination">
-{% if chatlist.has_previous %}
-  <li><a href="{% url 'alliance:chat' chatlist.previous_page_number %}">{{ chatlist.previous_page_number }}</a></li>
-  <li><a href="{% url 'alliance:chat' chatlist.number %}">{{ chatlist.number }}</a></li>
-    {% if chatlist.has_next %}
-  <li><a href="{% url 'alliance:chat' chatlist.next_page_number %}">{{ chatlist.next_page_number }}</a></li>
-    {% endif %}
-{% elif not chatlist.has_previous and not chatlist.has_next %}
-    <li><a href="{% url 'alliance:chat' chatlist.number %}">{{ chatlist.number }}</a></li>
-{% else %}
-    <li><a href="{% url 'alliance:chat' chatlist.number %}">{{ chatlist.number }}</a></li>
-  <li><a href="{% url 'alliance:chat' chatlist.next_page_number %}">{{ chatlist.next_page_number }}</a></li>
-  <li><a href="{% url 'alliance:chat' chatlist.next_page_number|add:'1' %}">{{ chatlist.next_page_number|add:'1' }}</a></li>
-{% endif %}
+{% for page in pages %}
+    <li><a href="?page={{ page.page }}">{{ page.page }}</a></li>
+{% endfor %}
 </ul> 
 </div>
 
@@ -36,7 +25,7 @@
     {% for chat in chatlist %}
         <div class="declaration">
             <div class="row">
-                <div class="col-sm-10">
+                <div class="col-sm-6">
                     <div style="text-align: left; padding-left: 10px">
                     <a href="{{ chat.nation.get_absolute_url }}">
                     <img src="{{ chat.nation.settings.showflag }}" height="20">
@@ -44,8 +33,10 @@
                         declared the following
                     </div>
                 </div>
-                <div class="col-sm-2">
-                    {{ chat.timestamp|naturaltime }}
+                <div class="col-sm-6">
+                    <div style="text-align: right; padding-right: 10px">
+                        {{ chat.timestamp|date:"o/m/d G:i" }}
+                    </div>
                 </div>
             </div>
             <div class="row">
