@@ -1,6 +1,6 @@
-from models import *
+from nation.models import *
 from django import forms
-from . import variables as v
+import nation.variables as v
 
 class anthemform(forms.Form):
     anthem = forms.CharField(max_length=15, widget=forms.TextInput(attrs={

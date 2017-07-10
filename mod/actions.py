@@ -1,16 +1,10 @@
-from django.shortcuts import render, redirect
 from django.db.models import Count, Q, F
-from django.contrib.auth.decorators import login_required
 from django.utils import timezone
-from django.core.paginator import *
-from django.http import HttpResponseRedirect
 from django.contrib.auth.models import User
 
 from nation.models import *
-from nation.allianceforms import *
 from nation.decorators import mod_required, headmod_required
 from .forms import *
-import nation.utilities as utils
 import nation.variables as v
 
 

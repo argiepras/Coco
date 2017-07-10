@@ -7,11 +7,10 @@ from django.views.generic.list import ListView
 from django.db import transaction
 from django.contrib.auth.models import User
 
-from .models import *
-from .allianceforms import *
+from nation.models import *
+from .forms import *
 import nation.news as news
-from .decorators import alliance_required, nation_required
-from .forms import declarationform
+from nation.decorators import alliance_required, nation_required
 import nation.utilities as utils
 import nation.turnchange as turnchange
 
@@ -106,6 +105,18 @@ def alliancepage(request, alliancepk, msg=False):
     return render(request, 'alliance/alliance.html', context)
 
 
+def stats(request):
+    pass
+
+def bankinterface(request):
+    pass
+
+def control_panel(request):
+    pass
+
+def change(request):
+    pass
+
 @login_required
 @nation_required
 def alliancerankings(request):
@@ -129,7 +140,7 @@ def alliancedeclarations(request):
             context.update({'result': "You need to be in an alliance to post here!"})
         else:
             context.update({'result': declare(nation, request.POST)})
-            
+
     page = (request.GET['page'] if 'page' in request.GET else 1)
     declarations = Alliancedeclaration.objects.select_related('nation', 'nation__settings', 'alliance').all().order_by('-pk')
     paginator, declist = utils.paginate_me(declarations, 10, page)

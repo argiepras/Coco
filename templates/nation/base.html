@@ -116,15 +116,15 @@
           <ul class="dropdown-menu">
           {% if nation.alliance %}
          <li><a href="{% url 'alliance:main' %}">{{ nation.alliance.name }}</a></li>
-         <li><a href="{% url 'alliance:chat' 1 %}">Alliance Chat  <span class="badge">{{ allydecs }}</span></a></button></li>
+         <li><a href="{% url 'alliance:chat' %}">Alliance Chat  <span class="badge">{{ allydecs }}</span></a></button></li>
        {% endif %}
               <li>
-                  <a href="{% url 'alliance:declarations' 1 %}">
+                  <a href="{% url 'alliance:declarations' %}">
                       Alliance Declarations 
                       <span class="badge">{{ alliancedeclarations }}</span>
                   </a>
               </li>
-          <li><a href="{% url 'alliance:rankings' 1 %}">Alliance Rankings</button></a></li>
+          <li><a href="{% url 'alliance:rankings' %}">Alliance Rankings</button></a></li>
           </ul>
         </li>
         

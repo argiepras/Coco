@@ -6,7 +6,7 @@ from django.core.paginator import *
 from django.http import HttpResponseRedirect
 
 from nation.models import *
-from nation.allianceforms import *
+#from nation.allianceforms import *
 from nation.decorators import mod_required, headmod_required
 from .forms import *
 import nation.utilities as utils
