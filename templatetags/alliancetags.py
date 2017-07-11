@@ -9,11 +9,12 @@ register = template.Library()
 def kick(permissions, member):
     return permissions.can_kick(member)
 
-
 register.filter('kick', kick)
 
 def iconsize(permissions):
-	return mark_safe(30-permissions.template.rank*2)
+    size = 30-permissions.template.rank*2
+    txt = "max-width: %(size)spx; max-height: %(size)spx;" % {'size': size}
+    return mark_safe(txt)
 
 register.filter('iconsize', iconsize)
 
@@ -45,3 +46,11 @@ def remaining_limit(nation, resource):
     return mark_safe(maxwithdraw)
     
 register.filter('remaining_limit', remaining_limit)
+
+
+def check_permission(permissions, permission):
+    #simple wrapper for the permissions method
+    #since templates don't allow passing arguments
+    return permissions.has_permission(permission)
+
+register.filter('check_permission', check_permission)
