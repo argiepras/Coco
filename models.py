@@ -953,79 +953,31 @@ class Permissions(models.Model):
     def __unicode__(self):
         return u"%s, rank %s" % (self.template.title, self.template.rank)
 
-    def is_officer(self):
-        return self.panel_access()
-
-    def logchange(self):
-        return self.template.founder or self.template.delete_log
-
-    def panel_access(self):
-        return self.template.founder or self.template.officer
-
-    def can_withdraw(self):
-        return self.template.founder or (self.template.officer and self.template.withdraw)
-
-    def kickpeople(self):
-        return self.template.founder or (self.template.officer and (self.template.kick or self.template.kick_officer))
-
+    
     def can_kick(self, member):
         if self.member.pk == member.pk:
             return False #can't kick yourself
-        elif self.template.founder:
+        elif self.template.rank == 0:
             return True #founders can kick everyone
-        elif self.template.officer and member.permissions.template.officer:
+        elif self.template.rank < 5 and member.permissions.template.rank < 5:
             if self.template.kick_officer:
-                if self.template.rank > member.permissions.template.rank:
+                if self.template.rank < member.permissions.template.rank:
                     return True
-                else:
-                    return False
-            else:
-                return False
         elif self.template.officer and self.template.kick:
             return True
         return False #not officer or can't kick
 
+    def has_permission(self, permission):
+        if not hasattr(Basetemplate, permission):
+            raise ValueError
+        if self.template.rank == 0:
+            return True
+        if self.template.rank == 5:
+            return False
+        return getattr(Basetemplate, permission)
 
-    def can_invite(self):
-        return self.template.founder or self.template.invite
 
-    def can_banking(self): #retarded name but whatever
-        return self.template.founder or self.template.banking
 
-    def can_invites(self):
-        return self.template.founder or (self.template.invite and self.template.officer)
-
-    def can_initiatives(self):
-        return self.template.founder or (self.template.initiatives and self.template.officer)
-
-    def can_manage(self):
-        return self.template.founder or  (self.template.officer and \
-            (self.template.promote or self.template.demote_officer or self.template.change_officer))
-
-    def can_manage_permissions(self):
-        return self.template.founder or (self.template.officer and \
-            (self.template.create_template or self.template.change_template or self.template.delete_template))
-
-    def can_promote(self):
-        return self.template.founder or (self.template.officer and self.template.promote)
-
-    def can_change(self): #change officer permissions
-        return self.template.founder or (self.template.officer and self.template.change_officer)
-
-    def can_demote(self):
-        return self.template.founder or (self.template.officer and self.template.demote_officer)
-
-    def can_applicants(self):
-        return self.template.founder or (self.template.officer and self.template.applicants)
-
-    def is_taxman(self):
-        return self.template.founder or (self.template.officer and self.template.taxman)
-
-    def can_masscomm(self):
-        return self.template.founder or (self.template.officer and self.template.mass_comm)
-
-    def can_officercomm(self):
-        return self.template.founder or (self.template.officer and self.template.officer_comm)
 
 
 ##############

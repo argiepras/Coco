@@ -29,8 +29,8 @@
                     <div style="text-align: left; padding-left: 10px">
                     <a href="{{ chat.nation.get_absolute_url }}">
                     <img src="{{ chat.nation.settings.showflag }}" height="20">
-                    <b>{{ chat.nation.name }}</b></a> 
-                        declared the following
+                    <b>{{ chat.nation.name }}</b></a>, 
+                    {{ chat.nation.permissions.template.title }}
                     </div>
                 </div>
                 <div class="col-sm-6">

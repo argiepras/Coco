@@ -25,7 +25,7 @@
     {% for entry in logentries %}
     <tr>
         <td>
-            <a href="{{ entry.nation.get_absolute_url }}"">
+            <a href="{{ entry.nation.get_absolute_url }}">
                 <b>{{ entry.nation.name }}</b>
             </a>
             {% if entry.deposit %}

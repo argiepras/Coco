@@ -21,6 +21,7 @@ from . import memberactions as ma
 def main(request):
     nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__initiatives', 'alliance__bank').prefetch_related( \
         'alliance__members', 'alliance__permissions').get(user=request.user)
+    
     alliance = nation.alliance
     context = {}
     result = ''
