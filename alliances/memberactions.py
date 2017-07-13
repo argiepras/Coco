@@ -60,6 +60,9 @@ def deposit():
 """
 
 def invite(nation, alliance, action):
+    nation = kwargs['nation']
+    alliance = kwargs['alliance']
+    action = kwargs['action']
     try:
         invite = alliance.invites.filter(nation=nation)
     except:

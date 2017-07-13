@@ -1,0 +1,27 @@
+{% if permissions.template.rank < 5 %}
+<div class="container-fluid">
+    <ul class="nav nav-tabs nav-justified">
+        <li class="{{ overview }}"><a href="{% url 'alliance:main' %}">Overview</a></li>
+        {% if alliance.outstanding_invites.count > 0 %}
+            <li class="{{ overview }}">
+                <a href="{% url 'alliance:invites' %}">Invites 
+                    <span class="badge">{{ alliance.outstanding_invites.count }}</span>
+                </a>
+            </li>
+        {% else %}
+        <li class="{{ invites }}"><a href="{% url 'alliance:invites' %}">Invites</a></li>
+        {% endif %}
+        {% if alliance.applications.count > 0 %}
+            <li>
+                <a href="{% url 'alliance:applications' %}">Applications 
+                    <span class="badge">{{ alliance.applications.count }}</span>
+                </a>
+            </li>
+        {% else %}
+            <li class="{{ applicants }}"><a href="{% url 'alliance:applications' %}">Applications</a></li>
+        {% endif %}
+            <li class="{{ panel }}"><a href="{% url 'alliance:control_panel' %}">Control panel</a></li>
+    </ul>
+    <div class="border"></div>
+</div> <!-- end fluid -->
+{% endif %}

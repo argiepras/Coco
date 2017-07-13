@@ -14,6 +14,7 @@ from nation.decorators import alliance_required, nation_required
 import nation.utilities as utils
 import nation.turnchange as turnchange
 from . import memberactions as ma
+from . import officeractions as oa
 
 @login_required
 @nation_required
@@ -21,14 +22,20 @@ from . import memberactions as ma
 def main(request):
     nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__initiatives', 'alliance__bank').prefetch_related( \
         'alliance__members', 'alliance__permissions').get(user=request.user)
-    
     alliance = nation.alliance
     context = {}
-    result = ''
+
+    if request.method == "POST":
+        action = request.POST['action']
+        if hasattr(ma, action):
+            context.update({'result': getattr()})
+        elif hasattr(oa, action):
+            context.update({'result': oa.permchecks(nation, POST)})
 
     context.update({
-        'result': result,
+        'overview': 'activetab',
         'permissions': nation.permissions,
+        'inviteform': inviteform(),
         'alliance': alliance,
         'members': alliance.members.all(),
         'masscommform': masscommform(),
@@ -113,8 +120,62 @@ def stats(request):
 def bankinterface(request):
     pass
 
+@login_required
+@nation_required
+@alliance_required
 def control_panel(request):
-    pass
+    context = {'panel': 'activetab'}
+    nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
+    permissions = nation.permissions
+    alliance = nation.alliance
+    result = ''
+    if not permissions.panel_access():
+        return redirect('alliance:main')
+    #setting initial data for banking form
+    bankinginit = {}
+    if alliance.bank.limit:
+        for field in alliance.bank._meta.fields: #MEMES
+            if len(field.name.split('_')) == 1:
+                continue
+            if field.name.split('_')[1] == 'limit':
+                bankinginit.update({field.name: alliance.bank.__dict__[field.name]})
+        if alliance.bank.per_nation:
+            bankinginit.update({'per_nation': 'per_nation'})
+        else:
+            bankinginit.update({'per_nation': 'total'})
+    #initial data for the tax forum
+    taxinit =  {}
+    for field in alliance.initiatives._meta.fields:
+        try:
+            if field.name.split('_')[1] == 'tax':
+                bracket = field.name
+            else:
+                continue
+        except: #continue if not a tax rate
+            continue
+        taxinit.update({bracket: alliance.initiatives.__dict__[bracket]})
+    membertemplate = alliance.templates.get(rank=5)
+    context.update({
+        'result': result,
+        'permissions': permissions,
+        'alliance': alliance,
+        'inviteform': inviteform(),
+        'heirform': heirform(nation, initial={'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)}),
+        'descriptionform': descriptionform(initial={'content': alliance.description}),
+        'initiatives': initiative_display(alliance.initiatives),
+        'bankingform': bankingform(),
+        'promoteform': promoteform(nation),
+        'changeform': changeform(nation),
+        'demoteform': demoteform(nation),
+        'membertitleform': membertitleform(initial={'title': membertemplate.title}),
+        'applicantsetform': applicantsetform(),
+        'taxrateform': taxrateform(),
+        'templatesform': templatesform(nation),
+        'anthemform': anthemform(initial={'anthem': alliance.anthem}),
+        'flagform': flagform(initial={'flag': alliance.flag}),
+        'applicantcommform': applicantcommform(),
+        })
+    return render(request, 'alliance/control_panel.html', context)
 
 def change(request):
     pass
@@ -216,16 +277,14 @@ def newalliance(request):
 @nation_required
 @alliance_required
 def invites(request):
-    context = {}
+    context = {'invites': 'activetab'}
     result = False
     nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
         'alliance__outstanding_invites', 'alliance__outstanding_invites__nation', 'alliance__outstanding_invites__inviter').get(user=request.user)
     alliance = nation.alliance
     permissions = nation.permissions
-    if not permissions.panel_access():
+    if not permissions.has_permission('invite'):
         return redirect('alliance:main')
-    if not permissions.can_invites():
-        return render(request, 'alliance/notallowed.html')
 
     if request.method == 'POST':
         if 'revoke' in request.POST:
@@ -242,32 +301,25 @@ def invites(request):
         if result:
             context.update({'result': result})
     invites = Invite.objects.select_related('nation').filter(alliance=alliance)
-    context.update({'invites': invites})
+    context.update({'outstanding_invites': invites})
     return render(request, 'alliance/invites.html', context)
 
 @login_required
 @nation_required
 @alliance_required
 def applications(request):
-    context = {}
-    result = False
+    context = {'applicants': 'activetab'}
     nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
         'alliance__applications', 'alliance__applications__nation').get(user=request.user)
-    alliance = nation.alliance
     permissions = nation.permissions
-    if not permissions.panel_access():
+    if not permissions.has_permission('applicants'):
         return redirect('alliance:main')
-    if not permissions.can_applicants():
-        return render(request, 'alliance/notallowed.html')
-
     if request.method == 'POST':
-        pass
-    if result:
-        context.update({'result': result})
-    applications = Application.objects.select_related('nation').filter(alliance=alliance)
+        context.update({'result': oa.applicants(nation, request.POST)})
+
     context.update({
-        'applications': applications,
-        'alliance': alliance,
+        'applications': Application.objects.select_related('nation').filter(alliance=alliance),
+        'alliance': nation.alliance,
     })
     return render(request, 'alliance/applications.html', context)
 

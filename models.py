@@ -976,6 +976,9 @@ class Permissions(models.Model):
             return False
         return getattr(Basetemplate, permission)
 
+    def panel_access(self):
+        return self.template.rank < 5
+
 
 
 

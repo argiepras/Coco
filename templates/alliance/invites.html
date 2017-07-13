@@ -2,19 +2,14 @@
 {% block content %}
 {% load basetags %}
 
+{% include 'alliance/header.html' %}
+
 <div class="container">
 <div class="row">
     <div class="col-xs-4 col-xs-offset-4">
         <h2>Sent Invitations</h2>
         {% load static %}
         <img src="{% static 'img/invites.jpg' %}" height="80" style="margin: 20px">
-    </div>
-    <div class="col-xs-1 col-xs-offset-2">
-        <a href="{% url 'alliance:main' %}">
-            <button class="btn" style="margin-top: 20px; margin-right: 20px">
-                Back to control panel
-            </button>
-        </a>
     </div>
 </div>
 
@@ -25,7 +20,7 @@
 {% endif %}
 
 
-{% if invites %}
+{% if outstanding_invites %}
 <form method="POST">{% csrf_token %}
     <table class="table table-striped" style="margin-top: 5em; margin-bottom: 2em">
         <thead>
@@ -39,7 +34,7 @@
             </tr>
         </thead>
         <tbody>
-    {% for invite in invites %}
+    {% for invite in outstanding_invites %}
             <tr>
                 <td><a href="{{ invite.nation.get_absolute_url }}">
                     <b>{{ invite.nation.name }}</b>

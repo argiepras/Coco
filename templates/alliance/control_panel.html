@@ -1,11 +1,17 @@
 {% extends 'nation/base.html' %}
 {% block content %}
 {% load timetags %}
+{% load alliancetags %}
+
+{% include 'alliance/header.html' %}
+
 <style>
 	.bank {
 		text-align: left;
 	}
 </style>
+
+
 <div class="container">
 		
 <div class="row">
@@ -24,38 +30,26 @@
 	</div>
 {% endif %}
 
-{% if permissions.can_invite %}
-<form method="POST">{% csrf_token %}
-	<p style="margin: 50px"><h4>invite player</h4></p>
-	<div class="row">
-		<div class="col-xs-4 col-xs-offset-4">
-			{{ inviteform.name }}
-		</div>
-	</div>
-	<button type="submit" class="btn btn-default" style="margin: 20px" name="invite">Invite</button>
-</form>
-{% endif %}
-
 
 <div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#settings">
 	<h3><b>General Settings</b></h3>
 </div>
 <div class="collapse" id="settings">
-{% if permissions.template.rank == 0 %} 
-	<p>Set new heir</p>
-	<form method="POST">{% csrf_token %}
-	<div class="row">
-		<div class="col-xs-4 col-xs-offset-4">
-			{{ heirform.heir }}
+	{% if permissions.template.rank == 0 %} 
+		<p>Set new heir</p>
+		<form method="POST">{% csrf_token %}
+		<div class="row">
+			<div class="col-xs-4 col-xs-offset-4">
+				{{ heirform.heir }}
+			</div>
+			<div class="col-xs-1">
+				<button type="submit" class="btn btn-default" name="setheir">
+					Set Heir
+				</button>
+			</div>
 		</div>
-		<div class="col-xs-1">
-			<button type="submit" class="btn btn-default" name="setheir">
-				Set Heir
-			</button>
-		</div>
-	</div>
-	</form>
-{% endif %}
+		</form>
+	{% endif %}
 	<p style="margin-top: 2em; margin-bottom: 1em;">Set Description</p>
 	<form method="POST">{% csrf_token %}
 	<div class="row">
@@ -149,7 +143,7 @@
 	</form>
 </div>
 
-{% if permissions.can_initiatives %}
+{% if permissions|check_permission:'initiatives' %}
 <div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#initiatives">
 	<h3><b>Alliance Initiatives</b></h3>
 </div>
@@ -222,7 +216,7 @@
 	</div>
 	</form>
 
-{% if permissions.can_promote %}
+{% if permissions|check_permission:'promote' %}
 	<div class="row spacer">
 		<div class="col-xs-6 col-xs-offset-3">
 			<p>Promote member to officer</p>

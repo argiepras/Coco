@@ -32,12 +32,12 @@ class newallianceform(forms.Form):
 
 class inviteform(forms.Form):
     name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={
-        'placeholder': 'Nation name, ID or player name', 'class': 'form-control', 'style': 'color: black;'}))
+        'placeholder': 'Invite a player by name, ID or username', 'class': 'form-control', 'style': 'color: black;'}))
 
 class heirform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(heirform, self).__init__(*args, **kwargs)
-        query = nation.alliance.members.all().filter(permissions__template__officer=True).exclude(pk=nation.pk)
+        query = nation.alliance.members.all().filter(permissions__template__rank__lt=5).exclude(pk=nation.pk)
         self.fields['heir'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black;'}))
 
@@ -104,7 +104,7 @@ class withdrawform(forms.Form):
         for choice in v.depositchoices:
             stockpile = nation.__dict__[choice]
             bankstock = nation.alliance.bank.__dict__[choice]
-            if nation.alliance.bank.limit and not nation.permissions.template.founder:
+            if nation.alliance.bank.limit and not nation.permissions.template.rank == 0:
                 limit = nation.alliance.bank.__dict__['%s_limit' % choice] - nation.memberstats.__dict__[choice]
                 maxwithdraw = (limit if limit < bankstock else bankstock)
             else:
@@ -162,7 +162,7 @@ class bankingform(forms.Form):
 class permissionselectform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(permissionselectform, self).__init__(*args, **kwargs)
-        if nation.permissions.template.founder:
+        if nation.permissions.template.rank == 0:
             perms = nation.alliance.templates.all().exclude(rank=5)
         else:
             perms = nation.alliance.templates.all().filter(rank__lte=nation.permissions.rank).exclude(member_template=True)
@@ -202,7 +202,7 @@ class changeform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(changeform, self).__init__(*args, **kwargs)
         templatequery = nation.alliance.templates.all().exclude(rank=5).exclude(rank=0)
-        if nation.permissions.template.founder:
+        if nation.permissions.template.rank == 0:
             query = nation.alliance.members.all().exclude(pk=nation.pk).exclude(permissions__template__rank=5).exclude(permissions__template__rank=0)
         else:
             query = nation.alliance.members.all().exclude(
@@ -221,7 +221,7 @@ class promoteform(forms.Form):
         super(promoteform, self).__init__(*args, **kwargs)
         query = nation.alliance.members.all().filter(permissions__template__rank=5).exclude(pk=nation.pk)
         templatequery = nation.alliance.templates.all().exclude(rank=5).exclude(rank=0)
-        if not nation.permissions.template.founder:
+        if not nation.permissions.template.rank == 0:
             templatequery = templatequery.filter(rank__lte=nation.permissions.template.rank)
         self.fields['member'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black',
@@ -234,7 +234,7 @@ class demoteform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(demoteform, self).__init__(*args, **kwargs)
         query = nation.alliance.members.all().exclude(permissions__template__rank=5).exclude(pk=nation.pk)
-        if not nation.permissions.template.founder:
+        if not nation.permissions.template.rank == 0:
             query = query.filter(permissions__template__rank__gte=nation.permissions.template.rank)
         self.fields['officer'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black' 
@@ -278,7 +278,7 @@ class templatesform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(templatesform, self).__init__(*args, **kwargs)
         templates = nation.alliance.templates.all().exclude(rank=5).exclude(rank=0)
-        if not nation.permissions.template.founder:
+        if not nation.permissions.template.rank == 0:
             templates = templates.filter(rank__gte=nation.permissions.template.rank)
         self.fields['template'] = forms.ModelChoiceField(queryset=templates, widget=forms.Select(
             attrs={'class': 'form-control', 'style': 'color: black'}))

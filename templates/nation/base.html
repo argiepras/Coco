@@ -41,9 +41,62 @@
 
 .navbar .navbar-collapse {
   text-align: center;
+
 }
 
+.nav-tabs.nav-justified > li:first-child > a {
+  border-top-left-radius: 15px;
+}
 
+.nav-tabs.nav-justified > li.activetab:first-child {
+  border-top-left-radius: 15px;
+  box-shadow: 0 0 3em rgba(0, 0, 0, 1.0) inset;
+}
+
+.nav-tabs.nav-justified > li.activetab {
+  box-shadow: 0 0 3em rgba(0, 0, 0, 1.0) inset;
+}
+
+.nav-tabs.nav-justified > li.activetab:last-child {
+  border-top-right-radius: 15px;
+  box-shadow: 0 0 3em rgba(0, 0, 0, 1.0) inset;
+}
+
+.nav-tabs.nav-justified > li:last-child > a {
+  border-right-width: 0px;
+  border-top-right-radius: 15px;
+}
+
+.nav-tabs.nav-justified > li > a{
+  border-right-width: 1px;
+  border-color: rgba(50, 50, 50, 0.5);
+  border-radius: 0px;
+  border-top-left-radius: 
+  margin: 0px;
+  border-collapse: collapse;
+  background-color: rgba(60, 60, 60, 0.5);
+}
+
+.border {
+  border-top: 1px solid rgba(150, 150, 150, 0.5);
+  margin-bottom: 3em;
+}
+
+.badge {
+  background-color: rgba(100, 100, 100, 0.9);
+}
+
+.note {
+  color: rgba(151, 151, 151, 0.8);
+}
+.small-nav {
+  padding: 0px;
+  color: blue;
+}
+
+.small-nava {
+  color: blue;
+}
 </style>
 
 {% if logged_in %}
