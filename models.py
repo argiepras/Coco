@@ -58,9 +58,8 @@ class Alliance(models.Model):
         nation.applications.all().delete()
         Memberstats.objects.create(nation=nation, alliance=self)
         membertemplate = self.templates.get(rank=5)
-        p = Permissions(member=nation, alliance=self, template=membertemplate)
+        self.permissions.create(member=nation, template=membertemplate)
         Nation.objects.filter(pk=nation.pk).update(alliance=self)
-        p.save()
 
     def taxrate(self, member):
         if member.gdp/2 > self.averagegdp:
@@ -779,6 +778,7 @@ class Initiatives(models.Model):
         field = '%s_timer' % initiative
         self.__dict__[field] = timezone.now() + timezone.timedelta(hours=v.initiative_timer)
         return field
+
 
 class Memberstats(models.Model):
     nation = models.OneToOneField(Nation, on_delete=models.CASCADE)

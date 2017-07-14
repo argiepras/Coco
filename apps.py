@@ -9,4 +9,4 @@ class NationConfig(AppConfig):
     def ready(self):
         #this registers the signal handling functions
         #so they actually recieve the signals sent by django
-        import nation.signals
+        from nation.signals import *

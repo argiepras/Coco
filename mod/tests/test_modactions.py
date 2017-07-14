@@ -134,24 +134,10 @@ class deletiontest(TestCase):
         cls.g = l[6] #at war with f and alliance member
 
         #alliance boilerplate crap, to be delegated to alliance creation functions later
-        Alliance.objects.create()
         alliance = Alliance.objects.create(
             name='test alliance',
-            description='test alliance')
-        Initiatives.objects.create(alliance=alliance)
-        Bank.objects.create(alliance=alliance)
-        Bankstats.objects.create(alliance=alliance, turn=10)
-        #founder permission set
-        founder = Permissiontemplate.objects.create(alliance=alliance, title='founder_title', 
-            founder=True, officer=True, rank=0)
-        founder.founded()
-        #base officer
-        alliance.templates.create(title='officer', officer=True,
-            kick=True, mass_comm=True, invite=True, applicants=True, rank=3, promote=True)
-        #member template
-        alliance.templates.create(rank=5, title='member_title')
-
-        alliance.add_member(cls.a, founder=True)
+            description='test alliance',
+            founder=cls.a)
         alliance.add_member(cls.b)
         alliance.add_member(cls.g)
 

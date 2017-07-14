@@ -7,6 +7,9 @@ def ip_generator(amount=1):
     #simply returns a list of n length with randomly generated IPs
     return ['%s.%s.%s.%s' % tuple([randint(0, 255) for x in range(4)]) for x in range(amount)]
 
+def namegen():
+    return ''.join(choice(string.ascii_letters) for x in range(8))
+
 
 def nation_generator(amount=1):
     nations = []
@@ -30,9 +33,6 @@ def nation_generator(amount=1):
 def alliance_generator(founder=nation_generator(), amount=1):
     return Alliance.objects.create(name=namegen(), founder=founder.name)
 
-
-def namegen():
-    return ''.join(choice(string.ascii_letters) for x in range(8))
 
 
 def set_nation(nation, newvals):

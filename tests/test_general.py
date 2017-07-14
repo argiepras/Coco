@@ -1,4 +1,4 @@
-from django.tests import SimpleTestCase
+from django.test import SimpleTestCase
 from nation.utilities import *
 
 class test_utils(SimpleTestCase):
