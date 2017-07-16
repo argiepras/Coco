@@ -17,7 +17,7 @@ class test_utils(SimpleTestCase):
 
         l += l
         result = string_list(l)
-        slf.assertEqual(result, 'a, b, c, a, b and c')
+        self.assertEqual(result, 'a, b, c, a, b and c')
 
         tmp = type('temp', (object,), {'name': ''})
         newlist = []
@@ -27,7 +27,7 @@ class test_utils(SimpleTestCase):
             newlist.append(inst)
 
         result = string_list(mewlist, 'name')
-        slf.assertEqual(result, 'a, b, c, a, b and c', msg="It should use field names")
+        self.assertEqual(result, 'a, b, c, a, b and c', msg="It should use field names")
 
     def test_econsystem(self):
         self.assertEqual(econsystem(0), 0)

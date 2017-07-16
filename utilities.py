@@ -395,14 +395,15 @@ def string_list(iterable, field=False):
     #ie from ['1', '2', '3', '4'] you'll get
     #'1, 2, 3 and 4'
     #or '1 and 2' from ['1', '2']
-    for entry in iterable:
-        index = iterable.index(entry)
+    result = ''
+    for entry, index in zip(iterable, range(len(iterable))):
         if index+1 == len(iterable):
             mod = ''
-        elif index+1 == len(iterable) - 1:
-            mod = 'and '
+        elif index == len(iterable) - 2:
+            mod = ' and '
         else:
             mod = ', '
         if field:
             entry = getattr(entry, field)
         result += '%s%s' % (entry, mod)
+    return result

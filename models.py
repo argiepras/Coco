@@ -936,7 +936,7 @@ class Permissiontemplate(Basetemplate):
     def save(self, *args, **kwargs):
         if self.alliance.templates.all().count() == 0:
             for field in Basetemplate._meta.fields:
-                setattr(getattr(self, field.name), field.name, True)
+                setattr(self, field.name, True)
             self.rank = 0
             self.title = 'Founder'
         super(Permissiontemplate, self).save(*args, **kwargs)

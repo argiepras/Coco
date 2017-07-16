@@ -16,7 +16,7 @@ class alliance_checks(TestCase):
     def test_foundered_creation(self):
         n = nation_generator()
         x = Alliance.objects.create(founder=n.name)
-        check_allianceattrs(x)
+        self.check_allianceattrs(x)
         self.assertEqual(alliance.members.count(), 1)
         self.assertEqual(alliance.memberstats.count(), 1)
         self.assertEqual(alliance.permissions.count(), 1)
