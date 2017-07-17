@@ -318,7 +318,7 @@ def applications(request):
         context.update({'result': oa.applicants(nation, request.POST)})
 
     context.update({
-        'applications': Application.objects.select_related('nation').filter(alliance=alliance),
+        'applications': nation.alliance.applications.select_related('nation').all(),
         'alliance': nation.alliance,
     })
     return render(request, 'alliance/applications.html', context)

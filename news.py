@@ -214,10 +214,33 @@ def kicked(victim, alliance):
     txt = "We recieved a memo from %s saying that our membership have been terminated!" % link
     victim.news.create(content=txt)
 
+
+####
+# invite related
+####
+
+
 def invited(invitee, alliance):
     link = '<a href="%s"><b>%s</b></a>' % (alliance.get_absolute_url(), alliance.name)
     txt = "We have a recieved an invitation to join %s! Go to their alliance page to accept/reject" % link
     invitee.news.create(content=txt)
+
+def players_invited(inviter, squad, invitees):
+    txt = '%s has invited %s to our alliance' % utils.string_list(invitees)
+    squad_update(squad, txt)
+
+
+def invitee_events(invitee, notification_squad, modifier): 
+    #when someone accepts/rejects an invite
+    txt = '%s has %s our invitation.' % (link_me(invitee), modifier)
+    squad_update(notification_squad, txt)
+
+def revoked_invites(nation, revokees, notification_squad):
+    #when an officer revokes invites
+    txt = "%s has revoked the invite" % nation.name + ('s' if len(revokees) > 1 else '') + ' to '
+    txt += utils.string_list(revokees)
+    squad_update(notification_squad, txt)
+
 
 def initiative_recalled(nation, initiative):
     txt = "The alliance bank has run out of funds and as a consequence the %s initiative has been recalled!" % initiative
@@ -232,10 +255,6 @@ def applicant_events(officer, notification_squad, modifier, applicants):
         txt = base + "%ss application." % linkified[0]
     else:
         txt = base + "applications from %s." % (utils.string_list(linkified))
-    squad_update(notification_squad, txt)
-
-def invite_events(invitee, notification_squad, modifier):
-    txt = '%s has %s our invitation.' % (link_me(invitee), modifier)
     squad_update(notification_squad, txt)
 
 #This saves about 1 line of code

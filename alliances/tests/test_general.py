@@ -7,20 +7,20 @@ class alliance_checks(TestCase):
     def test_creation(self):
         #tests that alliances are created properly
         #that the related models are automatically created
-        x = Alliance.objects.create()
-        self.check_allianceattrs(x)
+        alliance = Alliance.objects.create()
+        self.check_allianceattrs(alliance)
         self.assertEqual(alliance.members.count(), 0)
         self.assertEqual(alliance.memberstats.count(), 0)
         self.assertEqual(alliance.permissions.count(), 0)
 
     def test_foundered_creation(self):
         n = nation_generator()
-        x = Alliance.objects.create(founder=n.name)
+        alliance = Alliance.objects.create(founder=n.name)
         self.check_allianceattrs(x)
         self.assertEqual(alliance.members.count(), 1)
         self.assertEqual(alliance.memberstats.count(), 1)
         self.assertEqual(alliance.permissions.count(), 1)
-        self.check_allianceattrs(x)
+        self.check_allianceattrs(alliance)
 
     def check_allianceattrs(self, alliance):
         self.assertTrue(hasattr(alliance, 'bank'))

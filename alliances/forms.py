@@ -31,8 +31,8 @@ class newallianceform(forms.Form):
 
 
 class inviteform(forms.Form):
-    name = forms.CharField(max_length=30, widget=forms.TextInput(attrs={
-        'placeholder': 'Invite a player by name, ID or username', 'class': 'form-control', 'style': 'color: black;'}))
+    name = forms.CharField(max_length=200, widget=forms.TextInput(attrs={
+        'placeholder': 'Invite players by name, ID or username', 'class': 'form-control', 'style': 'color: black;'}))
 
 class heirform(forms.Form):
     def __init__(self, nation, *args, **kwargs):

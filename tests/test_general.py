@@ -26,7 +26,7 @@ class test_utils(SimpleTestCase):
             inst.name = x
             newlist.append(inst)
 
-        result = string_list(mewlist, 'name')
+        result = string_list(newlist, 'name')
         self.assertEqual(result, 'a, b, c, a, b and c', msg="It should use field names")
 
     def test_econsystem(self):

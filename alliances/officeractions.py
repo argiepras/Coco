@@ -1,4 +1,5 @@
 import nation.news as news
+from django.db.models import Q
 from nation.alliances.forms import declarationform
 
 
@@ -65,14 +66,52 @@ def resign(*args):
         result = "Resignation gets handed over and you assume the role of an ordinary member"
 
 
-def invite_players():
-    pass
+def invite_players(nation, POST):
+    form = inviteform(POST)
+    alliance = nation.alliance
+    failed = []
+    sent = []
+    if form.is_valid():
+        names = form.cleaned_data['name'].strip(' ').split(',')
+        for name in names:
+            invitee = get_active_player(name)
+            if invitee:
+                invitee.invites.create(inviter=nation, alliance=nation.alliance)
+                news.invited(invitee, alliance)
+                sent.append(invitee.name)
+            else:
+                failed.append("'%s'" % name)
+    else:
+        return "Slow down big boy! max 200 characters"
+    if alliance.event_on_invite:
+        squad = alliance.notification_squad('invite', exclusion=nation)
+
+
+
+
+def revoke_invites(nation, POST):
+    ids = POST.getlist('ids')
+    invites = nation.alliance.outstanding_invites.filter(nation__pk__in=ids)
+    if len(invites) == 0:
+        return "Nobodys invite has been revoked!"
+
+
+
+
+def generate_inviteevents(nation, invitees, modifier):
+    notifiers = nation.alliance.members.filter(
+        (Q(permissions__template__rank__lt=5)&Q(permissions__template__invite=True))|Q(permissions__template__rank=0)
+        #(rank  <5 and applicants == True) or rank == 0
+        #founder rank overrides other requirements
+        ).exclude(pk=nation.pk) #won't send notifications to the actioner
+    news.revoked_invites(nation, notifiers, modifier,  invitees)
+
 
 
 #permission checks are performed in the view
 def applicants(nation, POST):
     pks = POST.getlist('ids')
-    applications = alliance.applications.all().filter(pk__in=pks)
+    applications = nation.alliance.applications.all().filter(pk__in=pks)
     if len(applications) == 0:
         return "You didn't select any!"
     if 'accept' in POST:
@@ -80,11 +119,11 @@ def applicants(nation, POST):
     return reject_applicants(nation, applications)
 
 
-def accept_applicant(nation, applications):
+def accept_applicants(nation, applications):
     alliance = nation.alliance
     applicants = []
     for application in applications:
-        alliance.add_member(applicant.nation)
+        alliance.add_member(application.nation)
         news.acceptedapplication(application.nation, alliance)
         application.delete()
         applicants.append(application.nation)
@@ -98,7 +137,6 @@ def reject_applicants(nation, applications):
     alliance = nation.alliance
     applicants = []
     for application in applications:
-        alliance.add_member(applicant.nation)
         news.rejectedapplication(application.nation, alliance)
         application.delete()
         applicants.append(application.nation)
