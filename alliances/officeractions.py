@@ -1,7 +1,7 @@
 import nation.news as news
 from django.db.models import Q
 from nation.alliances.forms import declarationform
-
+import nation.utilities as utils
 
 def kick():
     pks = request.POST.getlist('ids')
@@ -81,21 +81,36 @@ def invite_players(nation, POST):
                 sent.append(invitee.name)
             else:
                 failed.append("'%s'" % name)
+        if len(sent) == 0:
+            return "Nobody was found for '%s'" % utils.string_list(names)
     else:
         return "Slow down big boy! max 200 characters"
     if alliance.event_on_invite:
         squad = alliance.notification_squad('invite', exclusion=nation)
+        news.players_invited(nation, squad, sent)
+    nation.actionlogs.create(action="Invited players to %s" % alliance.name, policy=False, extra=form.cleaned_data['name'])
 
-
-
-
+"""
 def revoke_invites(nation, POST):
+    if POST['revoke'] == 'all':
+        pass
     ids = POST.getlist('ids')
     invites = nation.alliance.outstanding_invites.filter(nation__pk__in=ids)
     if len(invites) == 0:
         return "Nobodys invite has been revoked!"
 
+            if request.POST['revoke'] == 'all':
+                alliance.outstanding_invites.all().delete()
+                result = "All outstanding invites have been revoked!"
+            elif request.POST['revoke'] == 'some':
+                alliance.outstanding_invites.all().filter(pk__in=request.POST.getlist('ids')).delete()
+                result = "Selected invites have been revoked!"
+            else:
+                invite = alliance.outstanding_invites.all().filter(pk=request.POST['revoke']).get()
+                result = "Invite to %s has been revoked!"
+                invite.delete()
 
+"""
 
 
 def generate_inviteevents(nation, invitees, modifier):

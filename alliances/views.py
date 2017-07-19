@@ -278,7 +278,6 @@ def newalliance(request):
 @alliance_required
 def invites(request):
     context = {'invites': 'activetab'}
-    result = False
     nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
         'alliance__outstanding_invites', 'alliance__outstanding_invites__nation', 'alliance__outstanding_invites__inviter').get(user=request.user)
     alliance = nation.alliance
@@ -287,22 +286,11 @@ def invites(request):
         return redirect('alliance:main')
 
     if request.method == 'POST':
-        if 'revoke' in request.POST:
-            if request.POST['revoke'] == 'all':
-                alliance.outstanding_invites.all().delete()
-                result = "All outstanding invites have been revoked!"
-            elif request.POST['revoke'] == 'some':
-                alliance.outstanding_invites.all().filter(pk__in=request.POST.getlist('ids')).delete()
-                result = "Selected invites have been revoked!"
-            else:
-                invite = alliance.outstanding_invites.all().filter(pk=request.POST['revoke']).get()
-                result = "Invite to %s has been revoked!"
-                invite.delete()
-        if result:
-            context.update({'result': result})
+        context.update({'result': oa.revoke_invites(nation, request.POST)})
     invites = Invite.objects.select_related('nation').filter(alliance=alliance)
     context.update({'outstanding_invites': invites})
     return render(request, 'alliance/invites.html', context)
+
 
 @login_required
 @nation_required

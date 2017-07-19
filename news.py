@@ -215,6 +215,10 @@ def kicked(victim, alliance):
     victim.news.create(content=txt)
 
 
+def player_left(leaver):
+    squad = leaver.alliance.notification_squad(['invite', 'applicants'])
+    squad_update(squad, "%s has left our alliance" % link_me(leaver))
+
 ####
 # invite related
 ####

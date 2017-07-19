@@ -25,6 +25,9 @@ def alliance_creation(sender, instance, created, **kwargs):
             nation = Nation.objects.get(name=instance.founder)
             nation.alliance = instance
             instance.permissions.create(member=nation, template=ft)
+            instance.memberstats.create(nation=nation)
+            nation.invites.all().delete()
+            nation.applications.all().delete()
             nation.save(update_fields=['alliance'])
 
 

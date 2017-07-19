@@ -33,6 +33,7 @@ class Alliance(models.Model):
     event_on_incoming = models.BooleanField(default=True) #news event is generated when someone applies
     event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
     event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
+    event_on_leaving = models.BooleanField(default=True)
 
     def __unicode__(self):
         return u"%s alliance" % self.name
@@ -40,13 +41,21 @@ class Alliance(models.Model):
     def get_absolute_url(self):
         return reverse('alliance:alliance_page', kwargs={'alliancepk': (str(self.pk))})
 
-    def notification_squad(self, permission, exclusion=False):
-        if not hasattr(Basetemplate, permission):
-            raise ValueError
-        var = 'permissions__template__' + permission
-        squad = self.members.filter(
-        (Q(permissions__template__rank__lt=5)&Q(**{var: True}))|Q(permissions__template__rank=0)
-        #(rank > 5 and applicants == True) or rank == 0
+    def notification_squad(self, permissions, anded=False, exclusion=False):
+        if type(permissions) != list:
+            permissions = [permissions]
+        baseq = Q(permissions__template__rank__lt=5)
+        var = Q()
+        for permission in permissions:
+            if not hasattr(Basetemplate, permission):
+                raise ValueError
+            if anded:
+                var&=Q(**{'permissions__template__%s' % permission: True})
+            else:
+                var|=Q(**{'permissions__template__%s' % permission: True})
+        baseq &= var
+        squad = self.members.filter(baseq|Q(permissions__template__rank=0)
+        #(rank > 5 and permission(s) == True) or rank == 0
         #founder rank overrides other requirements
         )
         if exclusion != False:
@@ -1009,6 +1018,7 @@ class Actionlog(models.Model):
     action = models.CharField(max_length=50)
     amount = models.IntegerField(default=1)
     cost = models.TextField() #json encoded cost
+    extra = models.TextField() #Field for extra comments, should they be necessary
     policy = models.BooleanField(default=True)
     timestamp = models.DateTimeField(auto_now=True)
     turn = models.IntegerField(default=current_turn) #for easier comparisons
@@ -1021,7 +1031,7 @@ class Actionlog(models.Model):
 class Aidlog(models.Model):
     sender = models.ForeignKey(Nation, related_name="outgoing_aid", on_delete=models.SET_NULL, null=True, blank=True)
     reciever = models.ForeignKey(Nation, related_name="incoming_aid", on_delete=models.SET_NULL, null=True, blank=True)
-    resource = models.CharField(max_length=7)
+    resource = models.CharField(max_length=20)
     amount = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
 

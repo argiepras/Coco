@@ -5,6 +5,8 @@ def leave(nation):
     if nation.alliance.members.all().count() == 1:
         nation.alliance.delete()
         return "Alliance has been disbanded"
+    if nation.alliance.event_on_leaving:
+        news.player_left(nation)
     nation.alliance.kick(nation)
     return "You say your goodbyes before being tossed by security."
 
@@ -77,12 +79,14 @@ def accept_invite(nation, alliance):
     #automatically deletes the invite
     if alliance.event_on_invite:
         news.invite_event(nation, alliance.notification_squad('invite'), 'accepted')
+    nation.actionlogs.create(action="Accepted invite to %s" % alliance.name, policy=False)
     
 
 def reject_invite(nation, alliance, invite):
     invite.delete()
     if alliance.event_on_invite:
         news.invite_event(nation, alliance.notification_squad('invite'), 'rejected')
+    nation.actionlogs.create(action="Rejected invite to %s" % alliance.name, policy=False)
 
 
 
@@ -97,6 +101,7 @@ def post_chat(nation, POST):
             result = "Please don't spam"
         else:
             nation.alliance.chat.create(nation=nation, content=form.cleaned_data['message'])
+            nation.actionlogs.create(action="Posted alliance chat", policy=False, extra=alliance.name)
             result = "Message posted!"
     else:
         result = "Must be between 5 and 400 characters"
