@@ -55,7 +55,7 @@ class alliance_checks(TestCase):
         self.assertEqual(alliance.notification_squad('invite').count(), 11, msg="invite permission should be 5+5 + founder")
         self.assertEqual(alliance.notification_squad('applicants').count(), 11, msg="applicant permission should be 5+5 + founder")
         self.assertEqual(alliance.notification_squad(['invite', 'applicants']).count(), 16, msg="invite and applicant permissions should be everyone")
-        self.assertEqual(alliance.notification_squad(['invite', 'applicants', 'kick']).count(), 1, msg="only the founder has kick permission")
+        self.assertEqual(alliance.notification_squad(['kick']).count(), 1, msg="only the founder has kick permission")
 
         #check that it doesn't just accept wrong permission types
         self.assertRaises(ValueError, alliance.notification_squad, 'not_a_permission')

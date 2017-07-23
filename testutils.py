@@ -30,8 +30,19 @@ def nation_generator(amount=1):
     return (nations if amount > 1 else nations[0])
 
 
-def alliance_generator(founder=nation_generator(), amount=1):
-    return Alliance.objects.create(name=namegen(), founder=founder.name)
+def alliance_generator(founder=nation_generator(), members=0, officers=0):
+    alliance = Alliance.objects.create(name=namegen(), founder=founder.name)
+    if members:
+        for member in nation_generator(members):
+            alliance.add_member(member)
+
+    if officers:
+        officer_template = alliance.templates.get(rank=3)
+        for member in nation_generator(officers):
+            alliance.add_member(member)
+            member.permissions.template = officer_template
+            member.permissions.save()
+    return alliance
 
 
 

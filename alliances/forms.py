@@ -16,7 +16,7 @@ class declarationform(forms.Form):
 
 
 class masscommform(forms.Form):
-    message = forms.CharField(max_length=500, widget=forms.Textarea(attrs={
+    message = forms.CharField(min_length=5, max_length=500, widget=forms.Textarea(attrs={
         'placeholder': 'Enter your alliance-wide message', 'class': 'form-control', 'style': 'height: 150px; color: black;'}))
 
 class newallianceform(forms.Form):
@@ -56,68 +56,48 @@ class descriptionform(forms.Form):
 class numberform(forms.Form):
     def __init__(self, *args, **kwargs):
         super(numberform, self).__init__(*args, **kwargs)
-        for choice in v.depositchoices:
-            self.fields[choice] = forms.IntegerField(
-                min_value=1, 
-                required=False,
-                widget=forms.NumberInput(attrs={
-                        'class': 'form-control', 
-                        'placeholder': 'Amount', 
-                        'style': 'color: black;'
-                    }))
+        self.fields['amount'] = forms.IntegerField(
+            min_value=1,
+            widget=forms.NumberInput(attrs={
+                    'class': 'form-control', 
+                    'placeholder': 'Amount', 
+                    'style': 'color: black;'
+                }))
 
 
 
 class depositform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(depositform, self).__init__(*args, **kwargs)
-        for choice in v.depositchoices:
-            self.fields[choice] = forms.IntegerField(
-                min_value=1,
-                max_value=nation.__dict__[choice],
-                required=False,
-                widget=forms.NumberInput(attrs={
-                        'class': 'form-control', 
-                        'placeholder': 'Deposit amount', 
-                        'style': 'color: black;'
-                    }))
-
-
-    empty = forms.BooleanField(required=False)
-
-    def clean(self):
-        cleaned_data = super(depositform, self).clean()
-        fields = []
-        for field in cleaned_data:
-            if cleaned_data[field] == None:
-                fields.append(field)
-        for field in fields:
-            cleaned_data.pop(field)
-        if len(cleaned_data) == 1:
-            cleaned_data['empty'] = True
-        return cleaned_data
+        self.fields['amount'] = forms.IntegerField(
+            min_value=1,
+            max_value=nation.budget,
+            widget=forms.NumberInput(attrs={
+                    'class': 'form-control', 
+                    'placeholder': 'Deposit amount', 
+                    'style': 'color: black;'
+                }))
 
 
 class withdrawform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(withdrawform, self).__init__(*args, **kwargs)
-        for choice in v.depositchoices:
-            stockpile = nation.__dict__[choice]
-            bankstock = nation.alliance.bank.__dict__[choice]
-            if nation.alliance.bank.limit and not nation.permissions.template.rank == 0:
-                limit = nation.alliance.bank.__dict__['%s_limit' % choice] - nation.memberstats.__dict__[choice]
-                maxwithdraw = (limit if limit < bankstock else bankstock)
-            else:
-                maxwithdraw = bankstock
-            self.fields[choice] = forms.IntegerField(
-                min_value=1, 
-                max_value=maxwithdraw, 
-                required=False,
-                widget=forms.NumberInput(attrs={
-                        'class': 'form-control', 
-                        'placeholder': 'Deposit amount', 
-                        'style': 'color: black;'
-                    }))
+        stockpile = nation.budget
+        bankstock = nation.alliance.bank.budget
+        if nation.alliance.bank.limit and not nation.permissions.template.rank == 0:
+            limit = nation.alliance.bank.budget_limit - nation.memberstats.budget
+            maxwithdraw = (limit if limit < bankstock else bankstock)
+        else:
+            maxwithdraw = bankstock
+        self.fields['amount'] = forms.IntegerField(
+            min_value=1, 
+            max_value=maxwithdraw, 
+            required=False,
+            widget=forms.NumberInput(attrs={
+                    'class': 'form-control', 
+                    'placeholder': 'Deposit amount', 
+                    'style': 'color: black;'
+                }))
 
 
     empty = forms.BooleanField(required=False)

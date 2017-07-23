@@ -8,6 +8,8 @@ from django.core.paginator import *
 import random
 import string
 
+from nation.models import Nation
+
 
 def timedeltadivide(timediff):
     'Splits a timedelta into h:m:s.'

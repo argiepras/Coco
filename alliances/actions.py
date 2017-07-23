@@ -24,16 +24,25 @@ class BaseAction(object):
     permissions_required = []
     generate_events = False
 
+    def eligible(self):
+        if self.nation.permissions.template.rank <= self.required_rank:
+            for permission in self.permissions_required:
+                if hasattr(self.nation.permissions.template, permission):
+                    if not getattr(self.nation.permissions.template, permission):
+                        return False
+            return True
+        return False
+
 
     def execute(self, *args, **kwargs):
         outcome, success = self.action(*args, **kwargs)
-
         if success:
             if self.log_msg:
                 self.log_action()
             if self.generate_events:
                 self.generate_events()
         return outcome
+
 
     def log_action(self):
         args = {

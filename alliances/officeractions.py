@@ -2,43 +2,65 @@ import nation.news as news
 from django.db.models import Q
 from nation.alliances.forms import declarationform
 import nation.utilities as utils
+from .forms import inviteform
 
-def kick():
-    pks = request.POST.getlist('ids')
-    kickees = alliance.members.all().select_related('permissions').filter(pk__in=pks)
-    if not nation.permissions.template.kick or not nation.permissions.template.kick_officer:
-        result = "You can't kick anyone! Stop this!"
-    elif len(kickees):
-        result = "You didn't select any members to kick!"
+def kick(nation, POST):
+    if not nation.permissions.has_permission('kick') or not nation.permissions.has_permission('kick_officer'):
+        return "You can't kick anyone! Stop this!"
+
+    pks = POST.getlist('member_choice')
+    kickees = nation.alliance.members.all().select_related('permissions').filter(pk__in=pks)
+
+    if len(kickees) ==  0:
+        return "You didn't select anyone!"
     else:
         tmp = 'But you do not have permission to kick '
         errs = ''
         for kickee in kickees:
             if nation.permissions.can_kick(kickee):
-                alliance.kick(kickee)
-                news.kicked(kickee, alliance)
+                nation.alliance.kick(kickee)
+                news.kicked(kickee, nation.alliance)
             else:
                 errs += "%s, "
-            result = "Selected members have been purged from our ranks!"
+            result = "%s have been purged from our ranks!" % utils.string_list(kickees, 'name')
         if errs != '':
             result +=  tmp + errs[:-2]
+        nation.actionlogs.create(action="kicked players", policy=False, extra=utils.string_list(kickees, 'name'))
+    return result
 
-def masscomm():
+
+def masscomm(nation, POST):
+    if POST['masscomm'] == 'everyone':
+        if not nation.permissions.has_permission('mass_comm'):
+            return "You do not have permission to do this!"
+    else:
+        if not nation.permissions.has_permission('officer_comm'):
+            return "You do not have permission to do this!"
     form = masscommform(request.POST)
     if form.is_valid():
-        if request.POST['masscomm'] == 'everyone' and nation.permissions.can_masscomm():
-            members = alliance.members.all()
-            for member in members:
-                member.comms.create(sender=nation, masscomm=True, message=form.cleaned_data['message'])
-            nation.sent_comms.create(masscomm=True, message=form.cleaned_data['message'])
+        payload = {
+            'sender': nation,
+            'message' : form.cleaned_data['message'],
+        }
+        if POST['masscomm'] == 'everyone':
+            recipients = alliance.members.all()
+            payload.update({'mass_comm': True})
             result = "Mass comm sent!"
-        elif request.POST['masscomm'] == 'leadership' and nation.permissions.can_officercomm():
-            members = alliance.members.all()
-            for member in members:
-                member.comms.create(sender=nation, leadership=True, message=form.cleaned_data['message'])
-            nation.sent_comms.create(leadership=True, message=form.cleaned_data['message'])
+        else:
+            recipients = alliance.officers.all()
+            payload.update({'leadership': True})
             result = "Leadership comm sent!"
+ 
+        for recipient in recipients:
+            recipient.comms.create(**payload)
+ 
+        payload.pop('sender')
+        nation.sent_comms.create(**payload)
         nation.actionlogging('mass commed')
+    
+    else:
+        result = 'Message must be between 5 and 500 characters'
+    return result
 
 
 
@@ -74,7 +96,7 @@ def invite_players(nation, POST):
     if form.is_valid():
         names = form.cleaned_data['name'].strip(' ').split(',')
         for name in names:
-            invitee = get_active_player(name)
+            invitee = utils.get_active_player(name)
             if invitee:
                 invitee.invites.create(inviter=nation, alliance=nation.alliance)
                 news.invited(invitee, alliance)
@@ -82,13 +104,22 @@ def invite_players(nation, POST):
             else:
                 failed.append("'%s'" % name)
         if len(sent) == 0:
-            return "Nobody was found for '%s'" % utils.string_list(names)
+            return "No matches found for %s" % utils.string_list(names)
     else:
         return "Slow down big boy! max 200 characters"
     if alliance.event_on_invite:
         squad = alliance.notification_squad('invite', exclusion=nation)
         news.players_invited(nation, squad, sent)
     nation.actionlogs.create(action="Invited players to %s" % alliance.name, policy=False, extra=form.cleaned_data['name'])
+
+    if len(sent) == 0:
+        txt = "%s wasn't found" % utils.string_list(failed)
+    else:
+        txt = "Invite%s has been sent to %s" % (('s' if len(sent) > 1 else ''), utils.string_list(sent))
+        if len(failed) > 0:
+            txt += ". <br>%s wasn't found" % utils.string_list(failed)
+    return txt
+
 
 """
 def revoke_invites(nation, POST):

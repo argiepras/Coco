@@ -3,11 +3,10 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
 from . import variables as v
-from nation.utilities import attrchange
 
 
 from django.db import models
-from django.db.models import F, Avg
+from django.db.models import F, Q, Avg
 from django.utils import timezone
 
 
@@ -34,6 +33,10 @@ class Alliance(models.Model):
     event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
     event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
     event_on_leaving = models.BooleanField(default=True)
+
+    def _officers(self):
+        return self.members.filter(permissions__template__rank__lt=5)
+    officers = property(_officers)
 
     def __unicode__(self):
         return u"%s alliance" % self.name
@@ -99,7 +102,7 @@ class Alliance(models.Model):
         member.permissions.delete()
         member.alliance = None
         member.save(update_fields=['alliance'])
-        if self.member.all().count() == 0:
+        if self.members.all().count() == 0:
             self.delete()
         return member
 
@@ -809,20 +812,17 @@ class Bank(models.Model):
 class Banklog(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="bank_logs", on_delete=models.CASCADE)
     nation = models.ForeignKey(Nation, related_name="alliancelog_entries", on_delete=models.SET_NULL, null=True, blank=True)
-    resource = models.CharField(max_length=10)
     amount = models.IntegerField(default=0)
     deposit = models.BooleanField(default=True)
     timestamp = models.DateTimeField(default=v.now)
     deleted = models.BooleanField(default=False)
     def display(self):
-        if self.resource == 'budget':
-            return "$%sk" % self.amount
-        else:
-            return "%s %s" % (self.amount, v.depositchoices[self.resource])
+        return "$%sk" % self.amount
+
     def __unicode__(self):
         if self.deposit:
-            return u"%s deposited %s %s in %ss bank" % (self.nation.name, self.amount, self.resource, self.alliance.name)
-        return u"%s withdrew %s %s in %ss bank" % (self.nation.name, self.amount, self.resource, self.alliance.name)
+            return u"%s deposited %s %s in %ss bank" % (self.nation.name, self.amount, self.display(), self.alliance.name)
+        return u"%s withdrew %s %s in %ss bank" % (self.nation.name, self.amount, self.display(), self.alliance.name)
         
 
 class Bankstats(models.Model):

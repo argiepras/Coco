@@ -12,34 +12,28 @@
 			</div>
 		{% endif %}
     {% if permissions|check_permission:'invite' %}
+    <form method="POST">{% csrf_token %}
     <div class="row">
         <div class="col-xs-4 col-xs-offset-4">
             <div class="input-group">
                 {{ inviteform.name }}
                 <span class="input-group-btn">
-                    <button type="submit" class="btn btn-default" style="float: left">
-                        Invite
-                    </button>
+                <button type="submit" class="btn btn-default" style="float: left" name="invite">
+                    Invite
+                </button>
                 </span>
             </div>
         </div>
     </div>
-    {% endif %}
-            <div class="row">
-                <div class="col-xs-12">
-                    <h6 class="note">You can several players at once with comma seperation, eg. "player1, 15, username5"</h5>
-                </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <h6 class="note">You can invite several players at once with comma seperation, eg. "player1, 15, username5"</h5>
             </div>
+        </div>
+    </form>
+    {% endif %}
 
 		<p><h1>{{ alliance.name }}</h1></p>
-		{% if invited %}
-			<p>You have been invited to this alliance! Will you join or spurn their advances?</p>
-			<form method="POST" role="form">
-			{% csrf_token %}
-			<input name="invite" value="accept">
-			<input name="invite" value="decline">
-			</form>
-		{% endif %}
 
 		<img src="{{ alliance.flag }}" class="dflag" style="display: inline;">
 		
@@ -48,10 +42,6 @@
 				<p style="margin: 40px">{{ alliance.description }}</p>
 			</div>
 		</div>
-
-
-
-
 
 		{% if permissions.can_masscomm %}
 		<div id="masscomm">
@@ -114,7 +104,7 @@
                     Cash
                 </td>
                 <td>
-                    {{ depositform.budget }}
+                    {{ depositform.amount }}
                 </td>
                 <td>
                     <span style="color: green">${{ alliance.bank.budget }}k</span>
@@ -125,76 +115,6 @@
                 </td>
                 {% endif %}
             </tr>
-
-            <tr>
-                <td>
-                    Oil
-                </td>
-                <td>
-                    {{ depositform.oil }}
-                </td>
-                <td>
-                    <span style="color: green">{{ alliance.bank.oil }} mbbls</span>
-                </td>
-                {% if permissions.can_withdraw %}
-                <td>
-                    {{ nation|remaining_limit:'oil' }} mbbls
-                </td>
-                {% endif %}
-            </tr>
-
-            <tr>
-                <td>
-                    Raw Material
-                </td>
-                <td>
-                    {{ depositform.rm }}
-                </td>
-                <td>
-                    <span style="color: green">{{ alliance.bank.rm }} tons</span>
-                </td>
-                {% if permissions.can_withdraw %}
-                <td>
-                    {{ nation|remaining_limit:'rm' }}  tons
-                </td>
-                {% endif %}
-            </tr>
-
-            <tr>
-                <td>
-                    Manufactured Goods
-                </td>
-                <td>
-                    {{ depositform.mg }}
-                </td>
-                <td>
-                    <span style="color: green">{{ alliance.bank.mg }} tons</span>
-                </td>
-                {% if permissions.can_withdraw %}
-                <td>
-                    {{ nation|remaining_limit:'mg' }} tons
-                </td>
-                {% endif %}
-            </tr>
-
-            <tr>
-                <td>
-                    Food
-                </td>
-                <td>
-                    {{ depositform.food }}
-                </td>
-                <td>
-                    <span style="color: green">{{ alliance.bank.food }} tons</span>
-                </td>
-                {% if permissions.can_withdraw %}
-                <td>
-                    {{ nation|remaining_limit:'food' }} tons
-                </td>
-                {% endif %}
-            </tr>
-
-
         </tbody>
     </table>
     </div>

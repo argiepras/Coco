@@ -16,6 +16,8 @@ import nation.turnchange as turnchange
 from . import memberactions as ma
 from . import officeractions as oa
 
+
+
 @login_required
 @nation_required
 @alliance_required
@@ -26,11 +28,39 @@ def main(request):
     context = {}
 
     if request.method == "POST":
-        action = request.POST['action']
-        if hasattr(ma, action):
-            context.update({'result': getattr()})
-        elif hasattr(oa, action):
-            context.update({'result': oa.permchecks(nation, POST)})
+        result = False
+        if 'leave' in request.POST:
+            result = ma.leave(nation)
+
+        elif 'withdraw' in request.POST:
+            result = ma.withdraw(nation, request.POST)
+
+        elif 'deposit' in request.POST:
+            result = ma.deposit(nation, request.POST)
+
+        elif 'kick' in request.POST:
+            print request.POST
+            result = oa.kick(nation, request.POST)
+
+        elif 'resign' in request.POST:
+            result = oa.resign(nation)
+
+        elif 'invite' in request.POST:
+            result = oa.invite_players(nation, request.POST)
+
+        else:
+            with transaction.atomic():
+                nation = Nation.objects.select_for_update().get(pk=nation.pk)
+                if 'withdraw' in request.POST:
+                    result = ma.withdraw(nation, request.POST)
+
+                elif 'deposit' in request.POST:
+                    result = ma.deposit(nation, request.POST)
+
+
+        if result:
+            context.update({'result': result})
+
 
     context.update({
         'overview': 'activetab',

@@ -250,6 +250,12 @@ def initiative_recalled(nation, initiative):
     txt = "The alliance bank has run out of funds and as a consequence the %s initiative has been recalled!" % initiative
     nation.news.create(content=txt)
 
+
+def retracted_application(nation, alliance):
+    txt = '%s has retracted their application' % nation.name
+    squad_update(alliance.notification_squad('applicants'), txt)
+
+
 def applicant_events(officer, notification_squad, modifier, applicants):
     base = "%s has %s " % (link_me(officer), modifier)
     linkified = []
