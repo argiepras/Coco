@@ -6,40 +6,33 @@ import nation.news as news
 def leave(nation):
     if nation.alliance.members.all().count() == 1:
         nation.alliance.delete()
+        nation.actionlogs.create(action="Left alliance and disbanded", policy=False, extra=nation.alliance.name)
         return "Alliance has been disbanded"
     if nation.alliance.event_on_leaving:
         news.player_left(nation)
-    nation.actionlogs.create(action="Left alliance", policy=False, extra=nation.alliance)
+    nation.actionlogs.create(action="Left alliance", policy=False, extra=nation.alliance.name)
     nation.alliance.kick(nation)
     return "You say your goodbyes before being tossed by security."
 
-"""
-def withdraw():
-    form = withdrawform(nation, request.POST)
-        if form.is_valid():
-                form.cleaned_data.pop('e mpty')
-                actions = {} #moving to nation
-                withdraws = {} #setting bankstats for limiting
-                withdrawactions = {} #moving from bank
-                for field in form.cleaned_data:
-                    actions.update({field: {'action': 'add', 'amount': form.cleaned_data[field]}})
-                    withdrawactions.update({field: {'action': 'subtract', 'amount': form.cleaned_data[field]}})
-                    withdraws.update({field: F(field) + form.cleaned_data[field]})
-             with transaction.atomic():
-                    utils.atomic_transaction(Nation, nation.pk, actions)
-                    utils.atomic_transaction(Bank, alliance.bank.pk, withdrawactions)
-                    if nation.alliance.bank.limit:
-                        if nation.alliance.bank.per_nation:
-                            qfilter = {'nation': nation}
-                        else:
-                            qfilter = {'alliance': nation.alliance}
-                        Memberstats.objects.select_for_update().filter(**qfilter).update(**withdraws)
-                banklogging(nation, actions, False)
-                result = "Withdrawal has been made!"
-        else:
-            result = "You can't withdraw more than your limit!"
-
-"""
+def withdraw(nation, POST):
+    if not nation.permissions.has_permission('withdraw'):
+        return "You need permission to do this"
+    bank = Bank.objects.select_for_update().get(alliance=nation.alliance)
+    form = withdrawform(nation, POST)
+    if form.is_valid():
+        nation.budget += form.cleaned_data['amount']
+        bank.budget -= form.cleaned_data['amount']
+        if nation.alliance.bank.limit:
+            if nation.alliance.bank.per_nation:
+                qfilter = {'nation': nation}
+            else:
+                qfilter = {'alliance': nation.alliance}
+            Memberstats.objects.select_for_update().filter(**qfilter).update(budget=F('budget') + form.cleaned_data['budget'])
+        banklogging(nation, actions, False)
+        result = "Withdrawal has been made!"
+    else:
+        result = "You can't withdraw %s!" % POST['amount']
+    return result
 
 def deposit(nation, POST):
     bank = Bank.objects.select_for_update().get(alliance=nation.alliance)
@@ -115,9 +108,9 @@ def apply(nation, alliance):
     if alliance.applications.filter(nation=nation).exists():
         alliance.applications.filter(nation=nation).delete()
         news.retracted_application(nation, alliance)
+        nation.actionlogs.create(action='unapplied to %s' % alliance.name, policy=False)
         return "Application retracted"
     alliance.applications.create(nation=nation)
+    news.player_applied(nation, alliance)
+    nation.actionlogs.create(action='applied to %s' % alliance.name, policy=False)
     return "Your application has been sent! Now we wait and see if they will accept it."
-
-
-def retract_application(nation, alliance)

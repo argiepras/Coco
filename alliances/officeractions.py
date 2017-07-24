@@ -121,27 +121,33 @@ def invite_players(nation, POST):
     return txt
 
 
-"""
+
 def revoke_invites(nation, POST):
+    result = "Invites have been revoked"
     if POST['revoke'] == 'all':
-        pass
-    ids = POST.getlist('ids')
-    invites = nation.alliance.outstanding_invites.filter(nation__pk__in=ids)
+        invites = nation.alliance.outstanding_invites.all()
+    
+    elif POST['revoke'] == 'some':
+        ids = POST.getlist('ids')
+        invites = nation.alliance.outstanding_invites.filter(nation__pk__in=ids)
+
+    else:
+        invites = [alliance.outstanding_invites.all().filter(pk=request.POST['revoke']).get()]
+        result = "Invite to %s has been revoked!"
+        invite.delete()
+
     if len(invites) == 0:
         return "Nobodys invite has been revoked!"
 
-            if request.POST['revoke'] == 'all':
-                alliance.outstanding_invites.all().delete()
-                result = "All outstanding invites have been revoked!"
-            elif request.POST['revoke'] == 'some':
-                alliance.outstanding_invites.all().filter(pk__in=request.POST.getlist('ids')).delete()
-                result = "Selected invites have been revoked!"
-            else:
-                invite = alliance.outstanding_invites.all().filter(pk=request.POST['revoke']).get()
-                result = "Invite to %s has been revoked!"
-                invite.delete()
+    revokees = []
+    for invite in invites:
+        news.invite_revoked(invite)
+        revokees.append(invite.nation.name)
+        invite.delete()
+    if nation.alliance.event_on_invite:
+        revoked_invites(nation, revokees)
 
-"""
+    nation.actionlogs.create(action="Revoked invites", policy=False, extra=utils.string_list(revokees))
 
 
 def generate_inviteevents(nation, invitees, modifier):
@@ -151,7 +157,6 @@ def generate_inviteevents(nation, invitees, modifier):
         #founder rank overrides other requirements
         ).exclude(pk=nation.pk) #won't send notifications to the actioner
     news.revoked_invites(nation, notifiers, modifier,  invitees)
-
 
 
 #permission checks are performed in the view

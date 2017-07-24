@@ -233,6 +233,10 @@ def players_invited(inviter, squad, invitees):
     txt = '%s has invited %s to our alliance' % utils.string_list(invitees)
     squad_update(squad, txt)
 
+def invite_revoked(invite):
+    #when someone has their invite revoked
+    txt = '%s has revoked their invitation!' % link_me(invite.alliance.name)
+    invite.nation.news.create(content=txt)
 
 def invitee_events(invitee, notification_squad, modifier): 
     #when someone accepts/rejects an invite
@@ -243,13 +247,20 @@ def revoked_invites(nation, revokees, notification_squad):
     #when an officer revokes invites
     txt = "%s has revoked the invite" % nation.name + ('s' if len(revokees) > 1 else '') + ' to '
     txt += utils.string_list(revokees)
-    squad_update(notification_squad, txt)
+    squad_update(nation.alliance.notification_squad('invite'), txt)
 
 
 def initiative_recalled(nation, initiative):
     txt = "The alliance bank has run out of funds and as a consequence the %s initiative has been recalled!" % initiative
     nation.news.create(content=txt)
 
+###########
+# applicant related
+#######
+
+def player_applied(nation, alliance):
+    txt = '%s has applied for membership' % nation.name
+    squad_update(alliance.notification_squad('applicants'), txt)
 
 def retracted_application(nation, alliance):
     txt = '%s has retracted their application' % nation.name
@@ -257,6 +268,8 @@ def retracted_application(nation, alliance):
 
 
 def applicant_events(officer, notification_squad, modifier, applicants):
+    #fired off when an officer accepts/rejects n amount of applicants
+    #and the alliance has events on applicants turned on
     base = "%s has %s " % (link_me(officer), modifier)
     linkified = []
     for app in applicants:

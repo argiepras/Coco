@@ -115,11 +115,85 @@ class member_tests(TestCase):
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.applications.all().count(), 1, msg="Application should be generated")
         self.assertEqual(self.founder.news.all().count(), 1, msg="Event should be generated")
+        self.assertEqual(self.member.actionlogs.all(), 1, msg="actionlog should be generated")
 
         self.alliance.event_on_applicants = False
         self.alliance.applications.all().delete()
         result = apply(applyee, self.alliance)
         self.assertEqual(self.founder.news.all().count(), 1, msg="Event should not be generated")
+
+
+    def test_apply_member(self):
+        result = apply(self.member, self.alliance)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.applications.all().count(), 0, msg="Application shouldn't be generated")
+        self.assertEqual(self.founder.news.all().count(), 0, msg="Event shouldn't be generated")
+        self.assertEqual(self.member.actionlogs.all(), 0, msg="No actionlog should be generated")
+
+
+    def test_unapply(self):
+        applyee =nation_generator()
+        apply(applyee, self.alliance)
+        
+        result = apply(applyee, self.alliance)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.applications.all().count(), 0, msg="Application should've been deleted")
+        self.assertEqual(self.founder.news.all().count(), 2, msg="Event should be generated")
+        self.assertEqual(applyee.actionlogs.all().count(), 2)
+
+
+        self.alliance.event_on_applicants = False
+        apply(applyee, self.alliance)
+        result = apply(applyee, self.alliance)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.applications.all().count(), 0, msg="Application should've been deleted")
+        self.assertEqual(self.founder.news.all().count(), 2, msg="Event shouldn't be generated")
+        self.assertEqual(applyee.actionlogs.all().count(), 4)
+
+
+    def test_depositing(self):
+        payload = {'amount': 50}
+        self.member.budget = 500
+        self.member.save()
+        result = deposit(self.member, payload)
+        self.check_depositvals(result)
+
+        payload = {'amount': 0}
+        result = deposit(self.member, payload)
+        self.check_depositvals(result)
+
+        payload = {'amount': -2000}
+        result = deposit(self.member, payload)
+        self.check_depositvals(result)
+
+        payload = {'amount': 9000}
+        result = deposit(self.member, payload)
+        self.check_depositvals(result)
+
+
+    def check_depositvals(self, result):
+        self.assertTrue(result != '')
+        self.assertEqual(self.member.budget, 450)
+        self.assertEqual(self.member.actionlogs.all().count(), 1)
+        self.assertEqual(self.alliance.bank.budget, 50)
+        self.assertEqual(self.alliance.bank_logs.all().count(), 1)
+
+
+    def test_withdrawals(self):
+        self.alliance.bank.budget = 1000
+        self.alliance.bank.save()
+        self.member.budget = 500
+        self.member.save()
+        payload = {'amount': 500}
+        result = withdraw(self.member, payload)
+        self.assertTrue(result != '')
+        self.assertEqual(self.member.budget, 500)
+        self.assertEqual(self.member.actionlogs.all().count(), 0)
+        self.assertEqual(self.alliance.bank.budget, 1000)
+        self.assertEqual(self.alliance.bank_logs.all().count(), 0)
+
+
+
 
 class officer_tests(TestCase):
     def setUp(self):
@@ -205,13 +279,65 @@ class officer_tests(TestCase):
         self.assertEqual(self.alliance.declarations.all().count(), 3, msg="Too short messages not aloud")
 
     
-    def make_declaration(self, declarer, expected)
+    def make_declaration(self, declarer, expected):
         payload = {'message': "This is a declaration"}
         result = declare(self.declarer, payload)
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.declarations.all().count(), expected)
         self.assertEqual(declarer.actionlogs.all().count(), 1, msg="decs should be logged")
 
+
+
+
+class invite_revokage(TestCase):
+    def setUp(self):
+        self.founder = nation_generator()
+        self.alliance = alliance_generator(self.founder, 20, 5)
+        self.invitees = nation_generator(10)
+        for x in self.invitees:
+            x.invites.create(alliance=self.alliance, inviter=self.founder)
+
+    def test_single_revoke(self):
+        invite = self.alliance.outstanding_invites.all()[0]
+        payload = {'revoke': invite.pk}
+        officer = self.alliance.officers.all()[0]
+        result = revoke_invites(officer, payload)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.outstanding_invites.all().count(), 9, msg="Invite should've been revoked")
+        self.assertEqual(invite.nation.news.all().count(), 1, msg="news item should be generated")
+        self.assertEqual(self.founder.news.all().count(), 1, msg="news item should be generated")
+        self.assertEqual(officer.actionlogs.all().count(), 1, msg="Should be logged")
+
+
+    def test_single_revoke_failure(self):
+        payload = {'revoke': 50012}
+        officer = self.alliance.officers.all()[0]
+        result = revoke_invites(officer, payload)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.outstanding_invites.all().count(), 10, msg="Invite should've been revoked")
+        self.assertEqual(self.founder.news.all().count(), 0, msg="news item should be generated")
+        self.assertEqual(officer.actionlogs.all().count(), 0, msg="Shouldn't be logged")
+
+
+    def test_single_revoke_without_event(self):
+        invite = self.alliance.outstanding_invites.all()[0]
+        payload = {'revoke': invite.pk}
+        officer = self.alliance.officers.all()[0]
+        result = revoke_invites(officer, payload)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.outstanding_invites.all().count(), 9, msg="Invite should've been revoked")
+        self.assertEqual(invite.nation.news.all().count(), 1, msg="news item should be generated")
+        self.assertEqual(self.founder.news.all().count(), 0, msg="news item should be generated")
+        self.assertEqual(officer.actionlogs.all().count(), 1, msg="Should be logged")
+
+
+    def test_all_revokes(self):
+        payload = {'revoke': 'all'}
+        officer = self.alliance.officers.all()[0]
+        result = revoke_invites(officer, payload)
+        self.assertEqual(self.alliance.outstanding_invites.all().count(), 0, msg="Invite should've been revoked")
+        self.assertEqual(self.founder.news.all().count(), 1, msg="news item should be generated")
+        self.assertEqual(officer.actionlogs.all().count(), 1, msg="Should be logged")
 
 
 
@@ -251,3 +377,5 @@ class applicant_tests(TestCase):
         self.assertEqual(self.founder.actionlogs.all().count(), 1, msg="Action should be logged")
         self.assertEqual(self.alliance.applications.all().count(), 0)
         self.assertEqual(self.other_alliance.applications.all().count(), 0)
+
+
