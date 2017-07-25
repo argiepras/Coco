@@ -39,7 +39,6 @@ def main(request):
             result = ma.deposit(nation, request.POST)
 
         elif 'kick' in request.POST:
-            print request.POST
             result = oa.kick(nation, request.POST)
 
         elif 'resign' in request.POST:
@@ -95,31 +94,10 @@ def alliancepage(request, alliancepk, msg=False):
 
     if request.method == 'POST':
         if 'invite' in request.POST:
-            try:
-                invite = alliance.outstanding_invites.all().get(nation=nation)
-            except:
-                result = "You do not have an invite to this alliance!"
-            else:
-                if request.POST['invite'] == 'accept':
-                    if nation.has_alliance():
-                        nation = nation.alliance.kick(nation)
-                    alliance.add_member(nation)
-                    nation.invites.all().delete()
-                    nation.news.filter(content__icontains="We have a recieved an invitation").delete()
-                    return redirect('alliance:main')
-                else:
-                    invite.delete()
-                    result = "Invitation refused."
-
+            result = ma.invite(nation, alliance, request.POST['action'])
+        
         elif 'apply' in request.POST:
-            if alliance.applications.all().filter(nation=nation).exists():
-                result = "You have already submitted an application to this alliance!"
-            else:
-                alliance.applications.create(nation=nation)
-                if alliance.comm_on_applicants:
-                    for officer in alliance.members.filter(Q(permissions__template__founder=True)|Q(permissions__template__applicants=True)):
-                        news.newapplicant(officer, nation)
-                result = "Your application has been sent! Now we wait and see if they will accept it."
+            result = ma.apply(nation, alliance)
 
         elif 'unapply' in request.POST:
             if alliance.applications.all().filter(nation=nation).exists():

@@ -33,7 +33,7 @@ class member_tests(TestCase):
         #accepting and rejecting invites are tested twice
         #with and without event generation for relevant officers
         alliance = self.alliance
-        result = self.member_invite(action)
+        result, newfie = self.member_invite(action)
         self.assertTrue(result)
         self.assertTrue(result != '')
         self.assertEqual(newfie.invites.all().count(), 0)
@@ -51,32 +51,36 @@ class member_tests(TestCase):
         inv = self.alliance.outstanding_invites.create(nation=newfie, inviter=self.founder)
         result = action(newfie, self.alliance, inv)
         self.assertEqual(newfie.actionlogs.all().count(), 1, msg="Actionlog should be generated")
-        return result
+        return result, newfie
 
     def test_leaving(self):
         self.leave_alliance()
         self.assertEqual(self.founder.news.all().count(), 1, msg="a member leaving should generate an event")
 
-        #reset and check that no event is generated
-        self.alliance.add_member(self.member)
-        self.member.refresh_from_db()
+    def test_leaving_noevent(self):
         self.alliance.event_on_leaving = False
         self.alliance.save()
 
         self.leave_alliance()
-        self.assertEqual(self.founder.news.all().count(), 1, msg="a member leaving shouldn't generate an event")
+        self.assertEqual(self.founder.news.all().count(), 0, msg="a member leaving shouldn't generate an event")
         self.assertEqual(self.alliance.permissions.all().count(), 1, msg="Permissions should be deleted when leaving")
-        self.assertEqual(self.alliance.Memberstats.all().count(), 1, msg="Memberstats should be deleted when leaving")
+        self.assertEqual(self.alliance.memberstats.all().count(), 1, msg="Memberstats should be deleted when leaving")
 
         leave(self.founder)
+        #1 because of the second alliance
+        self.assertEqual(Alliance.objects.all().count(), 1)
+        self.assertEqual(Memberstats.objects.all().count(), 1)
+        self.assertEqual(Permissions.objects.all().count(), 1)
+        self.assertEqual(Bank.objects.all().count(), 1)
+        self.assertEqual(Initiatives.objects.all().count(), 1)
+        self.assertEqual(Bankstats.objects.all().count(), 1)
+        self.assertEqual(Permissiontemplate.objects.all().count(), 3)
 
-        self.assertEqual(Alliance.objects.all().count(), 0)
-        self.assertEqual(Memberstats.objects.all().count(), 0)
-        self.assertEqual(Permissions.objects.all().count(), 0)
-        self.assertEqual(Bank.objects.all().count(), 0)
-        self.assertEqual(Initiatives.objects.all().count(), 0)
-        self.assertEqual(Bankstats.objects.all().count(), 0)
-        self.assertEqual(Permissiontemplate.objects.all().count(), 0)
+    def test_founder_leave(self):
+        leave(self.founder)
+        self.assertEqual(self.alliance.members.filter(permissions__template__rank=5).count(), 0, msg="Founder leaving should promote the member to founder")
+        self.assertEqual(self.alliance.members.filter(permissions__template__rank=0).count(), 1, msg="Founder leaving should promote the member to founder")
+        self.assertEqual(self.alliance.members.all().count(), 1)
 
 
     def leave_alliance(self):
@@ -115,7 +119,7 @@ class member_tests(TestCase):
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.applications.all().count(), 1, msg="Application should be generated")
         self.assertEqual(self.founder.news.all().count(), 1, msg="Event should be generated")
-        self.assertEqual(self.member.actionlogs.all(), 1, msg="actionlog should be generated")
+        self.assertEqual(applyee.actionlogs.all().count(), 1, msg="actionlog should be generated")
 
         self.alliance.event_on_applicants = False
         self.alliance.applications.all().delete()
@@ -128,7 +132,7 @@ class member_tests(TestCase):
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.applications.all().count(), 0, msg="Application shouldn't be generated")
         self.assertEqual(self.founder.news.all().count(), 0, msg="Event shouldn't be generated")
-        self.assertEqual(self.member.actionlogs.all(), 0, msg="No actionlog should be generated")
+        self.assertEqual(self.member.actionlogs.all().count(), 0, msg="No actionlog should be generated")
 
 
     def test_unapply(self):
@@ -143,6 +147,7 @@ class member_tests(TestCase):
 
 
         self.alliance.event_on_applicants = False
+        self.alliance.save()
         apply(applyee, self.alliance)
         result = apply(applyee, self.alliance)
         self.assertTrue(result != '')
@@ -172,6 +177,7 @@ class member_tests(TestCase):
 
 
     def check_depositvals(self, result):
+        self.alliance.bank.refresh_from_db()
         self.assertTrue(result != '')
         self.assertEqual(self.member.budget, 450)
         self.assertEqual(self.member.actionlogs.all().count(), 1)
@@ -181,6 +187,7 @@ class member_tests(TestCase):
 
     def test_withdrawals(self):
         self.alliance.bank.budget = 1000
+        self.alliance.bank.budget_limit = 500
         self.alliance.bank.save()
         self.member.budget = 500
         self.member.save()
@@ -191,6 +198,26 @@ class member_tests(TestCase):
         self.assertEqual(self.member.actionlogs.all().count(), 0)
         self.assertEqual(self.alliance.bank.budget, 1000)
         self.assertEqual(self.alliance.bank_logs.all().count(), 0)
+
+        self.founder.budget = 500
+        result = withdraw(self.founder, payload)
+        self.alliance.bank.refresh_from_db()
+        self.assertTrue(result != '')
+        self.assertEqual(self.founder.budget, 1000)
+        self.assertEqual(self.founder.actionlogs.all().count(), 1)
+        self.assertEqual(self.alliance.bank.budget, 500)
+        self.assertEqual(self.alliance.bank_logs.all().count(), 1)
+
+
+        self.member.permissions.template.withdraw = True
+        self.member.permissions.template.save()
+        result = withdraw(self.member, payload)
+        self.alliance.bank.refresh_from_db()
+        self.assertTrue(result != '')
+        self.assertEqual(self.member.budget, 1000)
+        self.assertEqual(self.member.actionlogs.all().count(), 1)
+        self.assertEqual(self.alliance.bank.budget, 0)
+        self.assertEqual(self.alliance.bank_logs.all().count(), 2)
 
 
 
@@ -215,7 +242,7 @@ class officer_tests(TestCase):
 
 
         kickees = ''
-        for member in self.alliance.members.all().exclude(self.founder).values_list('pk', flat=True)[0:6]:
+        for member in self.alliance.members.all().exclude(pk=self.founder.pk).values_list('pk', flat=True)[0:6]:
             kickees +=  'member_choice=%s&' % member
         kickees = kickees[:-1]
         payload = QueryDict(kickees)
@@ -228,19 +255,35 @@ class officer_tests(TestCase):
     def test_officer_kick(self):
         kicker = self.alliance.officers.all().order_by('?')[0]
 
-        kickees = 'member_choice=%s&' % self.officers.exclude(pk=kicker.pk).order_by('?')[0]
+        kickees = 'member_choice=%s&' % self.officers.exclude(pk=kicker.pk).order_by('?')[0].pk
         members = []
-        for member in self.members.values_list('pk', flat=True)[0:6]:
+        for member in self.officers.values_list('pk', flat=True)[0:6]:
             kickees +=  'member_choice=%s&' % member
             members.append(member)
         kickees = kickees[:-1]
-
-        result = kick(kicker, payload)
+        result = kick(kicker, QueryDict(kickees))
         self.assertTrue(result != '')
-        self.assertEqual(self.alliance.members.all().count(), 20, msg="6 members should've been kicked")
+        self.assertEqual(self.alliance.members.all().count(), 26, msg="no officers should've been kicked")
 
         for member in members:
-            Nation.objects.get(pk=member)
+            nation = Nation.objects.get(pk=member)
+            self.assertEqual(nation.news.all().count(), 0, msg="Member shouldn't recieve notification that they got kicked")
+
+
+    def test_officer_kick_members(self):
+        kicker = self.officers.order_by('?')[0]
+        kickees = 'member_choice=%s&' % self.members.exclude(pk=kicker.pk).order_by('-pk')[0].pk
+        members = []
+        for member in self.members.values_list('pk', flat=True)[0:5]:
+            kickees += 'member_choice=%s&' % member
+            members.append(member)
+        kickees = kickees[:-1]
+        result = kick(kicker, QueryDict(kickees))
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.members.all().count(), 20)
+
+        for member in members:
+            nation = Nation.objects.get(pk=member)
             self.assertEqual(nation.news.all().count(), 1, msg="Member should recieve notification that they got kicked")
 
 
@@ -248,7 +291,7 @@ class officer_tests(TestCase):
         result = masscomm(self.founder, {'masscomm': 'everyone', 'message': 'Test mass comms because lol'})
         self.assertTrue(result != '')
         for member in self.alliance.members.all():
-            self.assertEqual(member.comms.all(), 1, msg="Every member should get a comm")
+            self.assertEqual(member.comms.all().count(), 1)
 
 
     def test_officer_comm(self):
@@ -256,37 +299,74 @@ class officer_tests(TestCase):
         self.assertTrue(result != '')
         for member in self.alliance.members.all():
             if member.permissions.template.rank == 5:
-                self.assertEqual(member.comms.all(), 0, msg="Members don't get officer comms")
+                self.assertEqual(member.comms.all().count(), 0, msg="Members don't get officer comms")
             else:
-                self.assertEqual(member.comms.all(), 1, msg="officers should get officer comms")
+                self.assertEqual(member.comms.all().count(), 1, msg="officers should get officer comms")
 
 
     def test_comm_failure(self):
         result = masscomm(self.founder, {'masscomm': 'everyone', 'message': '2s'})
         self.assertEqual(result, 'Message must be between 5 and 500 characters', msg="Should be an error")
         for member in self.alliance.members.all():
-            self.assertEqual(member.comms.all(), 0, msg="Nobody should get a comm")
+            self.assertEqual(member.comms.all().count(), 0)
 
 
     def test_declarations(self):
-        decs = [self.founder, self.alliance.officers.all()[0], self.alliance.members.filter(permissions__template__rank=5)[0]]
-        for deccer, x in zip(decs, range(1, 4)):
+        decs = [self.founder, self.alliance.officers.all()[0]]
+        for deccer, x in zip(decs, [1, 2]):
             self.make_declaration(deccer, x)
 
         payload = {'message': "T"}
         result = declare(self.founder, payload)
         self.assertTrue(result != '')
-        self.assertEqual(self.alliance.declarations.all().count(), 3, msg="Too short messages not aloud")
+        self.assertEqual(self.alliance.declarations.all().count(), 2, msg="Too short messages not aloud")
 
     
+    def test_memberdeclaration(self):
+        payload = {'message': "This is a declaration"}
+        declarer = self.alliance.members.filter(permissions__template__rank=5)[0]
+        result = declare(declarer, payload)
+        self.assertTrue(result != '')
+        self.assertEqual(self.alliance.declarations.all().count(), 0)
+        self.assertEqual(declarer.actionlogs.all().count(), 0, msg="no dec, no log")
+
+
     def make_declaration(self, declarer, expected):
         payload = {'message': "This is a declaration"}
-        result = declare(self.declarer, payload)
+        result = declare(declarer, payload)
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.declarations.all().count(), expected)
         self.assertEqual(declarer.actionlogs.all().count(), 1, msg="decs should be logged")
 
 
+    def test_resign_officer(self):
+        officer = self.officers.all()[0]
+        result = resign(officer)
+        self.assertTrue(result != '')
+        self.assertEqual(officer.permissions.template.rank, 5)
+        self.assertEqual(officer.actionlogs.all().count(), 1)
+
+
+    def test_resign_founder(self):
+        #this tests if new heirs work correctly
+        result = resign(self.founder)
+        self.assertTrue(result != '')
+        self.assertEqual(self.founder.permissions.template.rank, 5)
+        self.assertEqual(self.founder.actionlogs.all().count(), 1)
+
+        self.assertEqual(self.alliance.members.filter(permissions__template__rank=0).count(), 1)
+        newfounder = self.alliance.members.get(permissions__template__rank=0)
+        self.assertEqual(newfounder.news.all().count(), 1, msg="New founder should be notified of the promotion")
+
+    def test_resign_with_heir(self):
+        heir = self.alliance.officers.all().order_by('?')[0]
+        heir.permissions.heir = True
+        heir.permissions.save()
+        result = resign(self.founder)
+        self.assertTrue(result != '')
+        self.assertEqual(self.founder.permissions.template.rank, 5)
+        heir.permissions.refresh_from_db()
+        self.assertEqual(heir.permissions.template.rank, 0)
 
 
 class invite_revokage(TestCase):
@@ -321,6 +401,7 @@ class invite_revokage(TestCase):
 
     def test_single_revoke_without_event(self):
         invite = self.alliance.outstanding_invites.all()[0]
+        self.alliance.event_on_invite = False
         payload = {'revoke': invite.pk}
         officer = self.alliance.officers.all()[0]
         result = revoke_invites(officer, payload)
@@ -352,7 +433,7 @@ class applicant_tests(TestCase):
         self.founder.refresh_from_db()
 
         self.applicants = nation_generator(5)
-        for applicant in applicants:
+        for applicant in self.applicants:
             apply(applicant, self.alliance)
             apply(applicant, self.other_alliance)
 
@@ -366,7 +447,7 @@ class applicant_tests(TestCase):
             self.assertEqual(sucker.news.all().count(), 1, msg="Should've recieved a rejection notice")
         self.assertEqual(self.founder.actionlogs.all().count(), 1, msg="Action should be logged")
         self.assertEqual(self.alliance.applications.all().count(), 0)
-        self.assertEqual(self.other_alliance.applications.all().count(), 0)
+        self.assertEqual(self.other_alliance.applications.all().count(), 5)
 
 
     def test_acceptance(self):
@@ -376,6 +457,6 @@ class applicant_tests(TestCase):
             self.assertEqual(sucker.news.all().count(), 1, msg="Should've recieved a rejection notice")
         self.assertEqual(self.founder.actionlogs.all().count(), 1, msg="Action should be logged")
         self.assertEqual(self.alliance.applications.all().count(), 0)
-        self.assertEqual(self.other_alliance.applications.all().count(), 0)
+        self.assertEqual(self.other_alliance.applications.all().count(), 5)
 
 

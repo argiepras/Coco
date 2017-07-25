@@ -115,15 +115,11 @@ class deletiontest(TestCase):
         from random import randint
         l = []
         for x in ['a', 'b', 'c', 'd', 'e', 'f', 'g']:
-            q = Nation.objects.create(user=User.objects.create(username=x))
+            q = nation_generator()
             # generates a variable length list of IPs to be used for banning tests
             # using pythons list concatenation magics
             IPs = [IP(nation=q, IP='%s.%s.%s.%s' % tuple([randint(0, 255) for x in range(4)])) for x in range(1, 50)]
             q.IPs.bulk_create(IPs)
-            Settings.objects.create(nation=q)
-            Military.objects.create(nation=q)
-            Econdata.objects.create(nation=q)
-            Researchdata.objects.create(nation=q)
             l.append(q)
         cls.a = l[0] #alliance founder
         cls.b = l[1] #alliance member

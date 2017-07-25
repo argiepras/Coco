@@ -2,17 +2,30 @@ from .forms import declarationform, depositform, withdrawform
 import nation.variables as v
 from nation.models import Bank
 import nation.news as news
+from nation.models import Memberstats
+
+from django.db.models import F
 
 def leave(nation):
-    if nation.alliance.members.all().count() == 1:
-        nation.alliance.delete()
-        nation.actionlogs.create(action="Left alliance and disbanded", policy=False, extra=nation.alliance.name)
+    alliance = nation.alliance
+    if alliance.members.all().count() == 1:
+        alliance.delete()
+        nation.actionlogs.create(action="Left alliance and disbanded", policy=False, extra=alliance.name)
         return "Alliance has been disbanded"
-    if nation.alliance.event_on_leaving:
+
+    if alliance.event_on_leaving:
         news.player_left(nation)
-    nation.actionlogs.create(action="Left alliance", policy=False, extra=nation.alliance.name)
-    nation.alliance.kick(nation)
+    nation.actionlogs.create(action="Left alliance", policy=False, extra=alliance.name)
+    if nation.permissions.template.rank == 0 and alliance.members.filter(permissions__template__rank=0).count() == 1: 
+        #special founder exception
+        #if the leaver is founder level and the only person with a rank 0 template
+        from .officeractions import set_new_heir
+        alliance.kick(nation)
+        set_new_heir(alliance, nation)
+    else:
+        alliance.kick(nation)
     return "You say your goodbyes before being tossed by security."
+
 
 def withdraw(nation, POST):
     if not nation.permissions.has_permission('withdraw'):
@@ -27,8 +40,12 @@ def withdraw(nation, POST):
                 qfilter = {'nation': nation}
             else:
                 qfilter = {'alliance': nation.alliance}
-            Memberstats.objects.select_for_update().filter(**qfilter).update(budget=F('budget') + form.cleaned_data['budget'])
-        banklogging(nation, actions, False)
+            Memberstats.objects.select_for_update().filter(**qfilter).update(budget=F('budget') + form.cleaned_data['amount'])
+        kwargs = {'update_fields': ['budget']}
+        nation.save(**kwargs)
+        bank.save(**kwargs)
+        nation.alliance.bank_logs.create(nation=nation, amount=form.cleaned_data['amount'])
+        nation.actionlogging('Withdrew from alliance bank', str(form.cleaned_data['amount']))
         result = "Withdrawal has been made!"
     else:
         result = "You can't withdraw %s!" % POST['amount']
@@ -43,7 +60,8 @@ def deposit(nation, POST):
         kwargs = {'update_fields': ['budget']}
         bank.save(**kwargs)
         nation.save(**kwargs)
-        nation.alliance.bank_logs.create(nation=nation, amount=form.cleaned_data['amount'])
+        nation.actionlogs.create(action="deposited", policy=False, extra=str(form.cleaned_data['amount']))
+        nation.alliance.bank_logs.create(nation=nation, deposit=False, amount=form.cleaned_data['amount'])
         result = "$%sk has been deposited!" % form.cleaned_data['amount']
     else:
         result = "Must be between $1k and $%sk" % nation.budget
@@ -103,14 +121,15 @@ def post_chat(nation, POST):
 def apply(nation, alliance):
     if nation.has_alliance():
         return "You are already a member of an alliance!"
-
     #using same function for both applying and retracting the application   
     if alliance.applications.filter(nation=nation).exists():
         alliance.applications.filter(nation=nation).delete()
-        news.retracted_application(nation, alliance)
+        if alliance.event_on_applicants:
+            news.retracted_application(nation, alliance)
         nation.actionlogs.create(action='unapplied to %s' % alliance.name, policy=False)
         return "Application retracted"
     alliance.applications.create(nation=nation)
-    news.player_applied(nation, alliance)
+    if alliance.event_on_applicants:
+        news.player_applied(nation, alliance)
     nation.actionlogs.create(action='applied to %s' % alliance.name, policy=False)
     return "Your application has been sent! Now we wait and see if they will accept it."

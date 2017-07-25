@@ -2,10 +2,11 @@ import nation.news as news
 from django.db.models import Q
 from nation.alliances.forms import declarationform
 import nation.utilities as utils
-from .forms import inviteform
+from .forms import inviteform, masscommform
+from nation.models import Permissiontemplate
 
 def kick(nation, POST):
-    if not nation.permissions.has_permission('kick') or not nation.permissions.has_permission('kick_officer'):
+    if not nation.permissions.has_permission('kick') and not nation.permissions.has_permission('kick_officer'):
         return "You can't kick anyone! Stop this!"
 
     pks = POST.getlist('member_choice')
@@ -15,16 +16,20 @@ def kick(nation, POST):
         return "You didn't select anyone!"
     else:
         tmp = 'But you do not have permission to kick '
-        errs = ''
+        success = []
+        errs = []
+        result = ''
         for kickee in kickees:
             if nation.permissions.can_kick(kickee):
                 nation.alliance.kick(kickee)
                 news.kicked(kickee, nation.alliance)
+                success.append(kickee)
             else:
-                errs += "%s, "
-            result = "%s have been purged from our ranks!" % utils.string_list(kickees, 'name')
-        if errs != '':
-            result +=  tmp + errs[:-2]
+                errs.append(kickee)
+        if success:
+            result = "%s have been purged from our ranks!" % utils.string_list(success, 'name')
+        if errs:
+            result +=  tmp + utils.string_list(errs)
         nation.actionlogs.create(action="kicked players", policy=False, extra=utils.string_list(kickees, 'name'))
     return result
 
@@ -36,18 +41,18 @@ def masscomm(nation, POST):
     else:
         if not nation.permissions.has_permission('officer_comm'):
             return "You do not have permission to do this!"
-    form = masscommform(request.POST)
+    form = masscommform(POST)
     if form.is_valid():
         payload = {
             'sender': nation,
             'message' : form.cleaned_data['message'],
         }
         if POST['masscomm'] == 'everyone':
-            recipients = alliance.members.all()
-            payload.update({'mass_comm': True})
+            recipients = nation.alliance.members.all()
+            payload.update({'masscomm': True})
             result = "Mass comm sent!"
         else:
-            recipients = alliance.officers.all()
+            recipients = nation.alliance.officers.all()
             payload.update({'leadership': True})
             result = "Leadership comm sent!"
  
@@ -64,28 +69,40 @@ def masscomm(nation, POST):
 
 
 
-def resign(*args):
-    if nation.permissions.panel_access():
-        if alliance.members.all().count() == 1:
-            alliance.kick(nation)
-            alliance.delete()
-            return redirect('nation:main')
-        else:
-            if alliance.permissions.filter(heir=True).count() > 0:
-                heir = alliance.permissions.get(heir=True)
-            elif alliance.permissions.filter(template__rank__gt=5).count() > 0:
-                for n in range(1, 5):
-                    if alliance.permissions.filter(template__rank__gt=n).count() > 0:
-                        heir = alliance.permissions.filter(template__rank__gt=n).order_by('?')[0]
-                        break
-            else:
-                heir = alliance.permissions.all().order_by('?')[0]
-            heir.template = alliance.templates.get(rank=0)
-            heir.save()
+def resign(nation):
+    if not nation.permissions.panel_access():
+        return "You cannot resign from being a member"
+    action = "resigned"
+    alliance = nation.alliance
+    if alliance.members.all().count() == 1:
+        alliance.kick(nation)
+        alliance.delete()
+        action += " and disbanded alliance"
+    else:
+        if nation.permissions.template.rank == 0:
+            set_new_heir(nation.alliance, nation)
         membertemplate = alliance.templates.get(rank=5)
         nation.permissions.template = membertemplate
         nation.permissions.save(update_fields=['template'])
         result = "Resignation gets handed over and you assume the role of an ordinary member"
+    nation.actionlogs.create(action=action, policy=False)
+
+
+def set_new_heir(alliance, exclude):
+    if alliance.permissions.filter(template__rank=0).exclude(member=exclude).exists():
+        #don't set a new heir if a founder level person already exists
+        return
+    foundertemplate = alliance.templates.filter(rank=0)[0]
+    if alliance.permissions.filter(heir=True).exists():
+        alliance.permissions.filter(heir=True).update(heir=False, template=foundertemplate)
+    else: #without an heir we randomly pick in descending order of rank, ie 0 -> 1 -> 2
+        for rank, _ in Permissiontemplate.rank_choices[1:]:
+            if alliance.permissions.filter(template__rank=rank).exclude(member=exclude).count() > 0:
+                heir = alliance.permissions.filter(template__rank=rank).exclude(member=exclude).order_by('?')[0]
+                heir.template = foundertemplate
+                heir.save(update_fields=['template'])
+                news.heir_tofounder(heir.member)
+                break
 
 
 def invite_players(nation, POST):
@@ -132,9 +149,8 @@ def revoke_invites(nation, POST):
         invites = nation.alliance.outstanding_invites.filter(nation__pk__in=ids)
 
     else:
-        invites = [alliance.outstanding_invites.all().filter(pk=request.POST['revoke']).get()]
+        invites = nation.alliance.outstanding_invites.all().filter(pk=POST['revoke'])
         result = "Invite to %s has been revoked!"
-        invite.delete()
 
     if len(invites) == 0:
         return "Nobodys invite has been revoked!"
@@ -142,12 +158,12 @@ def revoke_invites(nation, POST):
     revokees = []
     for invite in invites:
         news.invite_revoked(invite)
-        revokees.append(invite.nation.name)
+        revokees.append(invite.nation)
         invite.delete()
     if nation.alliance.event_on_invite:
-        revoked_invites(nation, revokees)
+        news.revoked_invites(nation, revokees)
 
-    nation.actionlogs.create(action="Revoked invites", policy=False, extra=utils.string_list(revokees))
+    nation.actionlogs.create(action="Revoked invites", policy=False, extra=utils.string_list(revokees, 'name'))
 
 
 def generate_inviteevents(nation, invitees, modifier):
@@ -181,7 +197,7 @@ def accept_applicants(nation, applications):
 
     if alliance.event_on_applicants:
         generate_applicantevents(nation, applicants, 'accepted')
-
+    nation.actionlogging('accepted applicants', utils.string_list(applicants))
     return  "The selected applicants are now members!"
 
 def reject_applicants(nation, applications):
@@ -194,7 +210,7 @@ def reject_applicants(nation, applications):
 
     if alliance.event_on_applicants:
         generate_applicantevents(nation, applicants, 'rejected')
-
+    nation.actionlogging('rejected applicants', utils.string_list(applicants))
     return "The selected applicants have been rejected!"
 
 
@@ -211,10 +227,11 @@ def generate_applicantevents(nation, applicants, modifier):
 #alliance declaration stuff
 #officers only
 def declare(nation, POST):
-    if nation.permissions.is_officer():
+    if nation.permissions.panel_access():
         form = declarationform(POST)
         if form.is_valid():
-            nation.alliance.declarations.create(nation=nation, content=form.cleaned_data['message'])
+            dec = nation.alliance.declarations.create(nation=nation, content=form.cleaned_data['message'])
+            nation.actionlogging('made alliance declaration', str(dec.pk))
             return "Declaration made!"
         else:
             return "A declaration must be between 5 and 400 characters"

@@ -13,20 +13,23 @@ def namegen():
 
 def nation_generator(amount=1):
     nations = []
-    ID.objects.get_or_create()
+    t = ID.objects.get_or_create()[0]
     for x in range(amount):
+        index = x + t.index
         q = Nation.objects.create(
             user=User.objects.create(username=namegen()),
-            index=x, 
+            index=index, 
             name=''.join(choice(string.ascii_letters) for x in range(8)),
             creationip=ip_generator()[0],
             )
+        t.index += 1
         Settings.objects.create(nation=q)
         Military.objects.create(nation=q)
         Econdata.objects.create(nation=q)
         Researchdata.objects.create(nation=q)
         q.IPs.create(IP=q.creationip)
         nations.append(q)
+    t.save()
     return (nations if amount > 1 else nations[0])
 
 

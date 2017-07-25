@@ -235,7 +235,7 @@ def players_invited(inviter, squad, invitees):
 
 def invite_revoked(invite):
     #when someone has their invite revoked
-    txt = '%s has revoked their invitation!' % link_me(invite.alliance.name)
+    txt = '%s has revoked their invitation!' % link_me(invite.alliance)
     invite.nation.news.create(content=txt)
 
 def invitee_events(invitee, notification_squad, modifier): 
@@ -243,7 +243,7 @@ def invitee_events(invitee, notification_squad, modifier):
     txt = '%s has %s our invitation.' % (link_me(invitee), modifier)
     squad_update(notification_squad, txt)
 
-def revoked_invites(nation, revokees, notification_squad):
+def revoked_invites(nation, revokees):
     #when an officer revokes invites
     txt = "%s has revoked the invite" % nation.name + ('s' if len(revokees) > 1 else '') + ' to '
     txt += utils.string_list(revokees)
@@ -306,8 +306,8 @@ def random_tofounder(nation, alliance):
     txt = "The previous leader stepped down and you have been picked as the new founder of %s!" % link
     nation.news.create(content=txt)
 
-def heir_tofounder(nation, alliance):
-    link = '<a href="%s"><b>%s</b></a>' % (alliance.get_absolute_url(), alliance.name)
+def heir_tofounder(nation):
+    link = '<a href="%s"><b>%s</b></a>' % (nation.alliance.get_absolute_url(), nation.alliance.name)
     txt = "The previous leader stepped down and you have assumed the role as founder of %s!" % link
     nation.news.create(content=txt)
 

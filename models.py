@@ -336,7 +336,7 @@ class Nation(Nationattrs):
             self.actionlogs.create(cost=cost, action=policy, total_cost=othercost)
 
     #for easier logging
-    def actionlogging(self, action):
+    def actionlogging(self, action, extra=False):
         if self.actionlogs.filter(
             timestamp__gte=v.now() - timezone.timedelta(minutes=15),
             action=action,
@@ -346,7 +346,10 @@ class Nation(Nationattrs):
             action=action,
                 ).update(amount=F('amount') + 1)
         else:
-            self.actionlogs.create(action=action, policy=False)
+            args = {'action': action, 'policy': False}
+            if extra:
+                args.update({'extra': extra})
+            self.actionlogs.create(**args)
 
 
     #next couple of functions are helpers used for generating URLs
@@ -956,6 +959,11 @@ class Permissions(models.Model):
     member = models.OneToOneField(Nation, on_delete=models.CASCADE)
     template = models.ForeignKey(Permissiontemplate, related_name="users", on_delete=models.CASCADE, blank=True, null=True)
     heir = models.BooleanField(default=False)#takes over if founder goes AWOL
+
+    class Meta:
+        get_latest_by = 'pk'
+        ordering = ['-pk']
+
     def __str__(self):
         return "%s, rank %s" % (self.template.title, self.template.rank)
 
@@ -972,7 +980,7 @@ class Permissions(models.Model):
             if self.template.kick_officer:
                 if self.template.rank < member.permissions.template.rank:
                     return True
-        elif self.template.officer and self.template.kick:
+        elif self.template.rank < 5 and self.template.kick:
             return True
         return False #not officer or can't kick
 
@@ -981,9 +989,7 @@ class Permissions(models.Model):
             raise ValueError
         if self.template.rank == 0:
             return True
-        if self.template.rank == 5:
-            return False
-        return getattr(Basetemplate, permission)
+        return getattr(self.template, permission)
 
     def panel_access(self):
         return self.template.rank < 5
