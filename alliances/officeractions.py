@@ -106,6 +106,8 @@ def set_new_heir(alliance, exclude):
 
 
 def invite_players(nation, POST):
+    if not nation.permissions.has_permission('invite'):
+        return "You do not have permission to do this"
     form = inviteform(POST)
     alliance = nation.alliance
     failed = []

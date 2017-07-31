@@ -1,0 +1,111 @@
+
+    <h2>General settings</h2>
+
+    {% if heirform %} 
+        <div class="row spacer">
+            <div class="col-xs-4">
+                <div class="rightie form-align">
+                    <a href="#" data-toggle="tooltip" title="This is the person who takes over if there are no more founders. If left blank the oldest officer with the highest rank will be picked.">
+                        Heir
+                        <small>
+                            <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                        </small>
+                    </a>
+                </div>
+            </div>
+            <div class="col-xs-4">
+                {{ heirform.heir }}
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="row spacer">
+        <div class="col-xs-4">
+                <div class="rightie form-align">
+                    Member title
+                </div>
+            </div>
+        <div class="col-xs-4">
+            {{ membertitleform.title }}
+        </div>
+    </div>
+
+    <div class="row spacer">
+        <div class="col-xs-4">
+                <div class="rightie form-align">
+                    Alliance description
+                </div>
+            </div>
+        <div class="col-xs-4">
+            {{ descriptionform.content }}
+        </div>
+    </div>
+
+
+    <h5 style="margin-bottom: 1em;">
+        Paste the video code from the youtube link, eg. https://www.youtube.com/watch?v=<b>R0tam7UPXHs</b>
+    </h5>
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            {{ anthemform.anthem }}
+        </div>
+    </div>
+
+
+    <h5 style="margin-bottom: 1em;">
+        Paste the full URL</b>
+    </h5>    
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            {{ flagform.flag }}
+        </div>
+    </div>
+
+
+{% include "alliance/cp_notifications.html" %}
+
+
+
+
+<div class="collapse" id="initiatives">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <td style="width: 80%">Initiative</td>
+                <td>Action</td>
+                <td>Time to Change</td>
+            </tr>
+        </thead>
+        <tbody>
+        {% for initiative in initiatives %}
+            <tr>
+                <td>
+                    <a href="#" data-toggle="tooltip" data-placement="right" title="{{ initiative.tooltip }}">
+                        {{ initiative.txt }}
+                    </a>
+                </td>
+                <td><form method="POST">{% csrf_token %}
+                    {% if initiative.status %}
+                    <input type="hidden" name="initiative" value="{{ initiative.initiative }}">
+                <button type="submit" class="btn btn-danger" name="initiativechange" value="off">
+                    Recall
+                </button>
+                    {% else %}
+                    <input type="hidden" name="initiative" value="{{ initiative.initiative }}">
+                <button type="submit" class="btn btn-success" name="initiativechange" value="on">
+                    Enact
+                </button>
+                    {% endif %}
+                </td></form>
+                <td>
+                {% if initiative.timer %}
+                    {{ initiative.timer }}
+                {% else %}
+                    <span style="color: green"><b>Now</b></span>
+                {% endif %}
+                </td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

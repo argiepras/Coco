@@ -13,10 +13,23 @@ from django.utils import timezone
 def current_turn():
     return ID.objects.get_or_create()[0].turn #get_or_create to make tests behave
 
+class Allianceoptions(models.Model):
+    accepts_applicants = models.BooleanField(
+        default=True, 
+        help_text="This will notify founders and officers with permission to accept/reject applicants",
+        verbose_name="Notify when players apply"
+        )
+    event_on_incoming = models.BooleanField(default=True) #news event is generated when someone applies
+    event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
+    event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
+    event_on_leaving = models.BooleanField(default=True)
+
+    class Meta:
+        abstract = True
 
 # Create your models here.
 #alliance first because it goes top to bottom and cries if a model refers to another model declared later
-class Alliance(models.Model):
+class Alliance(Allianceoptions):
     def __init__(self, *args, **kwargs):
         super(Alliance, self).__init__(*args, **kwargs)
         self.averagegdp = self.members.filter(vacation=False, reset=False, deleted=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
@@ -27,12 +40,6 @@ class Alliance(models.Model):
     foibonus = models.IntegerField(default=0)
     anthem = models.CharField(max_length=15, default="eFTLKWw542g")
     icon = models.CharField(max_length=40, default="/static/alliance/defaulticon.png")
-    #settings type things
-    accepts_applicants = models.BooleanField(default=True)
-    event_on_incoming = models.BooleanField(default=True) #news event is generated when someone applies
-    event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
-    event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
-    event_on_leaving = models.BooleanField(default=True)
 
     def _officers(self):
         return self.members.filter(permissions__template__rank__lt=5)
@@ -769,18 +776,12 @@ class Initiatives(models.Model):
     alliance = models.OneToOneField(Alliance, on_delete=models.CASCADE)
     focus = models.CharField(max_length=4)
     healthcare = models.BooleanField(default=False)
-    healthcare_timer = models.DateTimeField(default=v.now)
     literacy = models.BooleanField(default=False)
-    literacy_timer = models.DateTimeField(default=v.now)
     open_borders = models.BooleanField(default=False)
-    open_borders_timer = models.DateTimeField(default=v.now)
     freedom = models.BooleanField(default=False)
-    freedom_timer = models.DateTimeField(default=v.now)
     redistribute = models.BooleanField(default=False)
-    redistribute_timer = models.DateTimeField(default=v.now)
     alignment = models.IntegerField(default=0) #same as nation alignment
     weapontrade = models.BooleanField(default=False)
-    weapontrade_timer = models.DateTimeField(default=v.now)
     wealthy_tax = models.IntegerField(default=0)
     uppermiddle_tax = models.IntegerField(default=0)
     lowermiddle_tax = models.IntegerField(default=0)
@@ -790,10 +791,18 @@ class Initiatives(models.Model):
         return u"initiatives for %s" % self.alliance.name
 
     def reset_timer(self, initiative):
-        field = '%s_timer' % initiative
-        self.__dict__[field] = timezone.now() + timezone.timedelta(hours=v.initiative_timer)
-        return field
+        setattr(self.timers, initiative, self.__dict__[field] = timezone.now() + timezone.timedelta(hours=v.initiative_timer))
 
+class Timers(models.Model):
+    initiatives = models.OneToOneField(Initiatives, on_delete=models.CASCADE)
+    healthcare = models.DateTimeField(default=v.now)
+    literacy = models.DateTimeField(default=v.now)
+    open_borders = models.DateTimeField(default=v.now)
+    freedom = models.DateTimeField(default=v.now)
+    redistribute = models.DateTimeField(default=v.now)
+    weapontrade = models.DateTimeField(default=v.now)
+    def __unicode__(self):
+        return u"Initiative timers for %s" % self.initiatives.alliance.name
 
 class Memberstats(models.Model):
     nation = models.OneToOneField(Nation, on_delete=models.CASCADE)

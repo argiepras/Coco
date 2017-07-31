@@ -116,24 +116,7 @@ class withdrawform(forms.Form):
 
 
 class bankingform(forms.Form):
-    choices = (
-        ('per_nation', 'Total is per nation'),
-        ('total', 'Total is alliance wide'),
-        )
-    per_nation = forms.ChoiceField(choices=choices, widget=forms.RadioSelect())
     budget_limit = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'form-control', 'style': 'color: black',
-        }))
-    mg_limit = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'form-control', 'style': 'color: black',
-        }))
-    rm_limit = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'form-control', 'style': 'color: black',
-        }))
-    food_limit = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'form-control', 'style': 'color: black',
-        }))
-    oil_limit = forms.IntegerField(widget=forms.NumberInput(attrs={
         'class': 'form-control', 'style': 'color: black',
         }))
 
@@ -225,20 +208,6 @@ class membertitleform(forms.Form):
             'class': 'form-control', 'style': 'color: black' 
             }))
 
-class applicantsetform(forms.Form):
-    choices = (
-        ('on', 'Allow nations to apply for membership'),
-        ('off', 'Do not allow nations to apply for membership'),
-        )
-    choice = forms.ChoiceField(choices=choices, widget=forms.RadioSelect())
-
-
-class applicantcommform(forms.Form):
-    choices = (
-        ('on', 'Notify relevant officers when a nation applies for membership'),
-        ('off', 'Do not notify relevant officers when a nation applies for membership'),
-        )
-    choice = forms.ChoiceField(choices=choices, widget=forms.RadioSelect())
 
 class taxrateform(forms.Form):
     wealthy_tax = forms.IntegerField(min_value=0, max_value=100, label="Wealthy nations tax rate",

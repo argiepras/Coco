@@ -32,12 +32,6 @@ def main(request):
         if 'leave' in request.POST:
             result = ma.leave(nation)
 
-        elif 'withdraw' in request.POST:
-            result = ma.withdraw(nation, request.POST)
-
-        elif 'deposit' in request.POST:
-            result = ma.deposit(nation, request.POST)
-
         elif 'kick' in request.POST:
             result = oa.kick(nation, request.POST)
 
@@ -46,6 +40,9 @@ def main(request):
 
         elif 'invite' in request.POST:
             result = oa.invite_players(nation, request.POST)
+
+        elif 'masscomm' in request.POST:
+            result = oa.masscomm(nation, request.POST)
 
         else:
             with transaction.atomic():
@@ -100,11 +97,8 @@ def alliancepage(request, alliancepk, msg=False):
             result = ma.apply(nation, alliance)
 
         elif 'unapply' in request.POST:
-            if alliance.applications.all().filter(nation=nation).exists():
-                alliance.applications.all().filter(nation=nation).delete()
-                result = "Application has been retracted!"
-            else:
-                result = "You have not applied to become a member of %s!" % alliance.name
+            result = ma.apply(nation, alliance)
+
     initiatives = [] #initiative display, less html
     for init in v.initiativedisplay:
         initiatives.append({'status': alliance.initiatives.__dict__[init], 'txt': v.initiativedisplay[init]})
@@ -130,66 +124,6 @@ def bankinterface(request):
 
 @login_required
 @nation_required
-@alliance_required
-def control_panel(request):
-    context = {'panel': 'activetab'}
-    nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
-    permissions = nation.permissions
-    alliance = nation.alliance
-    result = ''
-    if not permissions.panel_access():
-        return redirect('alliance:main')
-    #setting initial data for banking form
-    bankinginit = {}
-    if alliance.bank.limit:
-        for field in alliance.bank._meta.fields: #MEMES
-            if len(field.name.split('_')) == 1:
-                continue
-            if field.name.split('_')[1] == 'limit':
-                bankinginit.update({field.name: alliance.bank.__dict__[field.name]})
-        if alliance.bank.per_nation:
-            bankinginit.update({'per_nation': 'per_nation'})
-        else:
-            bankinginit.update({'per_nation': 'total'})
-    #initial data for the tax forum
-    taxinit =  {}
-    for field in alliance.initiatives._meta.fields:
-        try:
-            if field.name.split('_')[1] == 'tax':
-                bracket = field.name
-            else:
-                continue
-        except: #continue if not a tax rate
-            continue
-        taxinit.update({bracket: alliance.initiatives.__dict__[bracket]})
-    membertemplate = alliance.templates.get(rank=5)
-    context.update({
-        'result': result,
-        'permissions': permissions,
-        'alliance': alliance,
-        'inviteform': inviteform(),
-        'heirform': heirform(nation, initial={'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)}),
-        'descriptionform': descriptionform(initial={'content': alliance.description}),
-        'initiatives': initiative_display(alliance.initiatives),
-        'bankingform': bankingform(),
-        'promoteform': promoteform(nation),
-        'changeform': changeform(nation),
-        'demoteform': demoteform(nation),
-        'membertitleform': membertitleform(initial={'title': membertemplate.title}),
-        'applicantsetform': applicantsetform(),
-        'taxrateform': taxrateform(),
-        'templatesform': templatesform(nation),
-        'anthemform': anthemform(initial={'anthem': alliance.anthem}),
-        'flagform': flagform(initial={'flag': alliance.flag}),
-        'applicantcommform': applicantcommform(),
-        })
-    return render(request, 'alliance/control_panel.html', context)
-
-def change(request):
-    pass
-
-@login_required
-@nation_required
 def alliancerankings(request):
     #this big chunk retrieves alliances ordered by highest membercount
     page = (request.GET['page'] if 'page' in request.GET else 1)
@@ -199,6 +133,7 @@ def alliancerankings(request):
         'pages': utils.pagination(paginator, alliancelist),
         'alliances': alliancelist,
         }
+    
     return render(request, 'alliance/rankings.html', context)
 
 @login_required
@@ -207,10 +142,7 @@ def alliancedeclarations(request):
     context = {'declarationform': declarationform()}
     nation = request.user.nation
     if request.method == 'POST':
-        if not nation.has_alliance():
-            context.update({'result': "You need to be in an alliance to post here!"})
-        else:
-            context.update({'result': declare(nation, request.POST)})
+        context.update({'result': oa.declare(nation, request.POST)})
 
     page = (request.GET['page'] if 'page' in request.GET else 1)
     declarations = Alliancedeclaration.objects.select_related('nation', 'nation__settings', 'alliance').all().order_by('-pk')

@@ -1,0 +1,119 @@
+{% extends "nation/base.html" %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-xs-3 col-xs-offset-3">
+        Limit withdrawals
+    </div>
+    <div class="col-xs-3">
+        <label class="switch">
+            <input type="checkbox" class="toggle" name="toggle" value="per_nation" 
+            {% if alliance.bank.limit %}
+                checked
+            {% endif %}
+            >
+            <span class="slider round"></span>
+        </label>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xs-3 col-xs-offset-3">
+        Limits are per nation
+    </div>
+    <div class="col-xs-3">
+        <label class="switch">
+            <input type="checkbox" class="toggle" name="toggle" value="per_nation" 
+            {% if alliance.bank.per_nation %}
+                checked
+            {% endif %}
+            >
+            <span class="slider round"></span>
+        </label>
+    </div>
+</div>
+
+{% if alliance.bank.limit == False %}
+    <p class="red">There are no limits on withdrawals</p>
+{% endif %}
+
+<form method="POST">{% csrf_token %}
+    <div class="row spacer-small">
+        <div class="col-xs-6 col-xs-offset-3">
+            {% for radio in bankingform.per_nation %}
+            <div class="row spacer-small">
+                <div class="col-xs-4 col-xs-offset-3">
+                    {{ radio.choice_label }}
+                </div>
+                <div class="col-xs-1">
+                    {{ radio.tag }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="row spacer-small">
+        <div class="col-xs-2 col-xs-offset-2">
+            <p style="padding-top: 5px">limit</p>
+        </div>
+        <div class="col-xs-4">
+            <div class="input-group">
+                <span class="input-group-addon">$</span>
+                    {{ bankingform.budget_limit }}
+                <span class="input-group-addon">k</span>
+            </div>
+        </div>
+    </div>
+    <div class="row spacer-small">
+        <div class="col-xs-4 col-xs-offset-4">
+            <button class="btn btn-default" name="bankingset">
+                Save
+            </button>
+        </div>
+       
+    </div>
+
+<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#taxmanning">
+    <h3><b>Taxes</b></h3>
+</div>
+    {% for field in taxrateform %}
+    <div class="row spacer-small">
+        <div class="col-xs-3 col-xs-offset-3">
+            <p>{{ field.label }}</p>
+        </div>
+        <div class="col-xs-2">
+            <div class="input-group">
+                {{ field }}
+                <span class="input-group-addon">%</span>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+    <div class="row spacer-small">
+        <div class="col-xs-4 col-xs-offset-4">
+            <button type="submit" class="btn btn-default" name="taxes">
+                Set new taxrates
+            </button>
+        </div>
+    </div>
+</div>
+</form>
+
+<script>
+    $(document).ready(function(){
+    $("button").click(function(event){
+        event.preventDefault();
+        var stuff = $("form").serialize();
+        alert(stuff);
+        $.ajax({
+            method: "POST",
+            data: stuff,
+            url: '/alliances/main/control_panel/',
+            success: function(x, y, z){},
+        });
+    });
+});
+</script>
+
+{% endblock content %}
