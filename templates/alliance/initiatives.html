@@ -1,0 +1,42 @@
+
+
+<h3 class="headliner">Initiatives</h3>
+
+{% if cooldowns %}
+    <div class="row">
+        <div class="col-xs-2 col-xs-offset-10">
+            cooldowns
+        </div>
+    </div>
+{% endif %}
+
+{% for initiative in initiatives %}
+    <div class="row spacer">
+        <div class="col-xs-4 col-xs-offset-2">
+            <div class="leftie">
+                <a href="#" data-toggle="tooltip" title="{{ initiative.tooltip }}">
+                    {{ initiative.txt }}
+                    <small>
+                        <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                    </small>
+                </a>
+                {{ option.text }}
+            </div>
+        </div>
+        <div class="col-xs-2 col-xs-offset-2">
+            <label class="switch">
+                <input type="checkbox" class="toggle" name="toggle" value="{{ option.field }}" 
+                    {% if initiative.status %}
+                        checked
+                    {% endif %}
+                >
+                    <span class="slider round"></span>
+                </label>
+        </div>
+        {% if initiative.timer %}
+            <div class="col-xs-2">
+                {{ initiative.timer }}
+            </div>
+        {% endif %}
+    </div>
+{% endfor %}

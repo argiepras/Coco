@@ -1,5 +1,6 @@
 
     <h2>General settings</h2>
+<form>{% csrf_token %}
 
     {% if heirform %} 
         <div class="row spacer">
@@ -21,10 +22,10 @@
 
     <div class="row spacer">
         <div class="col-xs-4">
-                <div class="rightie form-align">
-                    Member title
-                </div>
+            <div class="rightie form-align">
+                Member title
             </div>
+        </div>
         <div class="col-xs-4">
             {{ membertitleform.title }}
         </div>
@@ -37,75 +38,45 @@
                 </div>
             </div>
         <div class="col-xs-4">
-            {{ descriptionform.content }}
+            {{ generals.description }}
         </div>
     </div>
 
 
-    <h5 style="margin-bottom: 1em;">
+    <h6 style="margin-bottom: 1em; margin-top: 2em">
         Paste the video code from the youtube link, eg. https://www.youtube.com/watch?v=<b>R0tam7UPXHs</b>
-    </h5>
+    </h6>
     <div class="row">
-        <div class="col-xs-4 col-xs-offset-4">
-            {{ anthemform.anthem }}
+        <div class="col-xs-4">
+            <div class="rightie form-align">
+                Alliance anthem
+            </div>
+        </div>
+        <div class="col-xs-4">
+            {{ generals.anthem }}
         </div>
     </div>
 
 
-    <h5 style="margin-bottom: 1em;">
-        Paste the full URL</b>
-    </h5>    
+    <h6 style="margin-bottom: 1em; margin-top: 2em">
+        Paste the full URL
+    </h6> 
     <div class="row">
-        <div class="col-xs-4 col-xs-offset-4">
-            {{ flagform.flag }}
+        <div class="col-xs-4">
+            <div class="rightie form-align">
+                Alliance flag
+            </div>
+        </div>
+        <div class="col-xs-4">
+            {{ generals.flag }}
         </div>
     </div>
-
+    <input type="hidden" name="save" value="save">
+    <button type="submit" class="btn btn-default spacer" name="save">Save</button>
+</form>
 
 {% include "alliance/cp_notifications.html" %}
 
+<div class="spacer"></div>
 
-
-
-<div class="collapse" id="initiatives">
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <td style="width: 80%">Initiative</td>
-                <td>Action</td>
-                <td>Time to Change</td>
-            </tr>
-        </thead>
-        <tbody>
-        {% for initiative in initiatives %}
-            <tr>
-                <td>
-                    <a href="#" data-toggle="tooltip" data-placement="right" title="{{ initiative.tooltip }}">
-                        {{ initiative.txt }}
-                    </a>
-                </td>
-                <td><form method="POST">{% csrf_token %}
-                    {% if initiative.status %}
-                    <input type="hidden" name="initiative" value="{{ initiative.initiative }}">
-                <button type="submit" class="btn btn-danger" name="initiativechange" value="off">
-                    Recall
-                </button>
-                    {% else %}
-                    <input type="hidden" name="initiative" value="{{ initiative.initiative }}">
-                <button type="submit" class="btn btn-success" name="initiativechange" value="on">
-                    Enact
-                </button>
-                    {% endif %}
-                </td></form>
-                <td>
-                {% if initiative.timer %}
-                    {{ initiative.timer }}
-                {% else %}
-                    <span style="color: green"><b>Now</b></span>
-                {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-        </tbody>
-    </table>
-</div>
+{% include "alliance/initiatives.html" %}

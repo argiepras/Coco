@@ -16,10 +16,13 @@ def current_turn():
 class Allianceoptions(models.Model):
     accepts_applicants = models.BooleanField(
         default=True, 
+        verbose_name="Players can apply"
+        )
+    event_on_incoming = models.BooleanField(
+        default=True,
         help_text="This will notify founders and officers with permission to accept/reject applicants",
         verbose_name="Notify when players apply"
-        )
-    event_on_incoming = models.BooleanField(default=True) #news event is generated when someone applies
+    )
     event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
     event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
     event_on_leaving = models.BooleanField(default=True)
@@ -791,7 +794,7 @@ class Initiatives(models.Model):
         return u"initiatives for %s" % self.alliance.name
 
     def reset_timer(self, initiative):
-        setattr(self.timers, initiative, self.__dict__[field] = timezone.now() + timezone.timedelta(hours=v.initiative_timer))
+        setattr(self.timers, initiative, timezone.now() + timezone.timedelta(hours=v.initiative_timer))
 
 class Timers(models.Model):
     initiatives = models.OneToOneField(Initiatives, on_delete=models.CASCADE)

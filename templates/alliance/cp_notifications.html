@@ -1,19 +1,24 @@
-<div id="notifications">
+<div class="spacer" id="notifications">
+    <h3 class="headliner">Notifications</h3>
     {% for option in options %}
-        <div class="row">
+        <div class="row spacer">
             <div class="col-xs-4 col-xs-offset-2">
                 <div class="leftie">
-                    <a href="#" data-toggle="tooltip" title="{{ option.tooltip }}">
+                    {% if option.tooltip %}
+                        <a href="#" data-toggle="tooltip" title="{{ option.tooltip }}">
                         {{ option.text }}
                         <small>
                             <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
                         </small>
                     </a>
+                    {% else %}
+                        {{ option.text }}
+                    {% endif %}
                 </div>
             </div>
             <div class="col-xs-2 col-xs-offset-2">
                 <label class="switch">
-                    <input type="checkbox" class="toggle {{ option.locked }}" name="toggle" value="{{ option.event }}" {{ option.checked }}>
+                    <input type="checkbox" class="toggle" name="toggle" value="{{ option.field }}" {{ option.checked }}>
                     <span class="slider round"></span>
                 </label>
             </div>

@@ -5,6 +5,7 @@ from .forms import *
 from django.shortcuts import render
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
 
 import random
 
@@ -12,6 +13,7 @@ import random
 @nation_required
 @alliance_required
 def view(request):
+    print request.POST
     if request.is_ajax():
         return post_handler(request)
     page = (request.GET['page'] if 'page' in request.GET else 'general')
@@ -47,24 +49,60 @@ def change(request):
 
 
 def post_handler(request):
+    alliance = request.user.nation.alliance
+    nation = request.user.nation
     if 'toggle' in request.POST:
         field = request.POST['toggle']
-        if hasattr(Timer, field):
+        if field == "pk" or field == "id":
+            return HttpResponse()
+        if hasattr(Timers, field):
             initiatives = request.user.nation.alliance.initiatives
+            if getattr(initiatives.timers, field) < timezone.now(): #not on a cooldown
+                toggle(initiatives, field)
+        elif hasattr(Allianceoptions, field):
+            toggle(alliance, field)
+        return HttpResponse()
+
+    elif 'save' in request.POST:
+        form = generals_form(request.POST)
+        if form.is_valid():
+            if nation.permissions.template.rank == 0:
+                hform = heirform(nation, request.POST)
+                if hform.is_valid():
+                    heir = hform.cleaned_data['heir']
+                    if alliance.permissions.filter(heir=True).exclude(member=heir).exists():
+                        alliance.permissions.all().update(heir=False)
+                    alliance.permissions.filter(member=heir).update(heir=False)
+            alliance.anthem = form.cleaned_data['anthem']
+            alliance.flag = form.cleaned_data['flag']
+            if form.cleaned_data['description']:
+                alliance.description = form.cleaned_data['description']
+            else:
+                alliance.description = "we r alliance, we ar goood at being and alliance. come at us bros. sponsored by the foundation for rehabilitation of rumsodomites"
+            alliance.save(update_fields=['description', 'anthem', 'flag'])
+        form = membertitleform(request.POST)
+        if form.is_valid():
+            alliance.templates.filter(rank=5).update(title=form.cleaned_data['title'])
+
+    return HttpResponse("Settings successfully saved")
 
 
+def toggle(model, field):
+    if getattr(model, field) == False:
+        setattr(model, field, True)
+    else:
+        setattr(model, field, False)
+    model.save(update_fields=[field])
     
 
 
 def general(nation, alliance):
     membertitle = alliance.templates.values('title').get(rank=5)['title']
     return {
-        'anthemform': anthemform(initial={'anthem': alliance.anthem}),
-        'flagform': flagform(initial={'flag': alliance.flag}),
+        'generals': generals_form(initial={'anthem': alliance.anthem, 'flag': alliance.flag, 'description': alliance.description}),
         'initiatives': initiative_display(alliance.initiatives),
         'membertitleform': membertitleform(initial={'title': membertitle}),
         'heirform': heirform(nation, initial={'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)}),
-        'descriptionform': descriptionform(initial={'content': alliance.description}),
     }
 
 
@@ -105,7 +143,6 @@ def notifications(alliance):
                 'field': field.name,
                 'text': alliance._meta.get_field(field.name).verbose_name,
                 'checked': ('checked' if getattr(alliance, field.name) else ''),
-                'locked': ('locked' if random.randint(1, 2) == 1 else ''),
             }
         )
     return {'options': options}
@@ -121,8 +158,8 @@ def initiative_display(initiatives):
             'tooltip': v.initiativedisplay[init]['tooltip'],
             'initiative': init,
             }
-        if initiatives.__dict__['%s_timer' % init] > timezone.now():
-            app.update({'timer': initiatives.__dict__['%s_timer' % init] - timezone.now()})
+        if getattr(initiatives.timers, init) > timezone.now():
+            app.update({'timer': getattr(initiatives.timers, init) - timezone.now()})
         else:
             app.update({'timer': False})
         inits.append(app)

@@ -15,7 +15,7 @@ import nation.utilities as utils
 import nation.turnchange as turnchange
 from . import memberactions as ma
 from . import officeractions as oa
-
+from .control_panel import initiative_display
 
 
 @login_required
@@ -250,22 +250,3 @@ def applications(request):
         'alliance': nation.alliance,
     })
     return render(request, 'alliance/applications.html', context)
-
-
-
-
-def initiative_display(initiatives):
-    inits = [] #initiative display, less html
-    for init in v.initiativedisplay:
-        app = {
-            'status': initiatives.__dict__[init], 
-            'txt': v.initiativedisplay[init]['display'],
-            'tooltip': v.initiativedisplay[init]['tooltip'],
-            'initiative': init,
-            }
-        if initiatives.__dict__['%s_timer' % init] > timezone.now():
-            app.update({'timer': initiatives.__dict__['%s_timer' % init] - timezone.now()})
-        else:
-            app.update({'timer': False})
-        inits.append(app)
-    return inits

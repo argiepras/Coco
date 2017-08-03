@@ -2,13 +2,14 @@ from nation.models import *
 from django import forms
 import nation.variables as v
 
-class anthemform(forms.Form):
+class generals_form(forms.Form):
     anthem = forms.CharField(max_length=15, widget=forms.TextInput(attrs={
         'placeholder': 'New anthem', 'class': 'form-control', 'style': 'color: black',}))
-
-class flagform(forms.Form):
     flag = forms.CharField(max_length=100, widget=forms.TextInput(attrs={
         'placeholder': 'New flag URL', 'class': 'form-control', 'style': 'color: black',}))
+    description = forms.CharField(max_length=1000, required=False, widget=forms.Textarea(attrs={
+        'placeholder': 'Enter new description', 'class': 'form-control', 'style': 'height: 150px; color: black;'}))
+
 
 class declarationform(forms.Form):
     message = forms.CharField(min_length=5, max_length=400, widget=forms.Textarea(attrs={
@@ -38,13 +39,8 @@ class heirform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(heirform, self).__init__(*args, **kwargs)
         query = nation.alliance.members.all().filter(permissions__template__rank__lt=5).exclude(pk=nation.pk)
-        self.fields['heir'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
+        self.fields['heir'] = forms.ModelChoiceField(queryset=query, required=False, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black;'}))
-
-class descriptionform(forms.Form):
-    content = forms.CharField(max_length=1000, widget=forms.Textarea(attrs={
-        'placeholder': 'Enter new description', 'class': 'form-control', 'style': 'height: 150px; color: black;'}))
-
 
 # Withdrawing and depositing limits are form enforced
 # withdrawing limits are whatever is lower between nation withdrawal limit or bank stockpile
