@@ -17,15 +17,28 @@ class Allianceoptions(models.Model):
     accepts_applicants = models.BooleanField(
         default=True, 
         verbose_name="Players can apply"
-        )
+    )
     event_on_incoming = models.BooleanField(
         default=True,
-        help_text="This will notify founders and officers with permission to accept/reject applicants",
+        help_text="This will notify founders and officers with permission to accept/reject applicants when a player applies for membership",
         verbose_name="Notify when players apply"
     )
-    event_on_applicants = models.BooleanField(default=True) #event when an officer accepts/rejects
-    event_on_invite = models.BooleanField(default=True) #on rejected/accepted invites
-    event_on_leaving = models.BooleanField(default=True)
+    event_on_applicants = models.BooleanField(
+        default=True,
+        help_text="This will notify founders and officers with permission to accept/reject applicants when an officer accepts/rejects an application",
+        verbose_name="Notify when an application is accepted/rejected",
+    )
+    event_on_invite = models.BooleanField(
+        default=True,
+        help_text="This will notify founders and officers with invite permission when a player accepts/rejects their invite",
+        verbose_name="Notify when an invite is accepted/rejected",
+    )
+     #on rejected/accepted invites
+    event_on_leaving = models.BooleanField(
+        default=True,
+        help_text="This will notify officers when a member leaves the alliance",
+        verbose_name="Notify when a member leaves",
+    )
 
     class Meta:
         abstract = True
@@ -831,6 +844,10 @@ class Banklog(models.Model):
     deposit = models.BooleanField(default=True)
     timestamp = models.DateTimeField(default=v.now)
     deleted = models.BooleanField(default=False)
+
+    class Meta:
+        get_latest_by = "timestamp"
+
     def display(self):
         return "$%sk" % self.amount
 
@@ -852,6 +869,10 @@ class Bankstats(models.Model):
     open_borders_cost = models.IntegerField(default=0)
     freedom_cost = models.IntegerField(default=0)
     weapontrade_cost = models.IntegerField(default=0)
+
+    class Meta:
+        get_latest_by = "turn"
+
     def __unicode__(self):
         return u"%s bankstats" % self.alliance.name
     def total(self):

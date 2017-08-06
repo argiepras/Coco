@@ -1,5 +1,5 @@
 
-    <h2>General settings</h2>
+<h2>General settings</h2>
 <form>{% csrf_token %}
 
     {% if heirform %} 
@@ -71,8 +71,7 @@
             {{ generals.flag }}
         </div>
     </div>
-    <input type="hidden" name="save" value="save">
-    <button type="submit" class="btn btn-default spacer" name="save">Save</button>
+    <button type="submit" class="btn btn-default spacer" name="save" value="general">Save</button>
 </form>
 
 {% include "alliance/cp_notifications.html" %}

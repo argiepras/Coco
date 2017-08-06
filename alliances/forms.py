@@ -2,6 +2,11 @@ from nation.models import *
 from django import forms
 import nation.variables as v
 
+class membertitleform(forms.Form):
+    title = forms.CharField(max_length=30, min_length=2, widget=forms.TextInput(attrs={
+            'class': 'form-control', 'style': 'color: black' 
+            }))
+
 class generals_form(forms.Form):
     anthem = forms.CharField(max_length=15, widget=forms.TextInput(attrs={
         'placeholder': 'New anthem', 'class': 'form-control', 'style': 'color: black',}))
@@ -111,12 +116,6 @@ class withdrawform(forms.Form):
         return cleaned_data
 
 
-class bankingform(forms.Form):
-    budget_limit = forms.IntegerField(widget=forms.NumberInput(attrs={
-        'class': 'form-control', 'style': 'color: black',
-        }))
-
-
 #selecting permission templates for promote/alter/deletion
 class permissionselectform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
@@ -199,25 +198,6 @@ class demoteform(forms.Form):
             'class': 'form-control', 'style': 'color: black' 
             }))
 
-class membertitleform(forms.Form):
-    title = forms.CharField(max_length=30, min_length=2, widget=forms.TextInput(attrs={
-            'class': 'form-control', 'style': 'color: black' 
-            }))
-
-
-class taxrateform(forms.Form):
-    wealthy_tax = forms.IntegerField(min_value=0, max_value=100, label="Wealthy nations tax rate",
-     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
-    
-    uppermiddle_tax = forms.IntegerField(min_value=0, max_value=100, label="Upper middle nations tax rate",
-     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
-    
-    lowermiddle_tax = forms.IntegerField(min_value=0, max_value=100, label="Lower middle nations tax rate",
-     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
-    
-    poor_tax = forms.IntegerField(min_value=0, max_value=100, label="Poor nations tax rate",
-     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
-
 
 class templatesform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
@@ -227,4 +207,40 @@ class templatesform(forms.Form):
             templates = templates.filter(rank__gte=nation.permissions.template.rank)
         self.fields['template'] = forms.ModelChoiceField(queryset=templates, widget=forms.Select(
             attrs={'class': 'form-control', 'style': 'color: black'}))
+
+
+######
+## banking forms
+######
+
+class taxrateform(forms.Form):
+    wealthy_tax = forms.IntegerField(label="Wealthy nations tax rate",
+     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
+    
+    uppermiddle_tax = forms.IntegerField(label="Upper middle nations tax rate",
+     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
+    
+    lowermiddle_tax = forms.IntegerField(label="Lower middle nations tax rate",
+     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
+    
+    poor_tax = forms.IntegerField(label="Poor nations tax rate",
+     widget=forms.NumberInput(attrs={'class': 'form-control', 'style': 'color: black'}))
+
+    def clean(self):
+        cleaned_data = super(taxrateform, self).clean()
+        for field in cleaned_data:
+            if field == "budget_limit":
+                continue
+            if cleaned_data[field] < 0:
+                cleaned_data[field] = 0
+            elif cleaned_data[field] > 100:
+                cleaned_data[field] = 100
+        return cleaned_data
+
+class bankingform(taxrateform):
+    #inherit from taxrate form to make form validation at the view level easier
+    budget_limit = forms.IntegerField(min_value=0, widget=forms.NumberInput(attrs={
+        'class': 'form-control', 'style': 'color: black',
+        }))
+
 

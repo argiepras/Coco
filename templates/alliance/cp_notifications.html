@@ -2,7 +2,7 @@
     <h3 class="headliner">Notifications</h3>
     {% for option in options %}
         <div class="row spacer">
-            <div class="col-xs-4 col-xs-offset-2">
+            <div class="col-xs-6 col-xs-offset-2">
                 <div class="leftie">
                     {% if option.tooltip %}
                         <a href="#" data-toggle="tooltip" title="{{ option.tooltip }}">
@@ -16,7 +16,7 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="col-xs-2 col-xs-offset-2">
+            <div class="col-xs-2">
                 <label class="switch">
                     <input type="checkbox" class="toggle" name="toggle" value="{{ option.field }}" {{ option.checked }}>
                     <span class="slider round"></span>
@@ -25,12 +25,3 @@
         </div>
     {% endfor %}
 </div>
-
-<script type="text/javascript">
-    $(document).ready(function(event)
-        {
-            $('.locked').click(function(event){
-                event.preventDefault();
-            });
-        });
-</script>

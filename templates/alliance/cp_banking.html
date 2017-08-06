@@ -1,14 +1,15 @@
-{% extends "nation/base.html" %}
 
-{% block content %}
+<h2>Banking settings</h2>
 
-<div class="row">
-    <div class="col-xs-3 col-xs-offset-3">
-        Limit withdrawals
+<div class="row spacer">
+    <div class="col-xs-4 col-xs-offset-2">
+        <div class="leftie">
+            Limit withdrawals
+        </div>
     </div>
-    <div class="col-xs-3">
+    <div class="col-xs-2 col-xs-offset-2">
         <label class="switch">
-            <input type="checkbox" class="toggle" name="toggle" value="per_nation" 
+            <input type="checkbox" class="toggle" name="toggle" value="limit" 
             {% if alliance.bank.limit %}
                 checked
             {% endif %}
@@ -19,10 +20,12 @@
 </div>
 
 <div class="row">
-    <div class="col-xs-3 col-xs-offset-3">
-        Limits are per nation
+    <div class="col-xs-4 col-xs-offset-2">
+        <div class="leftie">
+            Limits are per nation
+        </div>
     </div>
-    <div class="col-xs-3">
+    <div class="col-xs-2 col-xs-offset-2">
         <label class="switch">
             <input type="checkbox" class="toggle" name="toggle" value="per_nation" 
             {% if alliance.bank.per_nation %}
@@ -41,21 +44,11 @@
 <form method="POST">{% csrf_token %}
     <div class="row spacer-small">
         <div class="col-xs-6 col-xs-offset-3">
-            {% for radio in bankingform.per_nation %}
-            <div class="row spacer-small">
-                <div class="col-xs-4 col-xs-offset-3">
-                    {{ radio.choice_label }}
-                </div>
-                <div class="col-xs-1">
-                    {{ radio.tag }}
-                </div>
-            </div>
-            {% endfor %}
         </div>
     </div>
     <div class="row spacer-small">
         <div class="col-xs-2 col-xs-offset-2">
-            <p style="padding-top: 5px">limit</p>
+            <p class="leftie" style="padding-top: 5px">limit</p>
         </div>
         <div class="col-xs-4">
             <div class="input-group">
@@ -65,22 +58,13 @@
             </div>
         </div>
     </div>
-    <div class="row spacer-small">
-        <div class="col-xs-4 col-xs-offset-4">
-            <button class="btn btn-default" name="bankingset">
-                Save
-            </button>
-        </div>
-       
-    </div>
 
-<div style="margin-top: 5em; margin-bottom: 2em;" data-toggle="collapse" data-target="#taxmanning">
-    <h3><b>Taxes</b></h3>
-</div>
+    <h3 class="headliner">Taxes</h3>
+
     {% for field in taxrateform %}
     <div class="row spacer-small">
-        <div class="col-xs-3 col-xs-offset-3">
-            <p>{{ field.label }}</p>
+        <div class="col-xs-4 col-xs-offset-2">
+            <p class="leftie">{{ field.label }}</p>
         </div>
         <div class="col-xs-2">
             <div class="input-group">
@@ -90,30 +74,12 @@
         </div>
     </div>
     {% endfor %}
-    <div class="row spacer-small">
+    <div class="row spacer">
         <div class="col-xs-4 col-xs-offset-4">
-            <button type="submit" class="btn btn-default" name="taxes">
-                Set new taxrates
+            <input type="hidden" name="save" value="banking">
+            <button type="submit" class="btn btn-default" name="save">
+                Save
             </button>
         </div>
     </div>
-</div>
 </form>
-
-<script>
-    $(document).ready(function(){
-    $("button").click(function(event){
-        event.preventDefault();
-        var stuff = $("form").serialize();
-        alert(stuff);
-        $.ajax({
-            method: "POST",
-            data: stuff,
-            url: '/alliances/main/control_panel/',
-            success: function(x, y, z){},
-        });
-    });
-});
-</script>
-
-{% endblock content %}

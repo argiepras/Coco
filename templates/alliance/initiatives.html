@@ -1,11 +1,12 @@
 
+{% load timetags %}
 
 <h3 class="headliner">Initiatives</h3>
 
 {% if cooldowns %}
     <div class="row">
         <div class="col-xs-2 col-xs-offset-10">
-            cooldowns
+            <h5>cooldowns</h5>
         </div>
     </div>
 {% endif %}
@@ -20,12 +21,16 @@
                         <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
                     </small>
                 </a>
-                {{ option.text }}
             </div>
         </div>
         <div class="col-xs-2 col-xs-offset-2">
             <label class="switch">
-                <input type="checkbox" class="toggle" name="toggle" value="{{ option.field }}" 
+                <input type="checkbox" {% if initiative.locked %}
+                    class="toggle locked"    
+                {% else %}
+                    class="toggle"
+                {% endif %} 
+                name="initiative" value="{{ initiative.initiative }}" 
                     {% if initiative.status %}
                         checked
                     {% endif %}
@@ -33,10 +38,14 @@
                     <span class="slider round"></span>
                 </label>
         </div>
-        {% if initiative.timer %}
             <div class="col-xs-2">
-                {{ initiative.timer }}
+                <div class="timercount" id="{{ initiative.initiative }}_timer">
+                    {% if initiative.timer %}
+                        {{ initiative.timer|timer }}
+                    {% else %}
+                        <span class="green">ready</span>
+                    {% endif %}
+                </div>
             </div>
-        {% endif %}
     </div>
 {% endfor %}

@@ -13,16 +13,18 @@
         <link href="{% static 'nation/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
         <script src="http://code.jquery.com/jquery.js"></script>
         <script src="{% static 'nation/js/bootstrap.min.js' %}"></script>
-
+        {% block scripts %}
+          
+        {% endblock scripts %}
         <script>
             jQuery(function ($) {
                 $("a").tooltip()
             });
             
             $('#myTab a').click(function (e) {
-  e.preventDefault();
-  $(this).tab('show');
-})
+            e.preventDefault();
+            $(this).tab('show');
+          })
         </script>
     </head>    
 <style>.dropdown-backdrop{
@@ -102,6 +104,11 @@
 .note {
   color: rgba(151, 151, 151, 0.8);
 }
+
+.cpactive {
+  background-color: rgba(60, 60, 60, 0.5);
+}
+
 .small-nav {
   padding: 0px;
   color: blue;
@@ -123,6 +130,11 @@
   width: 60px;
   height: 24px;
 
+}
+
+.timercount {
+  font-size: 0.75em;
+  padding-top: 4px;
 }
 
 /* Hide default HTML checkbox */
@@ -182,6 +194,10 @@ input:checked + .slider:before {
 .cpnot {
   border-radius: 0px;
   background-color: rgba(40, 40, 40, 0.5);
+}
+
+.spacer-top{
+  margin-top: 3em;
 }
 
 </style>
@@ -427,27 +443,3 @@ input:checked + .slider:before {
     </div>
 
     {% endif %}
-
-    <script type="text/javascript">
-    function checkTime(i) {
-    if (i < 10) {
-        i = "0" + i;
-    }
-    return i;
-}
-
-function startTime() {
-    var today = new Date();
-    var h = today.getHours();
-    var m = today.getMinutes();
-    var s = today.getSeconds();
-    // add a zero in front of numbers<10
-    m = checkTime(m);
-    s = checkTime(s);
-    document.getElementById('time').innerHTML = h + ":" + m + ":" + s;
-    t = setTimeout(function () {
-        startTime()
-    }, 500);
-}
-startTime();
-    </script>

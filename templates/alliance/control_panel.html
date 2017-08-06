@@ -1,6 +1,5 @@
 {% extends 'nation/base.html' %}
 {% block content %}
-{% load timetags %}
 {% load alliancetags %}
 
 {% include 'alliance/header.html' %}
@@ -13,14 +12,21 @@
 		font-size: 0.5em;
 	}
 
+	.test {
+		background-color: blue;
+	}
+
 
 </style>
 <div style="margin-top: -52px">
 	<div class="container-fluid">
     	<div class="btn-group btn-group-justified" role="group" aria-label="...">
-			<a class="btn cpnot" id="notifications" href="#">1</a>
-			<a class="btn cpnot" href="#">1</a>
-			<a class="btn cpnot" href="#">1</a>
+    		{% for page in pages %}
+    			<a class="btn 
+    			{% if not page.active %}
+    				cpnot
+    			{% endif %}" id="notifications" href="?page={{ page.link }}">{{ page.name }}</a>
+    		{% endfor %}
 		</div>
 	</div> <!-- end fluid -->
 </div>
@@ -35,15 +41,23 @@
 {% endif %}
 
 
-<script>
 
+
+<script>
 $(document).ready(function(){
     $(".toggle").click(function(){
     	if($(this).hasClass("locked") === false)
     	{
+    		if (this.name === "initiative"){
+    			$(this).addClass("locked");
+    			lock_it();
+    			var target = "#" + this.value + "_timer";
+    			$(target).html("72 hours");
+    		}
     		$.ajax({
 	            method: "POST",
 	            data: {
+	            	"csrfmiddlewaretoken": $("input[name='csrfmiddlewaretoken']").val(),
 	            	"toggle": this.value,
 	            },
 	            url: '/alliances/main/control_panel/',
@@ -56,7 +70,6 @@ $(document).ready(function(){
 $(document).ready(function(){
     $("button[name='save']").click(function(event){
     	event.preventDefault();
-    	alert(this);
 		$.ajax({
             method: "POST",
             data: $('form').serialize(),
@@ -73,7 +86,13 @@ function double(data, textStatus, jqXHR)
 	$(this).addClass("btn-success");
 }
 
+function lock_it(){
+	$('.locked').click(function(event){
+        event.preventDefault();
+    });
+}
 
+$(document).ready(lock_it);
 </script>
 
 {% endblock %}
