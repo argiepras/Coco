@@ -1,6 +1,6 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-from nation.models import Nation, Alliance, Initiatives, Permissiontemplate, Bank, Bankstats
+from nation.models import Nation, Alliance, Initiatives, Permissiontemplate, Bank, Bankstats, Timers
 
 
 @receiver(post_save, sender=Alliance, dispatch_uid='nation.signals.alliance_creation')
@@ -9,7 +9,8 @@ def alliance_creation(sender, instance, created, **kwargs):
     #this has the advantage that testing and shell actions doesn't need to explicitly set
     #related tables and such
     if created:
-        Initiatives.objects.create(alliance=instance)
+        ini = Initiatives.objects.create(alliance=instance)
+        Timers.objects.create(initiatives=ini)
         Bank.objects.create(alliance=instance)
         Bankstats.objects.create(alliance=instance)
         ft = instance.templates.create()

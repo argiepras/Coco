@@ -1,6 +1,7 @@
+{% load alliancetags %}
 
 <h2>Banking settings</h2>
-
+{% if nation.permissions|check_permission:'banking' %}
 <div class="row spacer">
     <div class="col-xs-4 col-xs-offset-2">
         <div class="leftie">
@@ -58,7 +59,10 @@
             </div>
         </div>
     </div>
+{% endif %}
 
+
+{% if nation.permissions|check_permission:'taxman' %}
     <h3 class="headliner">Taxes</h3>
 
     {% for field in taxrateform %}
@@ -83,3 +87,4 @@
         </div>
     </div>
 </form>
+{% endif %}

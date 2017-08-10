@@ -131,7 +131,7 @@ class permissionselectform(forms.Form):
 class newtemplateform(forms.Form):
     def __init__(self, permissions, *args, **kwargs):
         super(newtemplateform, self).__init__(*args, **kwargs)
-        for field in Permissiontemplate._meta.fields[6:]: #list of regular permissions
+        for field in Basetemplate._meta.fields: #list of regular permissions
             self.fields[field.name] = forms.BooleanField(required=False)
         rank_choices = (
             (1, 1), 
@@ -144,7 +144,8 @@ class newtemplateform(forms.Form):
             self.fields['rank'] = forms.ChoiceField(choices=rank_choices)
         else:
             self.fields['rank'] = forms.ChoiceField(choices=rank_choices[permissions.template.rank-1:len(rank_choices)])
-        if permissions.template.founder:
+        
+        if permissions.template.rank == 0:
             type_choices = (
             ('officer', 'Officer'),
             ('founder', 'Founder'),

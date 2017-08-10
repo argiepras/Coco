@@ -230,7 +230,7 @@ def invited(invitee, alliance):
     invitee.news.create(content=txt)
 
 def players_invited(inviter, squad, invitees):
-    txt = '%s has invited %s to our alliance' % utils.string_list(invitees)
+    txt = '%s has invited %s to our alliance' % (inviter.name, utils.string_list(invitees))
     squad_update(squad, txt)
 
 def invite_revoked(invite):
@@ -247,7 +247,7 @@ def revoked_invites(nation, revokees):
     #when an officer revokes invites
     txt = "%s has revoked the invite" % nation.name + ('s' if len(revokees) > 1 else '') + ' to '
     txt += utils.string_list(revokees)
-    squad_update(nation.alliance.notification_squad('invite'), txt)
+    squad_update(nation.alliance.notification_squad('invite', exclusion=nation.pk), txt)
 
 
 def initiative_recalled(nation, initiative):
@@ -311,6 +311,17 @@ def heir_tofounder(nation):
     txt = "The previous leader stepped down and you have assumed the role as founder of %s!" % link
     nation.news.create(content=txt)
 
+def promoted(nation, newrank):
+    txt = "You have been promoted to %s!" % newrank
+    nation.news.create(content=txt)
+
+def demoted(nation):
+    txt = "You have been demoted to regular member"
+    nation.news.create(content=txt)
+
+def changed(nation, newrank):
+    txt = "Your rank has been changed to %s" % newrank
+    nation.news.create(content=txt)
 
 
 #####################

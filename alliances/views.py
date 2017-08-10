@@ -228,7 +228,7 @@ def invites(request):
     if request.method == 'POST':
         context.update({'result': oa.revoke_invites(nation, request.POST)})
     invites = Invite.objects.select_related('nation').filter(alliance=alliance)
-    context.update({'outstanding_invites': invites})
+    context.update({'outstanding_invites': invites, 'alliance': alliance})
     return render(request, 'alliance/invites.html', context)
 
 

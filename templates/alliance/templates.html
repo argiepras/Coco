@@ -1,6 +1,11 @@
 {% extends 'nation/base.html' %}
 {% block content %}
+{% include "alliance/header.html" %}
 <div class="container">
+
+{% if error %}
+    <h3 style="margin: 50px;">Invalid template picked</h3>
+{% else %}
 
 {% if new %}
     <h3 style="margin: 50px;">New template</h3>
@@ -15,10 +20,15 @@
 {% endif %}
 
 <form method="POST">{% csrf_token %}
-{% if founder %}
+{% if nation.permissions.template.rank == 0 %}
     <div class="row spacer">
         <div class="col-xs-2 col-xs-offset-4"> 
-            Template type
+            <a href="#" data-toggle="tooltip" data-placement="top" title="Founder type templates have every permission enabled and will have rank 0">
+                Template type
+            </a>
+            <small>
+                <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+            </small>
         </div>
         <div class="col-xs-2">
             {{ form.permset }}
@@ -46,7 +56,14 @@
         </div>
 
         <div class="col-xs-3">
-            <p class="templating">Promote member</p>
+            <p class="templating">
+                <a href="#" data-toggle="tooltip" data-placement="top" title="Officer with this can promote members to a rank equal to or less than his own">
+                Promote member
+                </a>
+                <small>
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                </small>
+            </p>
         </div>
         <div class="col-xs-1 leftie">
             {{ form.promote }}
@@ -55,14 +72,28 @@
 
     <div class="row spacer">
         <div class="col-xs-3 col-xs-offset-1">
-            <p class="templating">Kick officer</p>
+            <p class="templating">
+                <a href="#" data-toggle="tooltip" data-placement="top" title="Will only be able to kick lower ranked officers">
+                    Kick officer
+                </a>
+                <small>
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                </small>
+            </p>
         </div>
         <div class="col-xs-1 leftie">
             {{ form.kick_officer }}
         </div>
 
         <div class="col-xs-3">
-            <p class="templating">Demote officer</p>
+            <p class="templating">
+                <a href="#" data-toggle="tooltip" data-placement="top" title="Will only be able to demote lower ranked officers">
+                    Demote officer
+                </a>
+                <small>
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                </small>
+            </p>
         </div>
         <div class="col-xs-1 leftie">
             {{ form.demote_officer }}
@@ -78,7 +109,7 @@
         </div>
 
         <div class="col-xs-3">
-            <p class="templating">Change officer permissions</p>
+            <p class="templating">Change officer rank</p>
         </div>
         <div class="col-xs-1 leftie">
             {{ form.change_officer }}
@@ -151,26 +182,10 @@
 
     <div class="row spacer">
         <div class="col-xs-3 col-xs-offset-1">
-            <p class="templating">Create permission template</p>
+            <p class="templating">Create/delete/change permission templates</p>
         </div>
         <div class="col-xs-1 leftie">
-            {{ form.create_template }}
-        </div>
-
-        <div class="col-xs-3">
-            <p class="templating">Delete permission template</p>
-        </div>
-        <div class="col-xs-1 leftie">
-            {{ form.delete_template }}
-        </div>
-    </div>
-
-    <div class="row spacer">
-        <div class="col-xs-3 col-xs-offset-1">
-            <p class="templating">Change permission template</p>
-        </div>
-        <div class="col-xs-1 leftie">
-            {{ form.change_template }}
+            {{ form.templating }}
         </div>
 
         <div class="col-xs-3">
@@ -182,21 +197,41 @@
     </div>
 
 <!-- missing  call_for_election -->
-
+    {% if new %}
+        <input type="hidden" name="template" value="new">
+    {% else %}
+        <input type="hidden" name="template" value="{{ templatepk }}">
+    {% endif %}
     <div class="row spacer">
         <div class="col-xs-4 col-xs-offset-4">
-            {% if new %}
-            <button type="submit" class="btn btn-default" name="createnew">
-                Create new template
+            <button type="submit" class="btn btn-default" name="save">
+                Save
             </button>
-            {% else %}
-            <button type="submit" class="btn btn-default" name="commitchange" value="{{ tmpk }}">
-                Alter template
-            </button>
-            {% endif %}
         </div>
     </div>
 </form>
 </div>
+
+<script type="text/javascript">
+    $(document).ready(function(){
+    $("button[name='save']").click(function(event){
+        event.preventDefault();
+        $.ajax({
+            method: "POST",
+            data: $('form').serialize(),
+            url: '/alliances/main/control_panel/change/',
+            context: this,
+            success: double,
+        });
+    });
+});
+
+function double(data, textStatus, jqXHR)
+{
+    $(this).html(data);
+    $(this).addClass("btn-success");
+}
+</script>
+{% endif %}
 
 {% endblock %}

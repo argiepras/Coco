@@ -1,55 +1,79 @@
+{% load alliancetags %}
+
 <h2 class="headline">Member management</h2>
 
+
+{% if result %}
+    <div class="result">
+        {{ result }}
+    </div>
+{% endif %}
+
+{% if nation.permissions|check_permission:'promote' %}
     <div class="row spacer">
         <div class="col-xs-6 col-xs-offset-3">
             <p>Promote member</p>
         </div>
     </div>
-    <form method="POST">{% csrf_token %}
     <div class="row">
         <div class="col-xs-2 col-xs-offset-3">
-            {{ promoteform.member }}
-        </div>
-        <div class="col-xs-2">
-            {{ promoteform.template }}
-        </div>
-        <div class="col-xs-2">
-            <button type="submit" class="btn btn-default" name="promote">
-                Promote
-            </button>
-        </div>
-    </div>
-    </form>
-    <div class="row spacer-top">
-        <div class="col-xs-6 col-xs-offset-3">
-            Change officer rank
-        </div>
-    </div>
-    <form method="POST">{% csrf_token %}
-
-    <div class="row">
-        <div class="col-xs-2 col-xs-offset-3">
-            <h6>officer</h6>
+            <h6>member</h6>
         </div>
         <div class="col-xs-2">
             <h6>new rank</h6>
         </div>
     </div>
+    <form method="POST">{% csrf_token %}
+        <div class="row">
+            <div class="col-xs-2 col-xs-offset-3">
+                {{ promoteform.member }}
+            </div>
+            <div class="col-xs-2">
+                {{ promoteform.template }}
+            </div>
+            <div class="col-xs-2">
+                <button type="submit" class="btn btn-default" name="promote">
+                    Promote
+                </button>
+            </div>
+        </div>
+    </form>
+{% endif %}
 
-    <div class="row">
-        <div class="col-xs-2 col-xs-offset-3">
-            {{ changeform.officer }}
-        </div>
-        <div class="col-xs-2">
-            {{ changeform.template }}
-        </div>
-        <div class="col-xs-2">
-            <button type="submit" class="btn btn-default" name="change">
-                Change
-            </button>
+{% if nation.permissions|check_permission:'promote' %}
+    <div class="row spacer-top">
+        <div class="col-xs-6 col-xs-offset-3">
+            Change officer rank
         </div>
     </div>
 
+    <form method="POST">{% csrf_token %}
+        <div class="row">
+            <div class="col-xs-2 col-xs-offset-3">
+                <h6>officer</h6>
+            </div>
+            <div class="col-xs-2">
+                <h6>new rank</h6>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-2 col-xs-offset-3">
+                {{ changeform.officer }}
+            </div>
+            <div class="col-xs-2">
+                {{ changeform.template }}
+            </div>
+            <div class="col-xs-2">
+                <button type="submit" class="btn btn-default" name="change">
+                    Change
+                </button>
+            </div>
+        </div>
+    </form>
+{% endif %}
+
+{% if nation.permissions|check_permission:'promote' %}
     <div class="row spacer">
         <div class="col-xs-6 col-xs-offset-3">
             <p>Demote officer</p>
@@ -57,7 +81,7 @@
     </div>
     <form method="POST">{% csrf_token %}
     <div class="row">
-        <div class="col-xs-2 col-xs-offset-4">
+        <div class="col-xs-3 col-xs-offset-3">
             {{ demoteform.officer }}
         </div>
         <div class="col-xs-2">
@@ -67,18 +91,17 @@
         </div>
     </div>
     </form>
-</div><!-- end of management collapse -->
+{% endif %}
 
-
-<div class="collapse" id="permissions">
+{% if nation.permissions|check_permission:'templating' %}
     <p style="margin-top: 2em; margin-bottom: 1em;">Alter Existing Template</p>
-    <form method="POST" action="{% url 'alliance:templates' %}">{% csrf_token %}
+    <form method="GET" action="{% url 'alliance:templates' %}">
     <div class="row">
         <div class="col-xs-3 col-xs-offset-3">
             {{ templatesform.template }}
         </div>
         <div class="col-xs-2">
-            <button type="submit" class="btn btn-default" name="alter">
+            <button type="submit" class="btn btn-default">
                 Alter Template
             </button>
         </div>
@@ -100,14 +123,14 @@
     </div>
     </form>
 
-    <p style="margin-top: 2em; margin-bottom: 1em;">Alter Existing Template</p>
-    <form method="POST" action="{% url 'alliance:templates' %}">{% csrf_token %}
+    <p style="margin-top: 2em; margin-bottom: 1em;">Create New Template</p>
+    <form method="GET" action="{% url 'alliance:templates' %}">
     <div class="row">
         <div class="col-xs-6 col-xs-offset-3">
-            <button type="submit" class="btn btn-default" name="new">
+            <button class="btn btn-default" name="template" value="new">
                 Create New Template
             </button>
         </div>
     </div>
     </form>
-</div>
+{% endif %}

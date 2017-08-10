@@ -1,11 +1,12 @@
-from nation.models import Allianceoptions, Nation, Timers, Initiatives
+from nation.models import Allianceoptions, Nation, Timers, Initiatives, Permissions, Basetemplate
 from nation.decorators import alliance_required, nation_required
 from .forms import *
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from nation import news
 
 import random
 
@@ -13,23 +14,26 @@ import random
 @nation_required
 @alliance_required
 def view(request):
-    print request.POST
+    nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
     if request.is_ajax():
         return post_handler(request)
-    page = (request.GET['page'] if 'page' in request.GET else 'general')
-    context = {'panel': 'activetab', 'page': page}
-    nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
     permissions = nation.permissions
     alliance = nation.alliance
     if not permissions.panel_access():
         return redirect('alliance:main')
+
+    page = (request.GET['page'] if 'page' in request.GET else 'general')
+    context = {'panel': 'activetab', 'page': page}
     
+
     if page == 'general':
         context.update(general(nation, alliance))
         context.update(notifications(alliance))
     elif page == 'banking':
         context.update(banking(nation, alliance))
     elif page == 'members':
+        if request.POST:
+            context.update(members_post(request))
         context.update(members(nation, alliance))
 
     pages = []
@@ -53,7 +57,7 @@ def control_panel_pages(permissions, page):
     iterables = ['general']
     if permissions.has_permission('banking') or permissions.has_permission('taxman'):
         iterables.append('banking')
-    for permission in ['promote', 'demote_officer', 'change_officer', 'create_template', 'change_template', 'delete_template']:
+    for permission in ['promote', 'demote_officer', 'change_officer', 'templating']:
         if permissions.has_permission(permission):
             iterables.append('members')
             break
@@ -64,8 +68,57 @@ def control_panel_pages(permissions, page):
                 'link': x,
             })
 
+
+#this here creates new/alters existing permission templates
 def change(request):
-    pass
+    nation = request.user.nation
+    alliance = request.user.nation.alliance
+    if not nation.permissions.has_permission('templating'):
+        return redirect('alliance:control_panel')
+    if request.method == "POST":
+        form = newtemplateform(nation.permissions, request.POST)
+        if form.is_valid():
+            print request.POST
+            if request.POST['template'] == 'new':
+                template = alliance.templates.create()
+                result = "Template successfully created"
+            else:
+                result = "Template saved"
+                try:
+                    template = alliance.templates.get(pk=request.POST['template'])
+                except:
+                    return HttpResponse('Stop editing the html')
+            template.from_form(form.cleaned_data)
+            template.save()
+        return HttpResponse(result)
+
+
+    if not 'template' in request.GET:
+        return redirect('alliance:control_panel')
+    context = {}
+    if request.GET['template'] == 'new':
+        context.update({
+            'form': newtemplateform(nation.permissions),
+            'new': True,
+            })
+    else:
+        try:
+            template = alliance.templates.get(pk=request.GET['template'])
+        except:
+            return render(request, 'alliance/templates.html', {'error': True})
+        context.update({'templatepk': template.pk})
+        init = {
+            'rank': template.rank,
+            'title': template.title
+            }
+        for field in Basetemplate._meta.fields:
+            init.update({field.name: getattr(template, field.name)})
+        context.update({'form': newtemplateform(nation.permissions, initial=init)})
+
+    return render(request, 'alliance/templates.html', context)
+
+
+
 
 
 def post_handler(request):
@@ -79,24 +132,22 @@ def post_handler(request):
         if hasattr(Timers, field): #when toggling an initiative
             #have to make sure that there isn't an active countdown
             #and that a fresh countdown is set
-            initiatives = request.user.nation.alliance.initiatives
-            if getattr(initiatives.timers, field) < timezone.now(): #not on a cooldown
-                setattr(initiatives.timers, field, timezone.now() + timezone.timedelta(hours=72))
-                initiatives.timers.save(update_fields=[field])
-                toggle(initiatives, field)
+            if nation.permissions.has_permission('initiatives'):
+                initiatives = request.user.nation.alliance.initiatives
+                if getattr(initiatives.timers, field) < timezone.now(): #not on a cooldown
+                    setattr(initiatives.timers, field, timezone.now() + timezone.timedelta(hours=72))
+                    initiatives.timers.save(update_fields=[field])
+                    toggle(initiatives, field)
 
         elif hasattr(Allianceoptions, field):
             toggle(alliance, field)
 
         elif hasattr(alliance.bank, field):
-            if field == 'limit' or field == 'per_nation':
-                toggle(alliance.bank, field)
+            if nation.permissions.has_permission('banking'):
+                if field == 'limit' or field == 'per_nation':
+                    toggle(alliance.bank, field)
 
-
-
-
-        return HttpResponse()
-
+        return HttpResponse() #toggles are silent
 
     elif 'save' in request.POST:
         if request.POST['save'] == 'general':
@@ -126,17 +177,14 @@ def post_handler(request):
             if form.is_valid():
                 for field in form.cleaned_data:
                     #sets either taxes or bank limits
-                    if hasattr(alliance.bank, field):
+                    if hasattr(alliance.bank, field) and nation.permissions.has_permission('banking'):
                         setattr(alliance.bank, field, form.cleaned_data[field])
-                    else:
+                    elif nation.permissions.has_permission('taxman'):
                         setattr(alliance.initiatives, field, form.cleaned_data[field])
                 alliance.bank.save(update_fields=['budget_limit'])
                 alliance.initiatives.save()
             else:
                 HttpResponse("Invalid input")
-
-        elif request.POST['save'] == 'members':
-            pass
 
     return HttpResponse("Settings successfully saved")
 
@@ -148,6 +196,40 @@ def toggle(model, field):
         setattr(model, field, False)
     model.save(update_fields=[field])
 
+
+#POSTS frrom the member management stuff is regular POST, not ajax
+#so it's handled in a different function
+#just because
+def members_post(request):
+    nation = request.user.nation
+    result = ''
+    if 'promote' in request.POST and nation.permissions.has_permission('promote'):
+        form = promoteform(nation, request.POST)
+        if form.is_valid():
+            news.promoted(form.cleaned_data['member'], form.cleaned_data['template'].rank)
+            Permissions.objects.filter(member=form.cleaned_data['member']).update(template=form.cleaned_data['template'])
+            result = "%s has been promoted" % form.cleaned_data['member'].name
+    
+    elif 'demote' in request.POST and nation.permissions.has_permission('demote_officer'):
+        form = demoteform(nation, request.POST)
+        if form.is_valid():
+            member_template = nation.alliance.templates.get(rank=5)
+            form.cleaned_data['officer'].permissions.template = member_template
+            form.cleaned_data['officer'].permissions.save(update_fields=['template'])
+            news.demoted(form.cleaned_data['officer'])
+            result = "%s has been demoted to a regular member" % form.cleaned_data['officer'].name
+
+    elif 'change' in request.POST and nation.permissions.has_permission('change_officer'):
+        form = changeform(nation, request.POST)
+        if form.is_valid():
+            news.changed(form.cleaned_data['officer'], form.cleaned_data['template'].rank)
+            Permissions.objects.filter(member=form.cleaned_data['officer']).update(template=form.cleaned_data['template'])
+            result = "%ss rank has been changed" % form.cleaned_data['officer'].name
+
+    if not result:
+        result = "No can do cap'n"
+    return {'result': result}
+
 ########
 ## context providing functions
 ######
@@ -157,26 +239,29 @@ def general(nation, alliance):
     x = {
         'generals': generals_form(initial={'anthem': alliance.anthem, 'flag': alliance.flag, 'description': alliance.description}),
         'membertitleform': membertitleform(initial={'title': membertitle}),
-        'heirform': heirform(nation, initial={'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)}),
     }
-    x.update(initiative_display(alliance.initiatives))
+    if nation.permissions.template.rank == 0:
+        x.update({'heirform': heirform(nation, initial={'heir': (alliance.permissions.get(heir=True).member if alliance.permissions.filter(heir=True).exists() else None)})})
+    if nation.permissions.has_permission('initiatives'):
+        x.update(initiative_display(alliance.initiatives))
     return x
 
 
 def banking(nation, alliance):
     context = {'bankingform': bankingform(initial={'budget_limit': alliance.bank.budget_limit})}
-    #initial data for the tax form
-    taxinit =  {}
-    for field in alliance.initiatives._meta.fields:
-        try:
-            if field.name.split('_')[1] == 'tax':
-                bracket = field.name
-            else:
+    if nation.permissions.has_permission('taxman'):
+        #initial data for the tax form
+        taxinit =  {}
+        for field in alliance.initiatives._meta.fields:
+            try:
+                if field.name.split('_')[1] == 'tax':
+                    bracket = field.name
+                else:
+                    continue
+            except: #continue if not a tax rate
                 continue
-        except: #continue if not a tax rate
-            continue
-        taxinit.update({bracket: alliance.initiatives.__dict__[bracket]})
-    context.update({'taxrateform': taxrateform(initial=taxinit)})
+            taxinit.update({bracket: alliance.initiatives.__dict__[bracket]})
+        context.update({'taxrateform': taxrateform(initial=taxinit)})
     return context
 
 

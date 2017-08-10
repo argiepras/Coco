@@ -25,6 +25,7 @@ class alliance_checks(TestCase):
     def check_allianceattrs(self, alliance):
         self.assertTrue(hasattr(alliance, 'bank'))
         self.assertTrue(hasattr(alliance, 'initiatives'))
+        self.assertTrue(hasattr(alliance.initiatives, 'timers'))
         self.assertEqual(alliance.bank_logs.count(), 0)
         self.assertEqual(alliance.bankstats.count(), 1)
         self.assertEqual(alliance.outstanding_invites.count(), 0)

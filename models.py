@@ -947,9 +947,7 @@ class Basetemplate(models.Model):
     initiatives = models.BooleanField(default=False)
     applicants = models.BooleanField(default=False)
     taxman = models.BooleanField(default=False)
-    create_template = models.BooleanField(default=False)
-    change_template = models.BooleanField(default=False)
-    delete_template = models.BooleanField(default=False)
+    templating = models.BooleanField(default=False)
     class Meta:
         abstract = True
 
@@ -968,15 +966,18 @@ class Permissiontemplate(Basetemplate):
         return u"%s template" % self.title
 
     def from_form(self, formdata):
+        founder = False
         for field in formdata:
             if field == 'permset':
                 if formdata[field] == 'founder':
-                    self.founder = True
-                self.officer= True
+                    founder = True
+                    break
             else:
                 self.__dict__[field] = formdata[field]
-        if not formdata.has_key('permset'):
-            self.officer = True
+        if founder:
+            for field in Basetemplate._meta.fields:
+                setattr(self, field.name, True)
+                self.rank = 0
 
     def save(self, *args, **kwargs):
         if self.alliance.templates.all().count() == 0:

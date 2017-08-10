@@ -1,7 +1,9 @@
 
 <h2>General settings</h2>
 <form>{% csrf_token %}
-
+    {% if nation.permissions.template %}
+        
+    {% endif %}
     {% if heirform %} 
         <div class="row spacer">
             <div class="col-xs-4">
@@ -77,5 +79,6 @@
 {% include "alliance/cp_notifications.html" %}
 
 <div class="spacer"></div>
-
-{% include "alliance/initiatives.html" %}
+{% if initiatives %}
+    {% include "alliance/initiatives.html" %}
+{% endif %}

@@ -110,6 +110,7 @@ def invite_players(nation, POST):
         return "You do not have permission to do this"
     form = inviteform(POST)
     alliance = nation.alliance
+    created = False
     failed = []
     sent = []
     if form.is_valid():
@@ -117,17 +118,20 @@ def invite_players(nation, POST):
         for name in names:
             invitee = utils.get_active_player(name)
             if invitee:
-                invitee.invites.create(inviter=nation, alliance=nation.alliance)
-                news.invited(invitee, alliance)
-                sent.append(invitee.name)
+                inv, created = invitee.invites.get_or_create(inviter=nation, alliance=nation.alliance)
+                if created:
+                    news.invited(invitee, alliance)
+                    sent.append(invitee.name)
             else:
                 failed.append("'%s'" % name)
-        if len(sent) == 0:
+        if len(sent) == 0 and not created:
+            return "%s already has an invite" % utils.string_list(names)
+        elif len(sent) == 0:
             return "No matches found for %s" % utils.string_list(names)
     else:
         return "Slow down big boy! max 200 characters"
     if alliance.event_on_invite:
-        squad = alliance.notification_squad('invite', exclusion=nation)
+        squad = alliance.notification_squad('invite', exclusion=nation.pk)
         news.players_invited(nation, squad, sent)
     nation.actionlogs.create(action="Invited players to %s" % alliance.name, policy=False, extra=form.cleaned_data['name'])
 
@@ -136,7 +140,7 @@ def invite_players(nation, POST):
     else:
         txt = "Invite%s has been sent to %s" % (('s' if len(sent) > 1 else ''), utils.string_list(sent))
         if len(failed) > 0:
-            txt += ". <br>%s wasn't found" % utils.string_list(failed)
+            txt += ". %s wasn't found" % utils.string_list(failed)
     return txt
 
 
