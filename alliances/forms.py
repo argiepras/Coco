@@ -160,13 +160,13 @@ class newtemplateform(forms.Form):
 class changeform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(changeform, self).__init__(*args, **kwargs)
-        templatequery = nation.alliance.templates.all().exclude(rank=5).exclude(rank=0)
+        templatequery = nation.alliance.templates.all().exclude(rank=5)
         if nation.permissions.template.rank == 0:
-            query = nation.alliance.members.all().exclude(pk=nation.pk).exclude(permissions__template__rank=5).exclude(permissions__template__rank=0)
+            query = nation.alliance.officers.all().exclude(pk=nation.pk)
         else:
-            query = nation.alliance.members.all().exclude(
-                permissions__template__rank__gte=nation.permissions.template.rank).exclude(permissions__template__rank=5)
-            templatequery = templatequery.filter(rank__lte=nation.permissions.template.rank)
+            query = nation.alliance.officers.all().exclude(
+                permissions__template__rank__lte=nation.permissions.template.rank)
+            templatequery = templatequery.filter(rank__gte=nation.permissions.template.rank)
         self.fields['officer'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black',
             }))
@@ -179,9 +179,9 @@ class promoteform(forms.Form):
     def __init__(self, nation, *args, **kwargs):
         super(promoteform, self).__init__(*args, **kwargs)
         query = nation.alliance.members.all().filter(permissions__template__rank=5).exclude(pk=nation.pk)
-        templatequery = nation.alliance.templates.all().exclude(rank=5).exclude(rank=0)
+        templatequery = nation.alliance.templates.all().exclude(rank=5)
         if not nation.permissions.template.rank == 0:
-            templatequery = templatequery.filter(rank__lte=nation.permissions.template.rank)
+            templatequery = templatequery.filter(rank__gte=nation.permissions.template.rank)
         self.fields['member'] = forms.ModelChoiceField(queryset=query, widget=forms.Select(attrs={
             'class': 'form-control', 'style': 'color: black',
             }))
@@ -238,10 +238,16 @@ class taxrateform(forms.Form):
                 cleaned_data[field] = 100
         return cleaned_data
 
-class bankingform(taxrateform):
+class limitform(forms.Form):
     #inherit from taxrate form to make form validation at the view level easier
     budget_limit = forms.IntegerField(min_value=0, widget=forms.NumberInput(attrs={
         'class': 'form-control', 'style': 'color: black',
         }))
+
+
+class bankingform(taxrateform, limitform):
+    #inherit from both forms to make form validation at the view level easier
+    #when permission requirements are satisfied
+    pass
 
 

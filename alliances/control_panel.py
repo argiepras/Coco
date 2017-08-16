@@ -36,16 +36,8 @@ def view(request):
             context.update(members_post(request))
         context.update(members(nation, alliance))
 
-    pages = []
-    for x in ['general', 'banking', 'members']:
-        pages.append({
-                'active': (True if page == x else False),
-                'name': x.capitalize(),
-                'link': x,
-            })
-    
     context.update({
-        'pages': pages,
+        'pages': control_panel_pages(permissions, page),
         'permissions': permissions,
         'alliance': alliance,
         })
@@ -67,6 +59,11 @@ def control_panel_pages(permissions, page):
                 'name': x.capitalize(),
                 'link': x,
             })
+    if len(pages) == 1: 
+        #if the officer only has permission to see the generals page
+        #there's no need to create the nagivationals
+        return False
+    return pages
 
 
 #this here creates new/alters existing permission templates
@@ -173,7 +170,12 @@ def post_handler(request):
 
 
         elif request.POST['save'] == 'banking':
-            form = bankingform(request.POST)
+            if nation.permissions.has_permission('banking') and nation.permissions.has_permission('taxman'):
+                form = bankingform(request.POST)
+            elif nation.permissions.has_permission('banking'):
+                form = limitform(request.POST)
+            elif nation.permissions.has_permission('taxman'):
+                form = taxrateform(request.POST)
             if form.is_valid():
                 for field in form.cleaned_data:
                     #sets either taxes or bank limits

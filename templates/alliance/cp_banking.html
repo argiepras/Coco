@@ -1,6 +1,7 @@
 {% load alliancetags %}
 
 <h2>Banking settings</h2>
+<form method="POST">{% csrf_token %}
 {% if nation.permissions|check_permission:'banking' %}
 <div class="row spacer">
     <div class="col-xs-4 col-xs-offset-2">
@@ -42,12 +43,16 @@
     <p class="red">There are no limits on withdrawals</p>
 {% endif %}
 
-<form method="POST">{% csrf_token %}
     <div class="row spacer-small">
         <div class="col-xs-6 col-xs-offset-3">
         </div>
     </div>
-    <div class="row spacer-small">
+    <div class="row">
+        <div class="col-xs-12">
+            <h5>Alliance bank contains ${{ alliance.bank.budget }}k</h5>
+        </div>
+    </div>
+    <div class="row">
         <div class="col-xs-2 col-xs-offset-2">
             <p class="leftie" style="padding-top: 5px">limit</p>
         </div>
@@ -78,6 +83,7 @@
         </div>
     </div>
     {% endfor %}
+{% endif %}
     <div class="row spacer">
         <div class="col-xs-4 col-xs-offset-4">
             <input type="hidden" name="save" value="banking">
@@ -87,4 +93,3 @@
         </div>
     </div>
 </form>
-{% endif %}

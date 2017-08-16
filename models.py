@@ -1020,7 +1020,7 @@ class Permissions(models.Model):
 
     def has_permission(self, permission):
         if not hasattr(Basetemplate, permission):
-            raise ValueError
+            raise ValueError('Invalid permission')
         if self.template.rank == 0:
             return True
         return getattr(self.template, permission)

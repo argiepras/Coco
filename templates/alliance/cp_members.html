@@ -40,7 +40,7 @@
     </form>
 {% endif %}
 
-{% if nation.permissions|check_permission:'promote' %}
+{% if nation.permissions|check_permission:'change_officer' %}
     <div class="row spacer-top">
         <div class="col-xs-6 col-xs-offset-3">
             Change officer rank
@@ -73,7 +73,7 @@
     </form>
 {% endif %}
 
-{% if nation.permissions|check_permission:'promote' %}
+{% if nation.permissions|check_permission:'demote_officer' %}
     <div class="row spacer">
         <div class="col-xs-6 col-xs-offset-3">
             <p>Demote officer</p>
