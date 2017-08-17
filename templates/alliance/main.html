@@ -43,14 +43,14 @@
 			</div>
 		</div>
 
-		{% if permissions.can_masscomm %}
+		{% if permissions|check_permission:"mass_comm" %}
 		<div id="masscomm">
 			<h3>Mass comm</h3>
 			<div class="row">
 				<div class="col-xs-4 col-xs-offset-4">
 					<form method="POST" role="form">{% csrf_token %}
 						{{ masscommform.message }}
-						{% if permissions.can_officercomm %}
+						{% if permissions|check_permission:"officer_comm" %}
 							<div style="margin-top: 20px;">
 								<button type="submit" name="masscomm" value="leadership" class="btn btn-default" style="margin-right: 15px">
 									Send leadership comm
@@ -72,54 +72,28 @@
 		</div>
 		{% endif %}
 
-<div>
-    <button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#banking">
-        Alliance banking
-    </button>
-    <div class="collapse" id="banking">
-    {% if permissions.can_banking %}
-        <div style="margin: 10px">
-            <a href="{% url 'alliance:bank' 1 %}">
-                <button class="btn btn-default">
-                    Bank Overview
-                </button>
-            </a>
-        </div>
-    {% endif %}
+
     <div style="margin: 20px">
     <form method="POST">{% csrf_token %}
-    <div class="col-xs-10 col-xs-offset-1">
-    <table class="table">
-        <thead>
-            <td></td>
-            <td></td>
-            <td>Bank content</td>
-            {% if permissions.can_withdraw %}
-                <td>Withdrawal limits</td>
-            {% endif %}
-        </thead>
-        <tbody>
-            <tr>
-                <td>
-                    Cash
-                </td>
-                <td>
-                    {{ depositform.amount }}
-                </td>
-                <td>
-                    <span style="color: green">${{ alliance.bank.budget }}k</span>
-                </td>
-                {% if permissions.can_withdraw %}
-                <td>
-                    ${{ nation|remaining_limit:'budget' }}k
-                </td>
-                {% endif %}
-            </tr>
-        </tbody>
-    </table>
+    <div class="row">
+        <div class="col-xs-6 col-xs-offset-3">
+            <h6>The alliance bank contains <span style="color: green">${{ alliance.bank.budget }}k</span></h6>
+        </div>
     </div>
+    <div class="row">
+        <div class="col-xs-6 col-xs-offset-3">
+            {{ depositform.amount }}
+        </div>
+    </div>
+    {% if permissions|check_permission:"withdraw" %}
         <div class="row">
-        {% if permissions.can_withdraw %}
+            <div class="col-xs-6 col-xs-offset-3">
+                <h6>Maximum withdrawal is <span style="color: green">${{ nation|remaining_limit }}k</span></h6>
+            </div>
+        </div>
+    {% endif %}
+        <div class="row">
+        {% if permissions|check_permission:"withdraw" %}
             <div class="col-xs-2 col-xs-offset-4">
                 <button type="submit" class="btn btn-default spacer" name="deposit">
                     Deposit
@@ -141,7 +115,6 @@
     </form>
     </div>
     </div>
-</div>
 
 <button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#inits">
 	Alliance initiatives
@@ -151,15 +124,20 @@
         <thead>
             <tr>
                 <td style="width: 80%">Policy</td>
-                <td style="width: 20%">Status</td>
+                <td style="width: 20%">Enacted</td>
             </tr>
         </thead>
         <tbody>
         {% for initiative in initiatives %}
             <tr>
-                <td><a href="#" data-toggle="tooltip" data-placement="right" title="{{ initiative.tooltip }}">
+                <td>            
+                    <a href="#" data-toggle="tooltip" title="{{ initiative.tooltip }}">
                         {{ initiative.txt }}
-                    </a></td>
+                        <small>
+                            <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                        </small>
+                    </a>
+                </td>
                 <td>
                     {% if initiative.status %}
                         <span style="color: green">Yes</span>
@@ -172,7 +150,6 @@
         </tbody>
     </table>
   </div>
-
 
 <div>
 <button class="btn btn-default btn-collapse" data-toggle="collapse" data-target="#taxes">
@@ -207,7 +184,6 @@
         </tbody>
     </table>
 </div>
-
 
 		<h3>Member list</h3>
 		<table class="table table-striped">
@@ -277,7 +253,5 @@
         </div>
         {% endif %}
     </form>
-</div>
-
 </div>
 {% endblock %}

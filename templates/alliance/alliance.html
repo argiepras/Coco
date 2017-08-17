@@ -120,7 +120,7 @@
         <tbody>
         {% for member in members %}
             <tr>
-                <td><a href="{{ member.get_absolute_url }}">
+                <td><a href="{{ member.get_absolute_url }}" style="color: rgb(224, 224, 224)">
                 {% if member.permissions.template.officer %}
                     <img src="{{ alliance.icon }}" style="max-width: {{ member.permissions|iconsize }}px; max-height: {{ member.permissions|iconsize }}px">
                 {% endif %}{{ member.name }}</a></td>

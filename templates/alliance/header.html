@@ -1,34 +1,19 @@
-{% if permissions.template.rank < 5 %}
-{% load alliancetags %}
 <div class="container-fluid">
     <ul class="nav nav-tabs nav-justified">
-        <li class="{{ overview }}"><a href="{% url 'alliance:main' %}">Overview</a></li>
-        {% if nation.permissions|check_permission:'invite' %}
-            {% if alliance.outstanding_invites.count > 0 %}
-                <li class="{{ invites }}">
-                    <a href="{% url 'alliance:invites' %}">Invites 
-                        <span class="badge">{{ alliance.outstanding_invites.count }}</span>
-                    </a>
-                </li>
+        {% for header in headers %}
+            {% if header.active %}
+                <li class="activetab">
             {% else %}
-                <li class="{{ invites }}"><a href="{% url 'alliance:invites' %}">Invites</a></li>
+                <li>
             {% endif %}
-        {% endif %}
-        {% if nation.permissions|check_permission:'applicants' %}
-            {% if alliance.applications.count > 0 %}
-                <li class="{{ applicants }}">
-                    <a href="{% url 'alliance:applications' %}">Applications 
-                        <span class="badge">{{ alliance.applications.count }}</span>
-                    </a>
-                </li>
-            {% else %}
-                <li class="{{ applicants }}"><a href="{% url 'alliance:applications' %}">Applications</a></li>
-            {% endif %}
-        {% endif %}
-        <li class="{{ panel }}">
-            <a href="{% url 'alliance:control_panel' %}">Control panel</a>
-        </li>
+                <a href="{% url header.pageurl %}">
+                    {{ header.name }}
+                    {% if header.badge %}
+                        <span class="badge">{{ header.badge }}</span>
+                    {% endif %}
+                </a>
+            </li>
+        {% endfor %}
     </ul>
     <div class="border"></div>
 </div> <!-- end fluid -->
-{% endif %}

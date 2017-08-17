@@ -15,6 +15,7 @@ import nation.utilities as utils
 import nation.turnchange as turnchange
 from . import memberactions as ma
 from . import officeractions as oa
+from .utils import allianceheaders
 from .control_panel import initiative_display
 
 
@@ -25,7 +26,7 @@ def main(request):
     nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__initiatives', 'alliance__bank').prefetch_related( \
         'alliance__members', 'alliance__permissions').get(user=request.user)
     alliance = nation.alliance
-    context = {}
+    context = {'headers': allianceheaders(request)}
 
     if request.method == "POST":
         result = False
@@ -57,15 +58,13 @@ def main(request):
         if result:
             context.update({'result': result})
 
-
+    context.update(initiative_display(alliance.initiatives))
     context.update({
-        'overview': 'activetab',
         'permissions': nation.permissions,
         'inviteform': inviteform(),
         'alliance': alliance,
         'members': alliance.members.all(),
         'masscommform': masscommform(),
-        'initiatives': initiative_display(alliance.initiatives),
         'depositform': numberform(),
         })
     return render(request, 'alliance/main.html', context)
@@ -118,7 +117,9 @@ def alliancepage(request, alliancepk, msg=False):
 
 def stats(request):
     pass
-
+@login_required
+@nation_required
+@alliance_required
 def bankinterface(request):
     pass
 
@@ -217,7 +218,7 @@ def newalliance(request):
 @nation_required
 @alliance_required
 def invites(request):
-    context = {'invites': 'activetab'}
+    context = {'headers': allianceheaders(request)}
     nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
         'alliance__outstanding_invites', 'alliance__outstanding_invites__nation', 'alliance__outstanding_invites__inviter').get(user=request.user)
     alliance = nation.alliance
@@ -236,7 +237,7 @@ def invites(request):
 @nation_required
 @alliance_required
 def applications(request):
-    context = {'applicants': 'activetab'}
+    context = {'headers': allianceheaders(request)}
     nation = Nation.objects.select_related('alliance', 'permissions', 'permissions__template').prefetch_related(\
         'alliance__applications', 'alliance__applications__nation').get(user=request.user)
     permissions = nation.permissions

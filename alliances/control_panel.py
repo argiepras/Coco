@@ -7,6 +7,7 @@ from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from nation import news
+from .utils import allianceheaders
 
 import random
 
@@ -14,6 +15,7 @@ import random
 @nation_required
 @alliance_required
 def view(request):
+    print request.path.split('/')
     nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
     if request.is_ajax():
         return post_handler(request)
@@ -23,7 +25,8 @@ def view(request):
         return redirect('alliance:main')
 
     page = (request.GET['page'] if 'page' in request.GET else 'general')
-    context = {'panel': 'activetab', 'page': page}
+    context = {'headers': allianceheaders(request), 'page': page}
+    
     
 
     if page == 'general':
