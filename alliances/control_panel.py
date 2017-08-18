@@ -15,9 +15,9 @@ import random
 @nation_required
 @alliance_required
 def view(request):
-    print request.path.split('/')
     nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
     if request.is_ajax():
+        print request.POST
         return post_handler(request)
     permissions = nation.permissions
     alliance = nation.alliance
@@ -26,7 +26,7 @@ def view(request):
 
     page = (request.GET['page'] if 'page' in request.GET else 'general')
     context = {'headers': allianceheaders(request), 'page': page}
-    
+
     
 
     if page == 'general':
@@ -124,32 +124,9 @@ def change(request):
 def post_handler(request):
     alliance = request.user.nation.alliance
     nation = request.user.nation
-
-    if 'toggle' in request.POST:
-        field = request.POST['toggle']
-        if field == "pk" or field == "id":
-            return HttpResponse()
-        if hasattr(Timers, field): #when toggling an initiative
-            #have to make sure that there isn't an active countdown
-            #and that a fresh countdown is set
-            if nation.permissions.has_permission('initiatives'):
-                initiatives = request.user.nation.alliance.initiatives
-                if getattr(initiatives.timers, field) < timezone.now(): #not on a cooldown
-                    setattr(initiatives.timers, field, timezone.now() + timezone.timedelta(hours=72))
-                    initiatives.timers.save(update_fields=[field])
-                    toggle(initiatives, field)
-
-        elif hasattr(Allianceoptions, field):
-            toggle(alliance, field)
-
-        elif hasattr(alliance.bank, field):
-            if nation.permissions.has_permission('banking'):
-                if field == 'limit' or field == 'per_nation':
-                    toggle(alliance.bank, field)
-
-        return HttpResponse() #toggles are silent
-
-    elif 'save' in request.POST:
+    print "handed off"
+    if 'save' in request.POST:
+        print "save triggered"
         if request.POST['save'] == 'general':
             form = generals_form(request.POST)
             if form.is_valid():
@@ -173,6 +150,7 @@ def post_handler(request):
 
 
         elif request.POST['save'] == 'banking':
+            print "bank triggered"
             if nation.permissions.has_permission('banking') and nation.permissions.has_permission('taxman'):
                 form = bankingform(request.POST)
             elif nation.permissions.has_permission('banking'):
@@ -190,6 +168,31 @@ def post_handler(request):
                 alliance.initiatives.save()
             else:
                 HttpResponse("Invalid input")
+
+    elif 'toggle' in request.POST:
+        field = request.POST['toggle']
+        if field == "pk" or field == "id":
+            return HttpResponse()
+        if hasattr(Timers, field): #when toggling an initiative
+            #have to make sure that there isn't an active countdown
+            #and that a fresh countdown is set
+            if nation.permissions.has_permission('initiatives'):
+                initiatives = request.user.nation.alliance.initiatives
+                if getattr(initiatives.timers, field) < timezone.now(): #not on a cooldown
+                    setattr(initiatives.timers, field, timezone.now() + timezone.timedelta(hours=72))
+                    initiatives.timers.save(update_fields=[field])
+                    toggle(initiatives, field)
+
+        elif hasattr(Allianceoptions, field):
+            toggle(alliance, field)
+
+        elif hasattr(alliance.bank, field):
+            if nation.permissions.has_permission('banking'):
+                if field == 'limit' or field == 'per_nation':
+                    toggle(alliance.bank, field)
+
+        return HttpResponse() #toggles are silent
+
 
     return HttpResponse("Settings successfully saved")
 

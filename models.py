@@ -46,9 +46,6 @@ class Allianceoptions(models.Model):
 # Create your models here.
 #alliance first because it goes top to bottom and cries if a model refers to another model declared later
 class Alliance(Allianceoptions):
-    def __init__(self, *args, **kwargs):
-        super(Alliance, self).__init__(*args, **kwargs)
-        self.averagegdp = self.members.filter(vacation=False, reset=False, deleted=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
     name = models.CharField(max_length=30)
     founder = models.CharField(max_length=30, default="admin")
     description = models.CharField(max_length=1000, default="You can change this description in the alliance control panel")
@@ -60,6 +57,10 @@ class Alliance(Allianceoptions):
     def _officers(self):
         return self.members.filter(permissions__template__rank__lt=5)
     officers = property(_officers)
+
+    def avgdp(self):
+        return self.members.filter(vacation=False, reset=False, deleted=False, gdp__gt=0).aggregate(avgdp=Avg('gdp'))['avgdp']
+    averagegdp = property(avgdp)
 
     def __unicode__(self):
         return u"%s alliance" % self.name
@@ -97,6 +98,7 @@ class Alliance(Allianceoptions):
         Nation.objects.filter(pk=nation.pk).update(alliance=self)
 
     def taxrate(self, member):
+        print self.averagegdp
         if member.gdp/2 > self.averagegdp:
             tax = self.initiatives.wealthy_tax
         elif member.gdp > self.averagegdp:
@@ -105,20 +107,24 @@ class Alliance(Allianceoptions):
             tax = self.initiatives.poor_tax
         else:
             tax = self.initiatives.lowermiddle_tax
+        print tax
         if tax == 0:
             return 0
         else:
             return tax/100.0
 
     def taxtype(self, member):
+        print member
         if member.gdp/2 > self.averagegdp:
-            return "wealthy_tax"
+            tax = "wealthy_tax"
         elif member.gdp > self.averagegdp:
-            return "uppermiddle_tax"
+            tax = "uppermiddle_tax"
         elif member.gdp*2 < self.averagegdp:
-            return "poor_tax"
+            tax = "poor_tax"
         else:
-            return "lowermiddle_tax"
+            tax = "lowermiddle_tax"
+        print tax
+        return tax
 
     def kick(self, member):
         member.memberstats.delete()
@@ -857,6 +863,7 @@ class Banklog(models.Model):
         return u"%s withdrew %s %s in %ss bank" % (self.nation.name, self.amount, self.display(), self.alliance.name)
         
 
+#used for recording turnly income and expenditures
 class Bankstats(models.Model):
     alliance = models.ForeignKey(Alliance, on_delete=models.CASCADE, related_name="bankstats")
     turn = models.IntegerField(default=current_turn)

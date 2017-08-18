@@ -17,6 +17,7 @@ from . import memberactions as ma
 from . import officeractions as oa
 from .utils import allianceheaders
 from .control_panel import initiative_display
+import nation.turnchange as turnchange
 
 
 @login_required
@@ -121,7 +122,18 @@ def stats(request):
 @nation_required
 @alliance_required
 def bankinterface(request):
-    pass
+    alliance = request.user.nation.alliance
+    context = {
+        'headers': allianceheaders(request),
+        'bank': alliance.bank,
+    }
+    incomebreakdown = Bankstats()
+    incomebreakdown.populate(turnchange.alliancetotal(alliance, display=True))
+
+    context.update({
+        'bankstats': incomebreakdown,
+    })
+    return render(request, 'alliance/bank.html', context)
 
 @login_required
 @nation_required
