@@ -154,21 +154,6 @@ def regioncheck(nation, target):
     return False
 
 
-def pagination(paginator, page):
-    pages = []
-    if paginator.num_pages <= 5:
-        for number in paginator.page_range:
-            pages.append({'page': number})
-    else:
-        if page.number - 2 <= 1: #page 1, 2 or 3
-            for number in xrange(1, 6):
-                pages.append({'page': number})
-        else:
-            for number in xrange(page.number - 2, page.number + 3):
-                pages.append({'page': number})
-    return pages
-
-
 
 def firstsetup(testing=False):
     ID.objects.create()
@@ -371,6 +356,21 @@ def paginate_me(query, count, page):
         listofstuff = paginator.page(paginator.num_pages)
 
     return paginator, listofstuff
+
+
+def pagination(paginator, page):
+    pages = []
+    if paginator.num_pages <= 5:
+        for number in paginator.page_range:
+            pages.append({'page': number})
+    else:
+        if page.number - 2 <= 1: #page 1, 2 or 3
+            for number in xrange(1, 6):
+                pages.append({'page': number})
+        else:
+            for number in xrange(page.number - 2, page.number + 3):
+                pages.append({'page': number})
+    return pages
 
 
 def opposing_alignments(nation1, nation2):

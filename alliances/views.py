@@ -28,6 +28,7 @@ def main(request):
         'alliance__members', 'alliance__permissions').get(user=request.user)
     alliance = nation.alliance
     context = {'headers': allianceheaders(request)}
+    context.update(initiative_display(alliance.initiatives))
 
     if request.method == "POST":
         result = False
@@ -51,15 +52,17 @@ def main(request):
                 nation = Nation.objects.select_for_update().get(pk=nation.pk)
                 if 'withdraw' in request.POST:
                     result = ma.withdraw(nation, request.POST)
+                    alliance.bank.refresh_from_db()
 
                 elif 'deposit' in request.POST:
                     result = ma.deposit(nation, request.POST)
+                    alliance.bank.refresh_from_db()
 
+        if not Alliance.objects.filter(pk=alliance.pk).exists():
+            return redirect('nation:main')
 
         if result:
             context.update({'result': result})
-
-    context.update(initiative_display(alliance.initiatives))
     context.update({
         'permissions': nation.permissions,
         'inviteform': inviteform(),
@@ -99,9 +102,7 @@ def alliancepage(request, alliancepk, msg=False):
         elif 'unapply' in request.POST:
             result = ma.apply(nation, alliance)
 
-    initiatives = [] #initiative display, less html
-    for init in v.initiativedisplay:
-        initiatives.append({'status': alliance.initiatives.__dict__[init], 'txt': v.initiativedisplay[init]})
+    context.update(initiative_display(alliance.initiatives))
 
     if nation.invites.all().filter(alliance=alliance).exists():
         context.update({'invite': True})
@@ -111,29 +112,44 @@ def alliancepage(request, alliancepk, msg=False):
         'members': alliance.members.all(), 
         'alliance': alliance, 
         'result': result, 
-        'initiatives': initiative_display(alliance.initiatives),
     })
     return render(request, 'alliance/alliance.html', context)
 
 
 def stats(request):
     pass
+
+
 @login_required
 @nation_required
 @alliance_required
 def bankinterface(request):
     alliance = request.user.nation.alliance
+    result = False
+    if request.POST:
+        if 'delete' in request.POST:
+            result = oa.delete_log(request.user.nation, request.POST)
+    average = alliance.averagegdp
     context = {
+        'result': result,
         'headers': allianceheaders(request),
         'bank': alliance.bank,
+        'wealthies': alliance.members.filter(gdp__gte=average*2).count(),
+        'poorsies': alliance.members.filter(gdp__lte=average/2).count(),
+        'middlelowers': alliance.members.filter(Q(gdp__gt=average/2)&Q(gdp__lte=average)).count(),
+        'middleuppers': alliance.members.filter(Q(gdp__gt=average)&Q(gdp__lte=average*2)).count(),
     }
     incomebreakdown = Bankstats()
     incomebreakdown.populate(turnchange.alliancetotal(alliance, display=True))
-
+    page = (request.GET['page'] if 'page' in request.GET else 1)
+    pager, logs = utils.paginate_me(alliance.bank_logs.all(), 15, page)
     context.update({
+        'pages': utils.pagination(pager, logs),
+        'logentries': logs,
         'bankstats': incomebreakdown,
     })
     return render(request, 'alliance/bank.html', context)
+
 
 @login_required
 @nation_required

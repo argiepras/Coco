@@ -55,19 +55,19 @@
     </thead>
     <tbody>
         <tr>
-            <td>Wealthy nations</td>
+            <td>Wealthy nations ({{ wealthies }})</td>
             <td><span style="color: green">+${{ bankstats.wealthy_tax }}k</span></td>
         </tr>
         <tr>
-            <td>Upper middle nations</td>
+            <td>Upper middle nations ({{ middleuppers }})</td>
             <td><span style="color: green">+${{ bankstats.uppermiddle_tax }}k</span></td>
         </tr>
         <tr>
-            <td>Lower middle nations</td>
+            <td>Lower middle nations ({{ middlelowers }})</td>
             <td><span style="color: green">+${{ bankstats.lowermiddle_tax }}k</span></td>
         </tr>
         <tr>
-            <td>Poor nations</td>
+            <td>Poor nations ({{ poorsies }})</td>
             <td><span style="color: green">+${{ bankstats.poor_tax }}k</span></td>
         </tr>
         <tr>
@@ -103,7 +103,7 @@
 <div> 
 <ul class="pagination">
 {% for page in pages %}
-    <li><a href="{% url 'alliance:bank' page.page %}">{{ page.page }}</a></li>
+    <li><a href="?page={{ page.page }}">{{ page.page }}</a></li>
 {% endfor %}
 </ul> 
 </div>
@@ -125,11 +125,13 @@
                 {{ entry.display }}
         </td>
         <td><h5>{{ entry.timestamp|date:"o/m/d G:i" }}</h5></td>
-        <td>
-            <button class="btn btn-danger" type="submit" name="delete" value="{{ entry.pk }}">
-                Delete
-            </button>
-        </td>
+        {% if nation.permissions|check_permission:"delete_log" %}
+            <td>
+                <button class="btn btn-danger" type="submit" name="delete" value="{{ entry.pk }}">
+                    Delete
+                </button>
+            </td>
+        {% endif %}
     </tr>
     {% endfor %}
 </table>

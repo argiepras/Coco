@@ -124,9 +124,7 @@ def change(request):
 def post_handler(request):
     alliance = request.user.nation.alliance
     nation = request.user.nation
-    print "handed off"
     if 'save' in request.POST:
-        print "save triggered"
         if request.POST['save'] == 'general':
             form = generals_form(request.POST)
             if form.is_valid():
@@ -150,7 +148,6 @@ def post_handler(request):
 
 
         elif request.POST['save'] == 'banking':
-            print "bank triggered"
             if nation.permissions.has_permission('banking') and nation.permissions.has_permission('taxman'):
                 form = bankingform(request.POST)
             elif nation.permissions.has_permission('banking'):

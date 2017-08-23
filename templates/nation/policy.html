@@ -23,9 +23,17 @@
                 <td>{{ policy.description|safe }}</td>
                 <td>{{ policy.render_cost|safe }}</td>
                 <td>
-                    <button class="btn btn-default" name="{{ policy.policyname|safe }}">
-                        {{ policy.button|safe }}
-                    </button>
+                    {% if policy.newalliance %}
+                        <a href="{% url 'alliance:new' %}">
+                            <button class="btn btn-default" name="{{ policy.policyname|safe }}">
+                                {{ policy.button|safe }}
+                            </button>
+                        </a>
+                    {% else %}
+                        <button class="btn btn-default" name="{{ policy.policyname|safe }}">
+                            {{ policy.button|safe }}
+                        </button>
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}

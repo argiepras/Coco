@@ -853,6 +853,7 @@ class Banklog(models.Model):
 
     class Meta:
         get_latest_by = "timestamp"
+        ordering = ['-timestamp']
 
     def display(self):
         return "$%sk" % self.amount

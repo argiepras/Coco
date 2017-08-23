@@ -173,6 +173,7 @@ class create_alliance(Policy):
     requirements = cost
     name = "Create an International Alliance"
     button = "Create"
+    newalliance = True
     description = "Create an alliance of nations to beat up other \
     alliances of nations. Once an alliance is created it allows you \
     to invite others into it, creates a unique page for your alliance,"

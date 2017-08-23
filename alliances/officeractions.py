@@ -242,3 +242,15 @@ def declare(nation, POST):
         else:
             return "A declaration must be between 5 and 400 characters"
     return "Only available to officers"
+
+
+def delete_log(nation, POST):
+    if nation.permissions.has_permission('delete_log'):
+        deleted = nation.alliance.bank_logs.filter(pk=POST['delete']).delete()[0]
+        if deleted > 0:
+            result = "Log entry deleted"
+        else:
+            result = "Invalid choice"
+    else:
+        result = "You do not have permission to do this"
+    return result
