@@ -118,13 +118,13 @@ def invite_players(nation, POST):
         for name in names:
             invitee = utils.get_active_player(name)
             if invitee:
-                inv, created = invitee.invites.get_or_create(inviter=nation, alliance=nation.alliance)
+                inv, created = invitee.invites.get_or_create(inviter=nation, alliance=alliance)
                 if created:
                     news.invited(invitee, alliance)
                     sent.append(invitee.name)
             else:
                 failed.append("'%s'" % name)
-        if len(sent) == 0 and not created:
+        if len(sent) == 0 and not created and len(failed) == 0:
             return "%s already has an invite" % utils.string_list(names)
         elif len(sent) == 0:
             return "No matches found for %s" % utils.string_list(names)
