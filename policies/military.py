@@ -30,6 +30,7 @@ class train(Policy):
         self.cost = {'budget': trainingcost}
         self.requirements = self.cost
 
+    result = "Your men are drilled in various forms of combat"
     name = "Train your Conscripts"
     button = "Train"
     description = "Turn your half-rate peasant army into a mindless killing \
@@ -45,15 +46,10 @@ class train(Policy):
             return "Your men are the elite of the elite, there is no need to train them further!"
 
     def enact(self):
-        if not self.can_apply():
-            self.result = "You do not have enough money!"
-        elif self.nation.military.training == 100:
-            self.result = "Your men are the elite of the elite, there is no need to train them further!"
-        else:
-            self.nation.military.training += 10
-            self.nation.military.save(update_fields=['_training'])
-            self.img = "train.jpg"
-            super(train, self).enact()
+        self.nation.military.training += 10
+        self.nation.military.save(update_fields=['_training'])
+        self.img = "train.jpg"
+        super(train, self).enact()
 
 
 class demobilize(Policy):
@@ -141,6 +137,10 @@ class gasrebels(Policy):
 
     def extra(self):
         return self.nation.military.chems == 10
+
+    def errors(self):
+        if self.nation.rebels == 0:
+            return "There are no rebels to attack!"
 
     #no errors function needed because contextual is set to true when no chems
 

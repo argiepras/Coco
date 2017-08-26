@@ -65,7 +65,7 @@ class martial(Policy):
     button = "Declare"
     description = "Dissent cannot be tolerated in wartime! Move decisively \
     authoritarian, increase military size. Decreases stability and reputation. Only available to dictatorships."
-    error_overrides = {'government': 'We are not a dictatorship!'}
+    error_overrides = {'government': 'We are already in a state of martial law!'}
 
     def enact(self):
         self.nation.military.army += 10
@@ -87,23 +87,34 @@ class elections(Policy):
 
     def enact(self):
         chance = random.randint(1, 10)
-        if chance > 6 and self.nation.approval > 50:
-            self.result = 'Elections are held, but the rebels continue their struggle, \
-            dropping stability. Despite this your victory in the elections increases \
-            your popularity.'
-        elif self.nation.rebels > 2 and nation.aproval > 50:
-            self.cost.update({'rebels': 3})
-            self.result = "As you win the elections some rebels recognize the \
-            legitimacy of your government and lay down their arms, while popularity increases."
-        elif self.nation.approval > 50:
-            self.gain.update({'growth': 1})
-            self.result = 'After successful free elections investors invest, \
-            hoping to benefit from your stability. Growth and popularity grow.'
+        if self.nation.rebels > 0:
+            if chance > 6 and self.nation.approval > 50:
+                self.cost.update({'stability': random.randint(0, 10)})
+                self.result = 'Elections are held, but the rebels continue their struggle, \
+                dropping stability. Despite this your victory in the elections increases \
+                your popularity.'
+            elif self.nation.rebels > 2 and self.nation.approval > 50:
+                rebels = (3 if self.nation.rebels > 3 else self.nation.rebels)
+                self.cost.update({'rebels': rebels})
+                self.result = "As you win the elections some rebels recognize the \
+                legitimacy of your government and lay down their arms, while popularity increases."
+            else:
+                self.result = "You would have lost the election. Your electoral board \
+                has of course rigged it so you stay in power... but be careful next time! Stability drops."
+                self.cost.update({'stability': random.randint(0, 10)})
+                self.img = ''
         else:
-            self.result = "You would have lost the election. Your electoral board \
-            has of course rigged it so you stay in power... but be careful next time! Stability drops."
-            self.cost.update({'stability': random.randint(0, 10)})
-            self.img = ''
+            if chance > 6 and self.nation.approval > 50:
+                self.gain.update({'growth': 1})
+                self.result = 'After successful free elections investors invest, \
+                hoping to benefit from your stability. Growth and popularity grow.'
+            elif self.nation.approval > 50:
+                self.result = "Election results are in and you are the decided winner. Popularity grows."
+            else:
+                self.result = "You would have lost the election. Your electoral board \
+                has of course rigged it so you stay in power... but be careful next time! Stability drops."
+                self.cost.update({'stability': random.randint(0, 10)})
+                self.img = ''
         super(elections, self).enact()
 
 
@@ -212,6 +223,9 @@ class school(Policy):
     def extra(self):
         return self.nation.literacy < 100
 
+    def errors(self):
+        if self.nation.literacy == 100:
+            return "We already have a 100% literacy rate!"
 
 class university(Policy):
     def __init__(self, nation):

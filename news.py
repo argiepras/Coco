@@ -247,7 +247,8 @@ def revoked_invites(nation, revokees):
     #when an officer revokes invites
     txt = "%s has revoked the invite" % nation.name + ('s' if len(revokees) > 1 else '') + ' to '
     txt += utils.string_list(revokees)
-    squad_update(nation.alliance.notification_squad('invite', exclusion=nation.pk), txt)
+    squad = nation.alliance.notification_squad('invite', exclusion=nation.pk)
+    squad_update(squad, txt)
 
 
 def initiative_recalled(nation, initiative):

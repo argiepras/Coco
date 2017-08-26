@@ -169,6 +169,10 @@ class sovietaid(base_aid):
 
 
 class create_alliance(Policy):
+    def __init__(self, nation):
+        super(create_alliance, self).__init__(nation)
+        if nation.has_alliance():
+            self.contextual = True
     cost = {'budget': 150}
     requirements = cost
     name = "Create an International Alliance"

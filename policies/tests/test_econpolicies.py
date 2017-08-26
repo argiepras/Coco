@@ -16,7 +16,7 @@ class policytests(TestCase):
         nation.economy = 90
         gl = great_leap(nation)
         self.assertEqual(gl.can_apply(), False)
-        self.assertEqual(gl.result, '')
+        self.assertNotEqual(gl.result, '')
         for field in gl.requirements:
             nation.__dict__[field] = gl.requirements[field]
 

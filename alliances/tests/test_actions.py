@@ -373,6 +373,7 @@ class invite_revokage(TestCase):
     def setUp(self):
         self.founder = nation_generator()
         self.alliance = alliance_generator(self.founder, 20, 5)
+        self.alliance.event_on_invite = True
         self.invitees = nation_generator(10)
         for x in self.invitees:
             x.invites.create(alliance=self.alliance, inviter=self.founder)
@@ -380,7 +381,7 @@ class invite_revokage(TestCase):
     def test_single_revoke(self):
         invite = self.alliance.outstanding_invites.all()[0]
         payload = {'revoke': invite.pk}
-        officer = self.alliance.officers.all()[0]
+        officer = self.alliance.officers.all()[3]
         result = revoke_invites(officer, payload)
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.outstanding_invites.all().count(), 9, msg="Invite should've been revoked")
@@ -391,7 +392,7 @@ class invite_revokage(TestCase):
 
     def test_single_revoke_failure(self):
         payload = {'revoke': 50012}
-        officer = self.alliance.officers.all()[0]
+        officer = self.alliance.officers.all()[3]
         result = revoke_invites(officer, payload)
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.outstanding_invites.all().count(), 10, msg="Invite should've been revoked")
@@ -403,7 +404,7 @@ class invite_revokage(TestCase):
         invite = self.alliance.outstanding_invites.all()[0]
         self.alliance.event_on_invite = False
         payload = {'revoke': invite.pk}
-        officer = self.alliance.officers.all()[0]
+        officer = self.alliance.officers.all()[3]
         result = revoke_invites(officer, payload)
         self.assertTrue(result != '')
         self.assertEqual(self.alliance.outstanding_invites.all().count(), 9, msg="Invite should've been revoked")
@@ -414,10 +415,10 @@ class invite_revokage(TestCase):
 
     def test_all_revokes(self):
         payload = {'revoke': 'all'}
-        officer = self.alliance.officers.all()[0]
+        officer = self.alliance.officers.all()[3]
         result = revoke_invites(officer, payload)
         self.assertEqual(self.alliance.outstanding_invites.all().count(), 0, msg="Invite should've been revoked")
-        self.assertEqual(self.founder.news.all().count(), 1, msg="news item should be generated")
+        self.assertEqual(self.founder.news.all().count(), 1)
         self.assertEqual(officer.actionlogs.all().count(), 1, msg="Should be logged")
 
 

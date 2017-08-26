@@ -31,17 +31,20 @@ class great_leap(Policy):
         elif chance < 2:
             self.gain = {'growth': -1}
             self.result = 'Poor pig iron! Economic growth decreases!'
-        else:
-            self.result = 'Mediocre pig iron! You have failed to improve economic growth!'
         super(great_leap, self).enact()
 
     name = 'Great Leap Forward'
     description = "The workers must produce more pig iron! Possibly increase economic growth. \
     Possibly backfire and associate your name with mass death for centuries. Not possible in free market economies."
     button = "Leap"
+    result = 'Mediocre pig iron! You have failed to improve economic growth!'
 
 
 class reactor(Policy):
+    def __init__(self, nation):
+        super(reactor, self).__init__(nation)
+        if self.nation.military.reactor == 20:
+            self.contextual = True
     cost = {
         'budget': 5000,
         'uranium': 1,
@@ -57,12 +60,19 @@ class reactor(Policy):
     def extra(self):
         return self.nation.military.reactor < 20
 
+    def errors(self):
+        if self.nation.military.reactor == 20:
+            return "We already have a nuclear reactor!"
+
     def enact(self):
         chance = random.randint(1, 10)
         progress = 0 
         if chance > 4:
             progress = utils.attrchange(self.nation.military.reactor, 1, upper=20)
-            self.result += "Progress continues toward a working reactor!"
+            if progress + self.nation.military.reactor == 20:
+                self.result = "Our scientist finish and we now have a fully operational reactor!"
+            else:
+                self.result = "Progress continues toward a working reactor!"
         elif chance < 2 and self.nation.military.reactor > 1:
             progress = utils.attrchange(self.nation.military.reactor, -1, upper=20)
             self.result = "A stealth bomber has struck your reactor in the middle of construction! Someone doesn't want you getting nuclear weapons... Progress is set back."
@@ -154,6 +164,10 @@ class collectivization(Policy):
 
     def extra(self):
         return self.nation.economy <= 33
+
+    def errors(self):
+        if self.nation.economy > 33:
+            return "Only available to centrally planned economies!"
 
     def enact(self):
         fp = self.nation.econdata.foodproduction
@@ -334,7 +348,9 @@ class privatize(Policy):
         if self.nation.econdata.nationalize > 0:
             return "You can only nationalize or privatize once per turn!"
         elif self.nation.economy >= 66:
-            return "There are no state assets to privatize!"
+            return "There are no state assets left to privatize!"
+        elif self.nation.gdp < 200:
+            return "Our GDP is too low!"
 
     def enact(self):
         super(privatize, self).enact()
@@ -379,6 +395,9 @@ class imf(Policy):
     def errors(self):
         if self.nation.alignment < 1:
             return "The IMF won't lend to pinkos!"
+        elif self.nation.growth < 1:
+            return "Growth is too low!"
+
 
 class humanitarian(Policy):
     contextual = True

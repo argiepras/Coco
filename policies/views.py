@@ -66,15 +66,7 @@ def ajax_handling(request):
         policy = Policy.registry[request.POST['policy']](nation)
         if policy.can_apply():
             policy.enact()
-            rval = policy.json()
-        else:
-            rval = {'result': "It won't work.", 'img': ''}
-        if policy.can_apply() == False and policy.contextual == False:
-            print "result: %s" % policy.result
-            rval = {'result': policy.result, 'img': policy.img}
-    else:
-        rval = {'result': "It won't work.", 'img': ''}
-    print rval
+        rval = policy.json()
     return JsonResponse(rval)
 
 
