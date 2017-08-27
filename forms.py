@@ -28,6 +28,8 @@ class ajaxaidform(forms.Form):
             return  cleaned_data
         if cleaned_data.get("amount") > getattr(self.nation, cleaned_data.get("resource")):
             self.add_error('amount', 'You cannot send off more than you have!')
+        elif cleaned_data.get("amount") == 0:
+            self.add_error('amount', 'You cannot send nothing!')
         return cleaned_data
 
 

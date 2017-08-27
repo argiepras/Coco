@@ -17,7 +17,7 @@ def incoming(request):
     #takes incoming aid requests in AJAX format
     #checks if sender and recipient are even eligible
     #then we either deny the request or hand control to the appropriate function
-    if Nation.objects.actives().filter(Q(user__pk=request.POST['target'])|Q(user=request.user)).exists():
+    if Nation.objects.actives().filter(Q(pk=request.POST['target'])|Q(user=request.user)).exists():
         return delegate(request)
     return JsonResponse({'result': "'no'"})
 
@@ -35,10 +35,10 @@ def delegate(request):
     mils = ['nuke', 'weapons', 'expedition']
     if request.POST['action'] in mils:
         nation = Nation.objects.select_for_update().select_related('military').get(user=request.user)
-        target = Nation.objects.select_for_update().select_related('military').get(user__pk=request.POST['target'])
+        target = Nation.objects.select_for_update().select_related('military').get(pk=request.POST['target'])
     else:
         nation = Nation.objects.select_for_update().get(user=request.user)
-        target = Nation.objects.select_for_update().get(user__pk=request.POST['target'])
+        target = Nation.objects.select_for_update().get(pk=request.POST['target'])
     if nation.pk == target.pk:
         return JsonResponse({'result': '"no"'})
     if request.POST['action'] in options:

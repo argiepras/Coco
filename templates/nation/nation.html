@@ -548,7 +548,7 @@
         <hr />            
             Diplomacy
         <br />
-            
+        <div class="aidresult result"></div>
         <p>
             There is a $10k loss from your budget for the giving of resources to nations of opposing alignment or economic systems, and a 10% loss from cash transfers. Trading with nations that are non-aligned and mixed market systems results in no loss.
         </p>
@@ -663,7 +663,7 @@
                 data: {
                     "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
                     "action": this.name,
-                    "target": {{ target.user.pk }},
+                    "target": {{ target.pk }},
                 },
                 url: '/api/aid/',
                 datatype: "json",
@@ -674,13 +674,13 @@
     });
 
     function updatestuff(x, y, z){
-        $(".result").show();
-        $(".result").html(x.result);
+        $(".aidresult").show();
+        $(".aidresult").html(x.result);
     };
 
     function set_load(){
-        $(".result").show();
-        $(".result").html("loading");
+        $(".aidresult").show();
+        $(".aidresult").html("loading");
     }
 
     function money() {
@@ -690,7 +690,7 @@
                 "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
                 "action": "aid",
                 "resource": "budget",
-                "target": {{ target.user.pk }},
+                "target": {{ target.pk }},
                 "amount": $("#id_budget").val(),
             },
             url: '/api/aid/',
@@ -706,7 +706,7 @@
                 "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
                 "action": "aid",
                 "resource": "rm",
-                "target": {{ target.user.pk }},
+                "target": {{ target.pk }},
                 "amount": $("#id_rm").val(),
             },
             url: '/api/aid/',
@@ -722,7 +722,7 @@
                 "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
                 "action": "aid",
                 "resource": "oil",
-                "target": {{ target.user.pk }},
+                "target": {{ target.pk }},
                 "amount": $("#id_oil").val(),
             },
             url: '/api/aid/',
@@ -739,7 +739,7 @@
                 "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
                 "action": "aid",
                 "resource": "mg",
-                "target": {{ target.user.pk }},
+                "target": {{ target.pk }},
                 "amount": $("#id_mg").val(),
             },
             url: '/api/aid/',
@@ -755,7 +755,7 @@
                 "csrfmiddlewaretoken": jQuery("[name=csrfmiddlewaretoken]").val(),
                 "action": "aid",
                 "resource": "food",
-                "target": {{ target.user.pk }},
+                "target": {{ target.pk }},
                 "amount": $("#id_food").val(),
             },
             url: '/api/aid/',
