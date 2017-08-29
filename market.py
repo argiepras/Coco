@@ -107,9 +107,9 @@ def free_market(request):
 @login_required
 @nation_required
 @novacation
-def offers(request, page):
-    context = {}
-    filtered = False
+def offers(request):
+    context = {'filterform': filterform(),}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     nation = request.user.nation
     econ = (nation.economy / 33 if nation.economy < 98 else 2)
     offers = Marketoffer.objects.annotate(
@@ -164,36 +164,25 @@ def offers(request, page):
             else:
                 context.update({'result': 'That trade does not exist!'})
 
-        elif 'filter' in request.POST:
-            form = filterform(request.POST)
-            if form.is_valid():
-                print offers
-                offers = offers.filter(offer=form.cleaned_data['offer'])
-                if len(offers) == 0:
-                    if form.cleaned_data['offer'] == 'army':
-                         filtered = "No trades for troops found"
-                    else:
-                        filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
-                    
+    if 'offer' in request.GET:
+        form = filterform(request.GET)
+        if form.is_valid():
+            offers = offers.filter(offer=form.cleaned_data['offer'])
+            context.update({'filterform': filterform(initial=request.GET)})
+            if len(offers) == 0:
+                if form.cleaned_data['offer'] == 'army':
+                    filtered = "No trades for troops found"
+                else:
+                    filtered = "No trades for %s found" % v.depositchoices[form.cleaned_data['offer']].lower()
+                context.update({'filtered': filtered}) 
 
-    paginator = Paginator(offers, 30)
-    page = int(page)
-    try:
-        offerlist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        offerlist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        offerlist = paginator.page(paginator.num_pages)
+    paginator, offerlist = utils.paginate_me(offers, 30, page)
     context.update({
         'offers': offerlist,
         'own_offers': nation.offers.all(),
         'offerform': offerform(),
         'remaining': 10 - nation.offers.all().count(),
         'pages': utils.pagination(paginator, offerlist),
-        'filterform': filterform(),
-        'filtered': filtered,
         })
     return render(request, 'nation/marketoffers.html', context)
 

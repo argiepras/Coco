@@ -143,7 +143,7 @@ def reset_nation(request):
     return render(request, 'nation/newnation.html', context)
 
 
-def declarations(request, page):
+def declarations(request):
     context = {}
     nation = request.user.nation
     result = ''
@@ -195,7 +195,7 @@ def declarations(request, page):
     return render(request, 'nation/declarations.html', context)
 
 
-def regionaldeclarations(request, page):
+def regionaldeclarations(request):
     nation = request.user.nation
     context = {'region': nation.region()}
     if request.method == 'POST':
@@ -254,13 +254,12 @@ def deldec(nation, decpk):
 
 @nation_required
 @login_required
-def commpage(request, page):
+def commpage(request):
     nation = request.user.nation
-    result = False
-    page = int(page)
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     context = {}
-    result = False
     if request.method == 'POST':
+        result = False
         if 'reply' in request.POST:
             ID = int(request.POST['reply'])
             form = commform(request.POST)
@@ -286,38 +285,30 @@ def commpage(request, page):
                 else:
                     comm.delete()
                     result = "Communique deleted!"
-    commslist = nation.comms.all().order_by('-pk')
-    paginator = Paginator(commslist, 10)
-    page = int(page)
-    try:
-        comms = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        comms = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        comms = paginator.page(paginator.num_pages)
+        if result:
+            context.update({'result': result})
+    paginator, commslist = utils.paginate_me(nation.comms.all().order_by('-pk'), 10, page)
     #clearing unread flag
     pklist = []
-    for comm in comms:
+    for comm in commslist:
+        print comm
         pklist.append(comm.pk)
     nation.comms.all().filter(pk__in=pklist).update(unread=False)
     #endclearing
-    if result:
-        context.update({'result': result})
     context.update({
-        'comms': comms, 
+        'comms': commslist, 
         'replyform': commform(),
-        'pages': utils.pagination(paginator, comms)
+        'pages': utils.pagination(paginator, commslist)
     })
     return render(request, 'nation/comms.html', context)
 
 
 @nation_required
 @login_required
-def sentcomms(request, page):
+def sentcomms(request):
     nation = request.user.nation
     context = {}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     result = ''
     if request.method == 'POST':
         if 'delete' in request.POST:
@@ -332,18 +323,8 @@ def sentcomms(request, page):
                 else:
                     result = "Comm doesn't exist!"
             context.update({'result': result})
-    commslist = nation.sent_comms.all().order_by('-pk')
-    paginator = Paginator(commslist, 10)
-    page = int(page)
-    try:
-        comms = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        comms = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        comms = paginator.page(paginator.num_pages)
-    context.update({'result': result})
+    paginator, comms = utils.paginate_me(nation.sent_comms.all().order_by('-pk'), 10, page)
+    print utils.pagination(paginator, comms).count(3)
     context.update({
         'comms': comms, 
         'pages': utils.pagination(paginator, comms)
@@ -594,7 +575,8 @@ def nationpage(request, idnumber):
 def newspage(request):
     context = {}
     nation = request.user.nation
-    result = ""
+    page = (request.GET['page'] if 'page' in request.GET else 1)
+
     if request.method == "POST":
         if 'delete' in request.POST:
             if nation.news.filter(deletable=True).filter(pk=request.POST['delete']).exists():
@@ -614,32 +596,22 @@ def newspage(request):
             else:
                 result = eventhandler.process_event(nation, event.content, request.POST['choice'])
                 event.delete()
+        context.update({'result': result})
 
-
-    newsitems = nation.news.all().order_by('-pk')
-    nation.news.all().update(seen=True)
+    pager, newsitems = utils.paginate_me(nation.news.all(), 10, page)
+    if page == 1:
+        nation.news.filter(seen=False).update(seen=True)
     context.update({
+        'pages': utils.pagination(pager, newsitems),
         'news': newsitems,
-        'result': result,
         })
     return render(request, 'nation/news.html', context)
 
 
-
-def rankings(request, page):
+def rankings(request):
     context = {}
-    nations = Nation.objects.actives().select_related('settings').order_by('-gdp')
-    paginator = Paginator(nations, 15)
-    page = int(page)
-    try:
-        nationlist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        nationlist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        nationlist = paginator.page(paginator.num_pages)
-
+    page = (request.GET['page'] if 'page' in request.GET else 1)
+    paginator, nationlist = utils.paginate_me(Nation.objects.actives().select_related('settings').order_by('-gdp'), 15, page)
     if request.method == "POST": #only POST on this page is search
         context.update(rankingsearch(request))
     context.update({
@@ -650,23 +622,15 @@ def rankings(request, page):
     return render(request, 'nation/rankings.html', context)
 
 
-def regionalrankings(request, region, page):
+def regionalrankings(request, region):
     try:
         bigregion = v.regionshort[region]
     except:
         return render(request, 'nation/notfound.html', {'item': region})
     context = {}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     nations = Nation.objects.actives().filter(subregion=bigregion).order_by('-gdp')
-    paginator = Paginator(nations, 15)
-    page = int(page)
-    try:
-        nationlist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        nationlist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        nationlist = paginator.page(paginator.num_pages)
+    paginator, nationlist = utils.paginate_me(nations, 15, page)
     context.update({
         'nations': nationlist,
         'region': bigregion,
@@ -675,6 +639,7 @@ def regionalrankings(request, region, page):
         'searchform': searchform(),
         })
     return render(request, 'nation/regionalrankings.html', context)
+
 
 def rankingsearch(request):
     form = searchform(request.POST)
@@ -733,6 +698,7 @@ def research(request):
     context.update({'cost': cost, 'research': nation.researchdata})
     return render(request, 'nation/research.html', context)
 
+
 def researchcost(nation):
     research = nation.researchdata.research()*25+25
     research = (research if 0 < research else 15)
@@ -746,7 +712,8 @@ def mapview(request):
 def about(request):
     return render(request, 'nation/about.html')
 
-def statistics(request, page):
+
+def statistics(request):
     warquery = War.objects.filter(over=False).order_by('-pk') #newest first
     paginator = Paginator(warquery, 10)
     page = int(page)

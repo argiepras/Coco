@@ -236,8 +236,8 @@ input:checked + .slider:before {
           {% endif %}
            </a>
           <ul class="dropdown-menu">
-             <li><a href="{% url 'nation:comms' 1 %}">Received</a></li>
-      <li><a href="{% url 'nation:sentcomms' 1 %}">Sent</a></li>
+             <li><a href="{% url 'nation:comms' %}">Received</a></li>
+      <li><a href="{% url 'nation:sentcomms' %}">Sent</a></li>
           </ul>
         </li>
         <li class="dropdown">
@@ -257,12 +257,12 @@ input:checked + .slider:before {
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><img  src="{% static 'main/globe.png' %}" width="20">  The World <b class="caret"></b></span></a>
           <ul class="dropdown-menu">
             
-         <li><a href="{% url 'regionaldiscussions' 1 %}">Regional Discussion <span class="badge">{{ regionaldecs }}</span></a></li>
-         <li><a href="{% url 'declarations' 1 %}">Global Declarations <span class="badge">{{ globaldecs }}</span></button></a></li>
-         <li><a href="{% url 'market:offers' 1 %}">The Free Market <span class="badge">{{ marketoffers }}</span></button></a></li>
-      <li><a href="{% url 'rankings' 1 %}">World Rankings</button></a></li>
+         <li><a href="{% url 'regionaldiscussions' %}">Regional Discussion <span class="badge">{{ regionaldecs }}</span></a></li>
+         <li><a href="{% url 'declarations' %}">Global Declarations <span class="badge">{{ globaldecs }}</span></button></a></li>
+         <li><a href="{% url 'market:offers' %}">The Free Market <span class="badge">{{ marketoffers }}</span></button></a></li>
+      <li><a href="{% url 'rankings' %}">World Rankings</button></a></li>
       <li><a href="{% url 'map' %}">World Map</button></a></li>
-      <li><a href="{% url 'news' 1 %}">News And Statistics</button></a></li>
+      <li><a href="{% url 'news' %}">News And Statistics</button></a></li>
           </ul>
         </li>
         
@@ -364,8 +364,8 @@ input:checked + .slider:before {
       <li class="dropdown"><a href="{% url 'map' %}" class="dropdown-toggle" data-toggle="dropdown"><button class="btn btn-default btn-sm"><img  src="{% static 'main/globe.png' %}" width="18">  The World <b class="caret"></b></button></a>
       <ul class="dropdown-menu">
       <li><a href="{% url 'map' %}">World Map</a></li>
-      <li><a href="{% url 'rankings' 1 %}">World Rankings</a></li>
-      <li><a href="{% url 'news' 1 %}">World News</a></li>
+      <li><a href="{% url 'rankings' %}">World Rankings</a></li>
+      <li><a href="{% url 'news' %}">World News</a></li>
       </ul>
       </li>
     </ul>

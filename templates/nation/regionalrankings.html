@@ -23,13 +23,7 @@
 </div>
 
 
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'regionrankings' 'shortregion' page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-</div>
+{% include "nation/pagination.html" %}
 
 
 <table class="table table-striped">

@@ -602,6 +602,11 @@ class War(models.Model):
             return True
         return False
 
+class Peace(models.Model):
+    war = models.ForeignKey(War, on_delete=models.CASCADE, related_name="peace_offers")
+    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="peace_offers")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
 
 class Donor(models.Model):
     name = models.CharField(max_length=30)
@@ -626,6 +631,10 @@ class Event(models.Model):
     content = models.TextField()    
     timestamp = models.DateTimeField(default=v.now)
     seen = models.BooleanField(default=False)
+    class Meta:
+        get_latest_by = "timestamp"
+        ordering = ['timestamp']
+
 
 
 class Eventhistory(models.Model):

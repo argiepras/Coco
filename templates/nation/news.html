@@ -25,6 +25,9 @@
 
 
 {% if news %}
+
+{% include "nation/pagination.html" %}
+
 <div class="declarations">
     {% for newsitem in news %}
     <form method="POST">{% csrf_token %}

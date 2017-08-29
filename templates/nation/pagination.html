@@ -1,0 +1,9 @@
+{% if pages|length > 1 %}
+    <div> 
+        <ul class="pagination">
+        {% for page in pages %}
+            <li><a href="?page={{ page.page }}">{{ page.page }}</a></li>
+        {% endfor %}
+        </ul> 
+    </div>
+{% endif %}

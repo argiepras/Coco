@@ -10,14 +10,7 @@
     </div>
 {% endif %}
 
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'regionaldiscussions' page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-</div>
-
+{% include "nation/pagination.html" %}
 
 <div class="declarations">
     <form method="POST">{% csrf_token %}

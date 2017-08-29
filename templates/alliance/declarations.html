@@ -11,15 +11,7 @@
 
 {% if declarations %}
 
-
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'declarations' page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-</div>
-
+{% include "nation/pagination.html" %}
 
 <div class="declarations">
     {% for declaration in declarations %}

@@ -94,7 +94,7 @@
     </form>
     </div>
 
-    <form method="POST">{% csrf_token %}
+    <form method="GET">
     <div>
         <p>filter options</p>
         <div class="row">
@@ -102,21 +102,21 @@
                 {{ filterform.offer }}
             </div>
             <div class="col-xs-2">
-                <button type="submit" class="btn btn-default" name="filter">
+                <button type="submit" class="btn btn-default">
                     filter
                 </button>
             </div>
         </div>
     </div>
+</form>
 
     {% if offers and not filtered %}{% load static %}
     {% if not filtered %}
-    <ul class="pagination">
-        {% for page in pages %}
-            <li><a href="{% url 'market:offers' page.page %}">{{ page.page }}</a></li>
-        {% endfor %}
-    </ul> 
+
+        {% include "nation/pagination.html" %}
+
     {% endif %}
+    <form method="POST">{% csrf_token %}
     <div class="row">
         <div class="col-xs-10 col-xs-offset-1">
             <table class="table table-hover">

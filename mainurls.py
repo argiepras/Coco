@@ -5,8 +5,8 @@ from .policies import views as policyviews
 
 urlpatterns = [
     url(r'^$', views.main, name='main'),
-    url(r'^comms/(?P<page>[0-9]+)/$', views.commpage, name='comms'),
-    url(r'^comms/sent/(?P<page>[0-9]+)/$', views.sentcomms, name='sentcomms'),
+    url(r'^comms/$', views.commpage, name='comms'),
+    url(r'^comms/sent/$', views.sentcomms, name='sentcomms'),
     url(r'^foreign/$', policyviews.foreignpolicies, name='foreign'),
     url(r'^economic/$', policyviews.econ_policies, name='economic'),
     url(r'^military/$', policyviews.militarypolicies, name='military'),

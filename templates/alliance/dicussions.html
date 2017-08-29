@@ -7,6 +7,8 @@
 <p>{{ result }}</p>
 {% endif %}
 
+{% include "nation/pagination.html" %}
+
 {% for dec in declarations %}
 <div class="declaration">
     Declaration made by {{ dec.nation.name }} on {{ dec.timestamp }}

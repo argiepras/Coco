@@ -56,15 +56,7 @@ pre {
 {% endif %}
 </center>
 
-
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'nation:sentcomms' page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-</div>
-
+{% include "nation/pagination.html" %}
 
 {% if comms %}
     <ul class="list-group">
