@@ -1,0 +1,22 @@
+<div class="container-fluid">
+    <ul class="nav nav-tabs nav-justified">
+        <li class="activetab">
+            <a href="#">yes</a>
+        </li>
+        {% for header in headers %}
+            {% if header.active %}
+                <li class="activetab">
+            {% else %}
+                <li>
+            {% endif %}
+                <a href="{% url header.pageurl %}">
+                    {{ header.name }}
+                    {% if header.badge %}
+                        <span class="badge">{{ header.badge }}</span>
+                    {% endif %}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+    <div class="border"></div>
+</div> <!-- end fluid -->

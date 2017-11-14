@@ -147,6 +147,7 @@ def declarations(request):
     context = {}
     nation = request.user.nation
     result = ''
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     if request.method == 'POST':
         if 'declare' in request.POST:
             form = declarationform(request.POST)
@@ -174,16 +175,7 @@ def declarations(request):
             region='none',
             deleted=False,
             ).order_by('-pk')
-    paginator = Paginator(declarations, 10)
-    page = int(page)
-    try:
-        declist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        declist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        declist = paginator.page(paginator.num_pages)
+    paginator, declist = utils.paginate_me(declarations, 10, page)
     context.update({
         'mod': nation.settings.mod,
         'declarations': declist, 
@@ -198,6 +190,7 @@ def declarations(request):
 def regionaldeclarations(request):
     nation = request.user.nation
     context = {'region': nation.region()}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     if request.method == 'POST':
         if 'declare' in request.POST:
             form = declarationform(request.POST)
@@ -220,16 +213,7 @@ def regionaldeclarations(request):
                 result = "Declaration not found"
 
     declarations = Declaration.objects.select_related('nation', 'nation__settings').filter(region=nation.region()).order_by('-pk')
-    paginator = Paginator(declarations, 10)
-    page = int(page)
-    try:
-        declist = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        declist = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        declist = paginator.page(paginator.num_pages)
+    paginator, declist = utils.paginate_me(declarations, 10, page)
     context.update({
         'mod': nation.settings.mod,
         'declarations': declist, 
@@ -237,6 +221,7 @@ def regionaldeclarations(request):
         'pages': utils.pagination(paginator, declist)
         })
     return render(request, 'nation/regionaldiscussion.html', context)
+
 
 def deldec(nation, decpk):
     if Declaration.objects.filter(pk=decpk).exists():
@@ -251,6 +236,7 @@ def deldec(nation, decpk):
         deleter=nation,
         deleted_timestamp=v.now()
         )
+
 
 @nation_required
 @login_required
@@ -291,7 +277,6 @@ def commpage(request):
     #clearing unread flag
     pklist = []
     for comm in commslist:
-        print comm
         pklist.append(comm.pk)
     nation.comms.all().filter(pk__in=pklist).update(unread=False)
     #endclearing
@@ -324,7 +309,6 @@ def sentcomms(request):
                     result = "Comm doesn't exist!"
             context.update({'result': result})
     paginator, comms = utils.paginate_me(nation.sent_comms.all().order_by('-pk'), 10, page)
-    print utils.pagination(paginator, comms).count(3)
     context.update({
         'comms': comms, 
         'pages': utils.pagination(paginator, comms)
@@ -424,15 +408,12 @@ def nationpage(request, idnumber):
                 if nation.protection > timezone.now():
                     Nation.objects.filter(user=request.user).update(protection=timezone.now())
                 war = War.objects.create(defender=target, attacker=nation)
-                Warlog.objects.create(war=war, defender=target, attacker=nation,
-                    attacker_armystart=nation.military.army, attacker_techstart=nation.military.weapons,
-                    defender_armystart=target.military.army, defender_techstart=target.military.weapons,)
                 news.wardec(nation, target)
                 atwar = True
                 result = "Foreign nationals from %s are rounded up and put into internment camps as the war declaration gets drafted and delivered!" % target.name
 
         elif 'attack' in request.POST and atwar and not nation.vacation:
-            if (nation == war.attacker and war.attacked) or (nation == war.defender and war.defended):
+            if war.has_attacked(nation, 'ground'):
                 result = "Your troops need time to reorganize!"
             elif nation.military.army == 0:
                 result = "You do not have an army to attack with!"
@@ -450,51 +431,47 @@ def nationpage(request, idnumber):
             action = request.POST['air']
             if nation.military.planes == 0:
                 result = "You do not have an air force!"
-            elif (nation == war.attacker and war.airattacked) or (nation == war.defender and war.airdefended):
+            elif war.has_attacked(nation, 'air'):
                 result = "Your aircraft must refuel before their next attack!"
             elif nation.oil < 1:
                 result = "You do not have enough fuel for an air attack!"
             else:
-                if war.defender == nation:
-                    wartype = "defender"
-                else:
-                    wartype = "attacker"
                 if action == 'air':
                     if target.military.planes == 0:
                         result = "Enemy nation has no planes to bomb!"
                     else:
-                        return render(request, 'nation/air.html', airbattle(nation, target, war, wartype))
+                        return render(request, 'nation/air.html', airbattle(nation, target, war))
                 elif action == 'econ':
-                    return render(request, 'nation/air.html', econbombing(nation, target, war, wartype))
+                    return render(request, 'nation/air.html', econbombing(nation, target, war))
                 elif action == 'cities':
-                    return render(request, 'nation/air.html', citybombing(nation, target, war, wartype))
+                    return render(request, 'nation/air.html', citybombing(nation, target, war))
                 elif action == 'army':
                     if target.military.army < 2:
                         result = "Enemy military has already been decimated!"
                     else:
-                        return render(request, 'nation/air.html', groundbombing(nation, target, war, wartype))
+                        return render(request, 'nation/air.html', groundbombing(nation, target, war))
                 elif action == 'chems':
                     if target.military.chems == 0:
                         result = "Enemy has no chemical weapons! This is pointless!"
                     else:
-                        return render(request, 'nation/air.html', chembombing(nation, target, war, wartype))
+                        return render(request, 'nation/air.html', chembombing(nation, target, war))
                 elif action == 'industry':
                     if target.factories == 0:
                         result = "There is no industry to bomb!"
                     else:
-                        return render(request, 'nation/air.html', industrybombing(nation, target, war, wartype))
+                        return render(request, 'nation/air.html', industrybombing(nation, target, war))
                 elif action == 'oil':
                     if target.wells == 0:
                         result = "The enemy doesn't have any oil wells to bomb!"
                     else:
-                        return render(request, 'nation/air.html', oilbombing(nation, target, war, wartype))
+                        return render(request, 'nation/air.html', oilbombing(nation, target, war))
                 elif action == 'orange':
                     if nation.military.chems < 10:
                         result = "You do not have the necessary chemical weapons!"
-                    elif target.researchdata.foodtech == 0:
+                    elif target.econdata.foodproduction == 0:
                         result = "Enemy is already unable to produce food!"
                     else:
-                        return render(request, 'nation/air.html', agentorange(nation, target, war, wartype))
+                        return render(request, 'nation/air.html', agentorange(nation, target, war))
 
         elif 'chem' in request.POST and atwar and not nation.vacation:
             if nation.military.chems < 10:
@@ -505,25 +482,18 @@ def nationpage(request, idnumber):
                 return render(request, 'nation/chems.html', chems(nation, target, war))
 
         elif 'peace' in request.POST and atwar and not nation.vacation:
-            if nation == war.attacker and war.attackerpeace:
-                result = "You have already offered peace!"
-            elif nation == war.defender and war.defenderpeace:
+            if war.peace_offers.filter(nation=nation).exists():
                 result = "You have already offered peace!"
             else:
                 result = "Peace offer is signed and sent! Now we wait and see if they'll reply.."
-                if nation == war.attacker:
-                    war.attackerpeace = True
-                    war.save()
-                else:
-                    war.defenderpeace = True
-                    war.save()
-                if war.peace():
+                war.peace_offers.create(nation=nation)
+                if war.peace_offers.count() == 2:
                     result = "Peace in our time."
                     waractions = {
                         'over': {'action': 'set', 'amount': True},
-                        'timestamp': {'action': 'set', 'amount': v.now()},
+                        'ended': {'action': 'set', 'amount': v.now()},
+                        'winner': {'action': 'set', 'amount': 'peace'}
                         }
-                    logactions = {'timeend': {'action': 'set', 'amount': v.now()}}
                     news.peaceaccept(nation, target)
                     utils.atomic_transaction(War, war.pk, waractions)
                     utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
@@ -531,9 +501,7 @@ def nationpage(request, idnumber):
                     news.peace(nation, target)
 
         elif 'naval' in request.POST and atwar and not nation.vacation:
-            if nation == war.attacker and war.navyattacked:
-                result = "Your fleet must reorganize before it can launch another attack!"
-            elif nation == war.defender and war.navydefended:
+            if war.has_attacked(nation, 'naval'):
                 result = "Your fleet must reorganize before it can launch another attack!"
             elif target.military.army < 2:
                 result = "The enemy  military has already been decimated!"
@@ -556,6 +524,7 @@ def nationpage(request, idnumber):
         'flag': target.settings.showflag(),
         'avatar': target.settings.showportrait(),
     })
+
     if nation:
         context.update({
             'aidform': aidform(nation),
@@ -612,7 +581,7 @@ def rankings(request):
     context = {}
     page = (request.GET['page'] if 'page' in request.GET else 1)
     paginator, nationlist = utils.paginate_me(Nation.objects.actives().select_related('settings').order_by('-gdp'), 15, page)
-    if request.method == "POST": #only POST on this page is search
+    if 'query' in request.GET:
         context.update(rankingsearch(request))
     context.update({
         'pages': utils.pagination(paginator, nationlist),
@@ -629,6 +598,8 @@ def regionalrankings(request, region):
         return render(request, 'nation/notfound.html', {'item': region})
     context = {}
     page = (request.GET['page'] if 'page' in request.GET else 1)
+    if 'query' in request.GET:
+        context.update(rankingsearch(request, bigregion))
     nations = Nation.objects.actives().filter(subregion=bigregion).order_by('-gdp')
     paginator, nationlist = utils.paginate_me(nations, 15, page)
     context.update({
@@ -641,20 +612,22 @@ def regionalrankings(request, region):
     return render(request, 'nation/regionalrankings.html', context)
 
 
-def rankingsearch(request):
-    form = searchform(request.POST)
+def rankingsearch(request, subregion=False):
+    form = searchform(request.GET)
     if form.is_valid():
         query = Nation.objects.actives().filter(
-            name__icontains=form.cleaned_data['nation']
+            name__icontains=form.cleaned_data['query']
         )
+        if subregion:
+            query = query.filter(subregion=subregion)
         if query.count() == 0:
-            query = [{'name': 'No nations found matching "%s"' % form.cleaned_data['nation']}]
+            query = [{'name': 'No nations found matching "%s"' % form.cleaned_data['query']}]
         result = {'results': query}
     else:
         #this may seem retarded
         #but this means there's no need to alter the html template
         #a "list" of dictionary (ies) in lieu of actual objects
-        test = Nation(name='No nations found matching "%s"' % form.cleaned_data['nation'])
+        test = Nation(name='No nations found matching "%s"' % form.cleaned_data['query'])
         result = {'results': [test]}
     return result
 
@@ -715,18 +688,9 @@ def about(request):
 
 def statistics(request):
     warquery = War.objects.filter(over=False).order_by('-pk') #newest first
-    paginator = Paginator(warquery, 10)
-    page = int(page)
+    page = (request.GET['page'] if 'page' in request.GET else 1)
+    paginator, wars = utils.paginate_me(warquery, 10, page)
     context = {}
-    try:
-        wars = paginator.page(page)
-    except PageNotAnInteger:
-        # If page is not an integer, deliver first page.
-        wars = paginator.page(1)
-    except EmptyPage:
-        # If page is out of range (e.g. 9999), deliver last page of results.
-        wars = paginator.page(paginator.num_pages)
-
     #generate statistics
     #at some point this will get cached as to reduce server load
     stats = {
@@ -942,7 +906,6 @@ def settings(request):
 @transaction.atomic
 def battle(attacker, defender, war):
     context = {}
-    log = war.warlog
     landloss = defender.land/100
     weaponloss = attacker.military.army/20
     attackdmg = (sqrt(attacker.military.army) * \
@@ -1057,26 +1020,14 @@ def battle(attacker, defender, war):
                 'us_points': {'action': 'subtract', 'amount': utils.attrchange(attacker.us_points, -5, -100)},
                 })
 
+    attack = war.attacks.create(attacker=attacker, attack_type="ground", lost=attacker_loss)
+    attack.kills.create(loss_type="army", amount=defender_loss)
+    if 'land' in defactions:
+        war.gains.create(resource="land", amount=defactions['land']['amount'])
     #now for logging
     #for the mods and anti cheat shit
-    if war.attacker == attacker:
-        logactions = {
-            'attacker_groundattacks': {'action': 'add', 'amount': 1},
-            'attacker_groundloss': {'action': 'add', 'amount': attacker_loss},
-            'defender_groundloss': {'action': 'add', 'amount': defender_loss},
-        }
-        waractions = {'attacked': {'action': 'set', 'amount': True}}
-    else:
-        logactions = {
-            'defender_groundattacks': {'action': 'add', 'amount': 1},
-            'attacker_groundloss': {'action': 'add', 'amount': defender_loss},
-            'defender_groundloss': {'action': 'add', 'amount': attacker_loss},
-        }
-        waractions = {'defended': {'action': 'set', 'amount': True}}
     news.groundengagement(attacker, defender, atkmilactions['army']['amount'], defmilactions['army']['amount'])
     #commit data to db
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, defender.pk, defactions)
     utils.atomic_transaction(Nation, attacker.pk, atkactions)
     utils.atomic_transaction(Military, defender.military.pk, defmilactions)
@@ -1120,31 +1071,16 @@ def war_win(attacker, defender, war):
     }
     waractions = {
         'over': {'action': 'set', 'amount': True},
-        'timestamp': {'action': 'set', 'amount': v.now()},
+        'ended': {'action': 'set', 'amount': v.now()},
+        'winner': {'action': 'set', 'amount': attacker.name}
     }
-    if war.attacker == attacker:
-        logactions = {
-            'winner': {'action': 'set', 'amount': attacker},
-            'attacker_armyend': {'action': 'set', 'amount': attacker.military.army},
-            'attacker_techend': {'action': 'set', 'amount': attacker.military.weapons},
-            'defender_armyend': {'action': 'set', 'amount': defender.military.army},
-            'defender_techend': {'action': 'set', 'amount': defender.military.weapons},
-            'timeend': {'action': 'set', 'amount': v.now()},
-        }
-    else:
-        logactions = {
-            'winner': {'action': 'set', 'amount': defender},
-            'attacker_armyend': {'action': 'set', 'amount': defender.military.army},
-            'attacker_techend': {'action': 'set', 'amount': defender.military.weapons},
-            'defender_armyend': {'action': 'set', 'amount': attacker.military.army},
-            'defender_techend': {'action': 'set', 'amount': attacker.military.weapons},
-            'timeend': {'action': 'set', 'amount': v.now()},
-        }
+    for resource in atkactions:
+        war.gains.create(resource=resource, amount=atkactions[resource]['amount'])
+
     utils.atomic_transaction(Nation, attacker.pk, atkactions)
     utils.atomic_transaction(Nation, defender.pk, defactions)
     utils.atomic_transaction(Military, defender.military.pk, defmilactions)
     utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     news.defeated(defender, attacker, defactions)
     return atkactions
 
@@ -1159,22 +1095,14 @@ def chems(attacker, defender, war):
         'gdp': {'action': 'subtract', 'amount': int(round(defender.gdp*v.chems['gdp']))}
     }
     defmilactions = {'army': {'action': 'subtract', 'amount': int(round(defender.military.army*v.chems['army']))}}
-    if  attacker == war.attacker:
-        logactions = {
-            'defender_chemmed': {'action': 'add', 'amount': 1},
-            'defender_groundloss': {'action': 'add', 'amount': int(round(defender.military.army*v.chems['army']))}
-        }
-    else:
-        logactions = {
-            'attacker_chemmed': {'action': 'add', 'amount': 1},
-            'attacker_groundloss': {'action': 'add', 'amount': int(round(defender.military.army*v.chems['army']))}
-        }
+    attack = war.attacks.create(attacker=attacker, attack_type="chem")
     utils.atomic_transaction(Nation, attacker.pk, atkactions)
     utils.atomic_transaction(Nation, defender.pk, defactions)
     utils.atomic_transaction(Military, defender.military.pk, defmilactions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     troops = defmilactions['army']['amount']
     gdp = defactions['gdp']['amount']
+    attack.kills.create(loss_type="gdp", amount=gdp)
+    attack.kills.create(loss_type="army", amount=troops)
     news.chemmed(attacker, defender, troops, gdp)
     context = {'gdp': gdp, 'troops': troops}
     return context
@@ -1188,19 +1116,12 @@ def navalstrike(attacker, defender, war):
     if attacker.military.navy/2 >= defender.military.navy:
         loss = defender.military.army/20
         loss = (loss if loss > 2 else 2)
+        attack = war.attacks.create(
+            attacker=attacker,
+            attack_type="naval")
+        attack.kills.create(loss_type="army", amount=loss)
         actions = {'army': {'action': 'subtract', 'amount': loss}}
         context.update({'img': 'war/bombardment.jpg', 'loss': loss})
-        #keeping logs
-        if war.attacker == attacker:
-            logactions = {
-                'defender_groundloss': {'action': 'add', 'amount': loss},
-                'attacker_navyattacks': {'action': 'add', 'amount': 1},
-                }
-        else:
-            logactions = {
-                'attacker_groundloss': {'action': 'add', 'amount': loss},
-                'defender_navyattacks': {'action': 'add', 'amount': 1},
-                }
         news.navalbombardment(attacker, defender, loss)
         img = 'war/bombardment.jpg'
         result = "You have bombarded their military positions, killing %s thousand soldiers." % loss
@@ -1238,264 +1159,226 @@ def navalstrike(attacker, defender, war):
                 result += "<p>But they also sink %s of your ships</p>" % atkloss
             img = 'war/navy2.jpg'
         news.navalengage(attacker, defender, atkloss, defloss)
-        actions = {'navy': {'action': 'subtract', 'amount': defloss}}
-        context.update({'kills': defloss, 'losses': atkloss})
         if atkloss > 0:
             atkactions = {'navy': {'action': 'subtract', 'amount': atkloss}}
             utils.atomic_transaction(Military, attacker.military.pk, atkactions)
 
-        if war.attacker == attacker:
-            logactions = {
-                'defender_navyloss': {'action': 'add', 'amount': defloss},
-                'attacker_navyloss': {'action': 'add', 'amount': atkloss},
-                }
-        else:
-            logactions = {
-                'defender_navyloss': {'action': 'add', 'amount': atkloss},
-                'attacker_navyloss': {'action': 'add', 'amount': defloss},
-                } 
-    if war.attacker == attacker:
-        waractions = {'navyattacked': {'action': 'set', 'amount': True}}
-    else:
-        waractions = {'navydefended': {'action': 'set', 'amount': True}}
+        actions = {'navy': {'action': 'subtract', 'amount': defloss}}
+        context.update({'kills': defloss, 'losses': atkloss})
+        attack = war.attacks.create(attacker=attacker, attack_type="naval", lost=atkloss)
+        attack.kills.create(loss_type="navy", amount=defloss)
+
     #commit dat data
     utils.atomic_transaction(Military, defender.military.pk, actions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
-    utils.atomic_transaction(War, war.pk, waractions)
     context.update({'result': result, 'img': img})
     return context
 
 
-#action is whether attacker or defender as a string, for easy logging
 @transaction.atomic
-def airbattle(nation, target, war, action):
+def airbattle(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
+        attack.kills.create(loss_type="plane", amount=1)
         targetactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % other: {'action': 'add', 'amount': 1}})
         result = "You have successfully bombed their airbases, reducing their airforce's strength."
         utils.atomic_transaction(Military, target.military.pk, targetactions)
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.airbattle(nation, target, success > chance)
     return {'result': result, 'img': img}
 
+
 @transaction.atomic
-def econbombing(nation, target, war, action):
+def econbombing(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
     loss = False
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
-    if success > chance:
+    if success > random.randint(1, 10):
         loss = round(target.gdp/100.0)
         targetactions = {'gdp': {'action': 'subtract', 'amount': loss}, 'growth': {'action': 'subtract', 'amount': 5}}
+        attack.kills.create(loss_type="gdp", amount=loss)
+        attack.kills.create(loss_type="growth", amount=5)
         utils.atomic_transaction(Nation, target.pk, targetactions)
         result = "You have bombed their economic infrastructure, reducing growth by $5 million and their GDP by $%s million." % loss
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.econbombing(nation, target, loss)
     return {'result': result, 'img': img}
 
+
 @transaction.atomic
-def groundbombing(nation, target, war, action):
+def groundbombing(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
     success = airratio(nation.military, target.military)
-    loss = False
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
-    if success > chance:
+    loss = 0
+    if success > random.randint(1, 10):
         loss = round(target.military.army/20.0)
         loss = (loss if loss > 2 else 2)
+        attack.kills.create(loss_type="army", amount=loss)
         targetactions = {'army': {'action': 'subtract', 'amount': loss}}
-        logactions.update({'%s_groundloss' % other: {'action': 'subtract', 'amount': loss}})
         utils.atomic_transaction(Military, target.military.pk, targetactions)
         result = "You have bombed their military positions, killing %s thousand soldiers." % loss
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.groundbombing(nation, target, loss)
     return {'result': result, 'img': img}
 
 
 @transaction.atomic
-def citybombing(nation, target, war, action):
+def citybombing(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     nationactions = {
         'oil': {'action': 'subtract', 'amount': 1}, 
         'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -15)},
     }
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
         targetactions = {
             'manpower': {'action': 'add', 'amount': utils.attrchange(target.manpower, -10)}, 
             'qol': {'action': 'add', 'amount': utils.attrchange(target.qol, -10)}
         }
         utils.atomic_transaction(Nation, target.pk, targetactions)
+        attack.kills.create(loss_type="manpower", amount=10)
+        attack.kills.create(loss_type="qol", amount=10)
         result = "You have bombed their civilian centers, reducing their quality of life and manpower. This atrocity has been condemned by many, and your reputation has dropped."
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.citybombing(nation, target, success > chance)
     return {'result': result, 'img': img}
 
 @transaction.atomic
-def navalbombing(nation, target, war, action):
+def navalbombing(nation, target, war):
     img = 'war/navy2.jpg'
-    other = v.opposite[action]
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
-        targetactions = {'ships': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_navyloss' % other: {'action': 'add', 'amount': 1}})
+        targetactions = {'navy': {'action': 'subtract', 'amount': 1}}
+        attack.kills.create(loss_type="navy", amount=1)
         result = "You have successfully bombed their navy, reducing their navys's strength."
         utils.atomic_transaction(Military, target.military.pk, targetactions)
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         result = "Your airforce has been defeated over the enemy's naval base! Your airforce has been weakened."
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.navalbombing(nation, target, success > chance)
     return {'result': result, 'img': img}
 
 @transaction.atomic
-def industrybombing(nation, target, war, action):
+def industrybombing(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
         targetactions = {'factories': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_factoryloss' % other: {'action': 'add', 'amount': 1}})
         utils.atomic_transaction(Nation, target.pk, targetactions)
         result = "You have bombed a factory, destroying it."
     else:
         nationactions.update({'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -20)}})
         result = "Your bombing run missed the enemy's factory, and instead struck civilian housing killing thousands of innocents. You have been condemned throughout the world as a war criminal, dropping your reputation significantly."
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.industrybombing(nation, target, success > chance)
     return {'result': result, 'img': img}
 
-
 @transaction.atomic
-def oilbombing(nation, target, war, action):
+def oilbombing(nation, target, war):
     img = 'war/oil.jpg'
-    other = v.opposite[action]
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
         targetactions = {'wells': {'action': 'subtract', 'amount': 1}}
+        attack.kills.create(loss_type="well", amount=1)
         utils.atomic_transaction(Nation, target.pk, targetactions)
         result = "You have bombed an oil well, destroying it."
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.oilbombing(nation, target, success > chance)
     return {'result': result, 'img': img}
 
 @transaction.atomic
-def chembombing(nation, target, war, action):
+def chembombing(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
-        targetactions = {'chems': {'action': 'subtract', 'amount': 1}}
+        attack.kills.create(loss_type="chems", amount=1)
+        targetactions = {'chems': {'action': 'subtract', 'amount': (2 if 1 < target.military.chems else 1)}}
         utils.atomic_transaction(Military, target.military.pk, targetactions)
         result = "You have bombed their chemical weapons storage facilities, reducing their chemical capabilities."
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     news.chembombing(nation, target, success > chance)
     return {'result': result, 'img': img}
 
 @transaction.atomic
-def agentorange(nation, target, war, action):
+def agentorange(nation, target, war):
     img = 'war/bomb.jpg'
-    other = v.opposite[action]
+    attack = war.attacks.create(attacker=nation, attack_type="air")
     success = airratio(nation.military, target.military)
-    chance = random.randint(1, 10)
-    logactions = {'%s_airattacks' % action: {'action': 'add', 'amount': 1}}
     nationactions = {'oil': {'action': 'subtract', 'amount': 1}}
-    waractions = {'air%sed' % action[:-2]: {'action': 'set', 'amount': True}}
+    chance = random.randint(1, 10)
     if success > chance:
-        loss = (target.econdata.foodproduction/2 if target.econdata.foodproduction < 200 else 100)
+        loss = (target.econdata.foodproduction/2 if target.econdata.foodproduction > 200 else 100)
         targetactions = {'foodproduction': {'action': 'subtract', 'amount': loss}}
-        nationactions.update({'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -20)}})
+        nationactions.update({'reputation': {'action': 'add', 'amount': utils.attrchange(nation.reputation, -10)}})
         utils.atomic_transaction(Econdata, target.econdata.pk, targetactions)
         result = "You have bombed their fields with agent orange, reducing their agriculture production."
     else:
+        attack.lost = 1
+        attack.save(update_fields=['lost'])
         nationmilactions = {'planes': {'action': 'subtract', 'amount': 1}}
-        logactions.update({'%s_airloss' % action: {'action': 'add', 'amount': 1}})
         utils.atomic_transaction(Military, nation.military.pk, nationmilactions)
         result = "Your airforce has been defeated over the enemy's skies! Your airforce has been weakened."
-    utils.atomic_transaction(War, war.pk, waractions)
-    utils.atomic_transaction(Warlog, war.warlog.pk, logactions)
     utils.atomic_transaction(Nation, nation.pk, nationactions)
     #inserting newsitem to target
     news.agentorange(nation, target, success > chance)
@@ -1504,8 +1387,6 @@ def agentorange(nation, target, war, action):
 
 def airratio(nationmil, targetmil):
     ratio = nationmil.planes - targetmil.planes
-    waractions = {}
-    logactions = {}
     if targetmil.planes == 0:
         return 11
     if ratio < 0:
@@ -1563,9 +1444,9 @@ def nuked(nation, target):
     base_query = Nation.objects.actives().exclude(pk=nation.pk)
     growth_query = base_query.filter(subregion=target.subregion).exclude(pk=target.pk)
     growth_query.update(growth=F('growth') - 10)
-    base_query.update(qol=F('qol') - 5)
+    base_query.update(_qol=F('_qol') - 5)
     #cleaning up so qol can't go below 0
-    base_query.filter(qol__lt=0).update(qol=0)
+    base_query.filter(_qol__lt=0).update(_qol=0)
 
     #inserting news items
     for n in base_query.iterator():

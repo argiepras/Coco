@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import JsonResponse
 from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
@@ -15,93 +16,129 @@ import datetime as time
 @nation_required
 @novacation
 def free_market(request):
+    if request.is_ajax():
+        return market_action(request)
     nation = request.user.nation
-    econ = nation.economy
-    econ = econ/33
-    econ = (2 if econ > 2 else econ)
-    context = {}
-    result = False
-    if request.method == 'POST' and not nation.vacation:
-        post = request.POST.dict()
-        actions = {}
-        with transaction.atomic():
-            market = Market.objects.select_for_update(nowait=True).latest('pk')
-            for field in post:
-                if len(field.split('_')) == 2:
-                    action, resource = field.split('_')
-                    amount = post[field]
-            amount = int(amount)
-            amount = (amount if amount == 20 or amount == 5 or amount == 1 else 20)
-            pricevar = '%sprice' % resource
-            price = market.__dict__[pricevar]
-            countervar = '%s_counter' % resource
-            counter = market.__dict__[countervar]
-            threshold = market.__dict__['%s_threshold' % resource]
-            log = Marketlog.objects.get_or_create(nation=nation, turn=market.pk, resource=resource)[0]
-            if action == 'buy':
-                cost = int(price * v.marketbuy[econ]) * amount
-                if nation.budget < cost:
-                    result = "You cannot afford this! You need $%sk more!" % (cost - nation.budget)
-                else:
-                    if amount + counter < threshold : #doesn't move price
-                        counter += amount
-                    else:
-                        counter = amount + counter - threshold
-                        market.__dict__[pricevar] += 1
-                    #set logs an shit, for generating market changes
-                    log.cost += cost
-                    log.volume += amount
-                    log.save()
-                    actions.update({
-                        resource: {'action': 'add', 'amount': amount},
-                        'budget': {'action': 'subtract', 'amount': cost},
-                        })
-                    result = "You buy %s for $%sk!" % (v.market(amount, resource), cost)
-
-            else: #SELLING :DDDDDDDDDDD
-                cost = int(price * v.marketsell[econ]) * amount
-                if nation.__dict__[resource] < amount:
-                    result = "You do not have %s!" % v.market(amount, resource)
-                elif price < 1:
-                    result = "The market has already been flooded with %s!" % v.depositchoices[resource]
-                else:
-                    if counter - amount > 0: #won't move the price
-                        counter -= amount
-                    else:
-                        counter = threshold + counter - amount
-                        market.__dict__[pricevar] -= 1
-                    log.cost -= cost
-                    log.volume -= amount
-                    log.save()
-                    actions.update({
-                        resource: {'action': 'subtract', 'amount': amount},
-                        'budget': {'action': 'add', 'amount': cost},
-                        })
-                    result = "You sell %s for $%sk!" % (v.pretty(amount, resource), cost)
-
-            if actions:
-                utils.atomic_transaction(Nation, nation.pk, actions)
-                counter = (counter if counter < threshold else threshold/2)
-                market.__dict__[countervar] = counter
-                market.save()
-                nation.refresh_from_db()
-    if result:
-        context.update({'result': result})
     market = Market.objects.all().latest('pk')
-    sellmod = v.marketsell[econ]
-    buymod = v.marketbuy[econ]
+    context = market_prices(market, nation.economy)
     context.update({
-            'mgbuyprice': int(market.mgprice*buymod),
-            'mgsellprice': int(market.mgprice*sellmod),
-            'foodbuyprice': int(market.foodprice*buymod),
-            'foodsellprice': int(market.foodprice*sellmod),
-            'rmbuyprice': int(market.rmprice*buymod),
-            'rmsellprice': int(market.rmprice*sellmod),
-            'oilbuyprice': int(market.oilprice*buymod),
-            'oilsellprice': int(market.oilprice*sellmod),
             'change': market.change,
+            'timestmap': market.last_updated,
         })
     return render(request, 'nation/market.html', context)
+
+
+@transaction.atomic
+def market_action(request):
+    print request.POST
+    market = Market.objects.select_for_update().latest('pk')
+    nation = Nation.objects.select_for_update().get(user=request.user)
+    econ = utils.econsystem(nation.economy)
+    price_changed = False
+    save = True
+    returns = {}
+    stats = {}
+    action, resource = request.POST['action'].split('_')
+    amount = int(request.POST['amount'])
+    amount = (amount if amount == 20 or amount == 5 or amount == 1 else 20)
+    pricevar = '%sprice' % resource
+    countervar = '%s_counter' % resource
+
+    price = getattr(market, pricevar)
+    counter = getattr(market, countervar)
+    threshold = getattr(market, '%s_threshold' % resource)
+
+    log = Marketlog.objects.get_or_create(nation=nation, turn=market.pk, resource=resource)[0]
+    
+    if action == 'buy':
+        cost = int(price * v.marketbuy[econ]) * amount
+        if nation.budget < cost:
+            save = False
+            result = "You cannot afford this! You need $%sk more!" % (cost - nation.budget)
+        else:
+            if amount + counter < threshold : #doesn't move price
+                counter += amount
+            else:
+                counter = amount + counter - threshold
+                market.__dict__[pricevar] += 1
+                price_changed = True
+            #set logs an shit, for generating market changes
+            log.cost += cost
+            log.volume += amount
+            log.save()
+
+            setattr(nation, resource, getattr(nation, resource) + amount)
+            nation.budget -= cost
+            result = "You buy %s for $%sk!" % (v.market(amount, resource), cost)
+
+    else: #SELLING :DDDDDDDDDDD
+        cost = int(price * v.marketsell[econ]) * amount
+        if getattr(nation, resource) < amount:
+            save = False
+            result = "You do not have %s!" % v.market(amount, resource)
+        elif price < 1:
+            save = False
+            result = "The market has already been flooded with %s!" % v.depositchoices[resource]
+        else:
+            if counter - amount > 0: #won't move the price
+                counter -= amount
+            else:
+                counter = threshold + counter - amount
+                market.__dict__[pricevar] -= 1
+                price_changed = True
+            log.cost -= cost
+            log.volume -= amount
+            log.save()
+            setattr(nation, resource, getattr(nation, resource) - amount)
+            nation.budget += cost
+            result = "You sell %s for $%sk!" % (v.pretty(amount, resource), cost)
+
+    returns.update({
+            'stats': {
+                'budget': nation.budget,
+                resource: getattr(nation, resource),
+            },
+            'result': result,
+        })
+
+    if price_changed:
+        color = ('green' if action == 'buy' else 'red')
+        prices = market_prices(market, nation.economy)
+        buy = 'buy_%s' % resource
+        sell = 'sell_%s' % resource
+        returns.update({
+                'prices': {
+                    buy: {'price': prices[buy], 'color': color},
+                    sell: {'price': prices[sell], 'color': color},
+                },
+            })
+
+    if save:
+        counter = (counter if counter < threshold else threshold/2)
+        market.__dict__[countervar] = counter
+        nation.save(update_fields=['budget', resource])
+        market.save(update_fields=[countervar, pricevar])
+    return JsonResponse(returns)
+
+
+def market_prices(market, econ):
+    econ = utils.econsystem(econ)
+    sellmod = v.marketsell[econ]
+    buymod = v.marketbuy[econ]
+    return {
+        'buy_mg': int(market.mgprice*buymod),
+        'sell_mg': int(market.mgprice*sellmod),
+        'buy_food': int(market.foodprice*buymod),
+        'sell_food': int(market.foodprice*sellmod),
+        'buy_rm': int(market.rmprice*buymod),
+        'sell_rm': int(market.rmprice*sellmod),
+        'buy_oil': int(market.oilprice*buymod),
+        'sell_oil': int(market.oilprice*sellmod),
+    }
+
+
+def price_update(request):
+    pass
 
 
 @login_required
@@ -192,7 +229,6 @@ def make_offer(request, nation):
     if form.is_valid():
         nation.offers.create(**form.cleaned_data)
         return {'result': 'Offer has been posted!'}
-    print form.errors
     return {'errors': form.errors}
 
 

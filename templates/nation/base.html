@@ -13,8 +13,11 @@
         <link href="{% static 'nation/css/bootstrap.min.css' %}" rel="stylesheet" media="screen">
         <script src="http://code.jquery.com/jquery.js"></script>
         <script src="{% static 'nation/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'usefuls.js' %}"></script>
         {% block scripts %}
-          
+          {% comment %}
+            additional scripts required by pages are inserted here
+          {% endcomment %}
         {% endblock scripts %}
         <script>
             jQuery(function ($) {
@@ -131,6 +134,16 @@
   height: 24px;
 
 }
+
+.oldresult {
+  background-color: rgba(62, 62, 62, 0.3);
+  color: red;
+  padding: 20px;
+  margin: 20px;
+  border-color: black;
+  width: 40%;
+}
+
 
 .timercount {
   font-size: 0.75em;
@@ -329,7 +342,7 @@ input:checked + .slider:before {
 </nav></div>
     
 {% else %}
-            <nav class="navbar navbar-default navbar-fixed-top" role="navigation">
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation">
   <div class="navbar-header">
     <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
       <span class="sr-only">Toggle navigation</span><div style="color: white;">LOGIN</div>
@@ -375,71 +388,86 @@ input:checked + .slider:before {
 </div></div>
 {% endif %}
       <center>
-            
-    <div id="con_div"> <div id="content">
-
+{% if mobile %}
+  <div id="mobile_main">
+  {% else %}
+  <div id="con_div">
+{% endif %}
      
 {% block content %}
 {% endblock %}
 
-<div style="font-size:15; background-color: rgba(0, 0, 0, 0.93); color:grey"><br />
-<!-- quotes -->
-<br />
- 
- <table style="background: transparent;"><tr><td style="padding: 10px;">
-    <a style="font-size:13; color: white;" href="{% url 'index' %}">Index</a>
-    
-    
-    </td><td style="padding: 10px;">
-  
-    <a style="font-size:12; color: white;" href="{% url 'about' %}">about</a>
-    </td><td style="padding: 10px;">
-    <a style="font-size:12; color: white;" href="{% url 'legal' %}">terms and conditions</a>
-    </td><td style="padding: 10px;">
-      <a style="font-size:12; color: white;">{{ onlineleaders }} leaders online</a>
-    </td><td style="padding: 10px;">
-    <a style="font-size:12; color: white;">Turn Change: 0:00, 12:00 server time</a>
-    </td><td style="padding: 10px;">
-    <a style="font-size:12; color: white;">Server Time: {{ curtime|date:'G:i' }}</a>
-    </td></tr></table>
- 
- 
- </div>
- </div>
+    <div style="font-size:15; background-color: rgba(0, 0, 0, 0.93); color:grey">
+      <br />
+
+      <br />
+     
+      <table style="background: transparent; max-width: 100%"><tr><td style="padding: 10px;">
+        <a style="font-size:13; color: white;" href="{% url 'index' %}">Index</a>
+        </td><td style="padding: 10px;">
+        <a style="font-size:12; color: white;" href="{% url 'about' %}">about</a>
+        </td> <tr></tr> <td style="padding: 10px;">
+        <a style="font-size:12; color: white;" href="{% url 'legal' %}">terms and conditions</a>
+        </td><td style="padding: 10px;">
+          <a style="font-size:12; color: white;">{{ onlineleaders }} leaders online</a>
+        </td><td style="padding: 10px;">
+        <a style="font-size:12; color: white;">Turn Change: 0:00, 12:00 server time</a>
+        </td><td style="padding: 10px;">
+        <a style="font-size:12; color: white;">Server Time: {{ curtime|date:'G:i' }}</a>
+        </td></tr></table>
     </div>
+
+</div>
     
     {% if logged_in %}
-    <div id="bottombar">
+    <div class="footer" style="background-color: black">
      <center>
     <div class="container-fluid">
-    <div class="row">
     <div class="col-xs-12">
-    <table style="background:transparent;"><tr>
-     <td style="padding: 10px;">
-      </td><td style="padding-top: 1px; padding-right: 15px; color: green; text-align:  center; min-width:20px;">
-       <a href="#" data-toggle="tooltip" data-placement="top" title="Available Budget" style="color: white;">${{stats.budget}}k</a>
-       </a></td><td style="top-padding: 1px; padding-right: 15px;  color: white; text-align:  center; min-width:20px;">
-       <a href="#" data-toggle="tooltip" data-placement="top" title="Oil Stockpile (Mbbls)" style="color: white;"><img src="{% static 'nation/bottom/oil.png' %}" height="20px" />{{stats.oil}}
-       </a></td><td style="top-padding: 1px; padding-right: 15px; color: white; text-align:  center; min-width:20px;">
-      <a href="#" data-toggle="tooltip" data-placement="top" title="Raw Material Stockpile (Htons)" style="color: white;"><img src="{% static 'nation/bottom/rm.png' %}" height="20px" /> {{stats.rm}}
-      </a></td>
-      <td style="top-padding: 1px; padding-right: 15px; color: white; text-align:  center; min-width:20px;">
-      <a href="#" data-toggle="tooltip" data-placement="top" title="Manufactured Goods (Tons)" style="color: white;"><img src="{% static 'nation/bottom/mg.png' %}" height="20px" /> {{stats.mg}}
-      </a></td>
-      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
-      <a href="#" data-toggle="tooltip" data-placement="top" title="Weapons" style="color: white;"><img src="{% static 'nation/bottom/weapons.png' %}" height="20px" /> {{stats.weapons}}
-      </a></td>
-      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
-      <a href="#" data-toggle="tooltip" data-placement="top" title="Food (Tons)" style="color: white;"><img src="{% static 'nation/bottom/food.png' %}" height="20px" /> {{stats.food}}
-      </a></td>
-      <td style="top-padding: 1px; padding-right: 10px; color: white; text-align:  center; min-width:20px;">
-      <a href="#" data-toggle="tooltip" data-placement="top" title="Research" style="color: white;"><img src="{% static 'nation/bottom/research2.png' %}" height="20px" /> {{stats.research}}
+    <table style="background:transparent;">
+      <tr>
+        <td>
+         <a href="#" data-toggle="tooltip" data-placement="top" title="Available Budget" style="color: white;">
+        $<span id="budget">{{stats.budget}}</span>k</a>
       </td>
-      <td style="padding-right: 30px;"></td>
+       <td>
+        <a href="#" data-toggle="tooltip" data-placement="top" title="Oil Stockpile (Mbbls)" style="color: white;">
+          <img src="{% static 'nation/bottom/oil.png' %}" height="15px">
+          <span id="oil">{{stats.oil}}</span>
+       </a>
+      </td>
+       <td>
+        <a href="#" data-toggle="tooltip" data-placement="top" title="Raw Material Stockpile" style="color: white;">
+          <img src="{% static 'nation/bottom/rm.png' %}" height="15px"> 
+          <span id="rm">{{stats.rm}}</span>
+      </a>
+      </td>
+      <td>
+        <a href="#" data-toggle="tooltip" data-placement="top" title="Manufactured Goods (Tons)" style="color: white;">
+          <img src="{% static 'nation/bottom/mg.png' %}" height="15px">
+          <span id="mg">{{stats.mg}}</span>
+      </a>
+      </td>
+      <td>
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Weapons" style="color: white;"><img src="{% static 'nation/bottom/weapons.png' %}" height="15px" /> 
+          <span id="weapons">{{stats.weapons}}</span>
+      </a>
+      </td>
+      <td>
+      <a href="#" data-toggle="tooltip" data-placement="top" title="Food (Tons)" style="color: white;">
+        <img src="{% static 'nation/bottom/food.png' %}" height="15px" /> 
+        <span id="food">{{stats.food}}</span>
+      </a>
+      </td>
+      <td>
+        <a href="#" data-toggle="tooltip" data-placement="top" title="Research" style="color: white;">
+          <img src="{% static 'nation/bottom/research2.png' %}" height="15px" /> 
+        <span id="research">{{stats.research}}</span>
+      </a>
+      </td>
       </tr></table>
     </center>  
    </div>
-    </div>
     </div>
 
     {% endif %}

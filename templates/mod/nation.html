@@ -100,40 +100,10 @@
 
     {% load modtags %}
 
-    <div class="row" style="margin: 1em; margin-top: 5em">
-        <div class="col-xs-7 col-xs-offset-1">
-            <p class="leftie">Last 10 incoming aid</p>
-        </div>
-        <div class="col-xs-4"> 
-            <a href="{% url 'mod:nation_incoming' target.index 1 %}">
-            	<button class="btn btn-default">See all</button>
-            </a>
-        </div>
-    </div>
-    <table class="table table-striped">
-        <thead>
-            <td>From</td>
-            <td>Type</td>
-            <td>Amount</td>
-            <td>Timestamp</td>
-        <tbody>
-            {% for aid in incoming_aid %}
-                <tr>
-                    <td><a href="{{ aid.sender.get_modview_url }}">
-                    {{ aid.sender }}
-                    </a></td>
-                    <td>{{ aid.resource }}</td>
-                    <td>{{ aid.amount }}</td>
-                    <td>{{ aid.timestamp|date:"o/m/d G:i" }}</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-
 
     <div class="row" style="margin: 1em; margin-top: 5em">
         <div class="col-xs-7 col-xs-offset-1">
-            <p class="leftie">Last 10 outgoing aid</p>
+            <p class="leftie">Recent aid</p>
         </div>
         <div class="col-xs-4"> 
             <a href="{% url 'mod:nation_outgoing' target.index 1 %}">
@@ -143,18 +113,25 @@
     </div>
     <table class="table table-striped">
         <thead>
-            <td>To</td>
-            <td>Type</td>
+            <td>To/From</td>
+            <td>Resource</td>
             <td>Amount</td>
+            <td>Type</td>
             <td>Timestamp</td>
         <tbody>
-            {% for aid in outgoing_aid %}
+            {% for aid in aids %}
                 <tr>
                     <td><a href="{{ aid.reciever.get_modview_url }}">
                     {{ aid.reciever }}
                     </a></td>
-                    <td>{{ aid.resource }}</td>
-                    <td>{{ aid.amount }}</td>
+                    <td>{{ aid.resource|aidname }}</td>
+                    <td>{{ aid|aidamount }}</td>
+                    <td>{% if aid.reciever == nation %}
+                            Incoming
+                        {% else %}
+                            Outgoing                        
+                    {% endif %}
+                    </td>
                     <td>{{ aid.timestamp|date:"o/m/d G:i" }}</td>
                 </tr>
             {% endfor %}

@@ -33,13 +33,18 @@ register.filter('lastipurl', lastipurl)
 
 
 def outcome(war, nation):
-
-    if war.winner == None:
-        war_outcome = "Ongoing"
-    elif war.winner.pk == nation.pk:
-        war_outcome = '<span style="color: green">Won</span>'
+    if war.winner == '':
+        war_outcome = "ongoing"
     else:
-         war_outcome = '<span style="color: red">Lost</span>'
+        try:
+            int(war.winner)
+        except:
+            war_outcome = war.winner
+        else:
+            if int(war.winner) == nation.pk:
+                war_outcome = '<span style="color: green">Won</span>'
+            else:
+                 war_outcome = '<span style="color: red">Lost</span>'
     return mark_safe(war_outcome)
 
 register.filter('outcome', outcome)
@@ -56,11 +61,7 @@ register.filter('war_otherguy', war_otherguy)
 
 
 def losses(war, nation):
-    if war.defender.pk == nation.pk:
-        loss = '%sk' % war.defender_groundloss
-    else:
-         loss = '%sk' % war.defender_groundloss
-    return mark_safe(loss)
+    return mark_safe(50)
 
 register.filter('losses', losses)
 
@@ -73,12 +74,20 @@ register.filter('aiddirection', aiddirection)
 
 #this is a bit redundant but whatever lol
 def warstatus(war, nation):
-    if war.winner == None:
+    if war.winner == '':
         war_outcome = "ongoing"
-    elif war.winner.pk == nation.pk:
-        war_outcome = 'won'
     else:
-         war_outcome = 'lost'
+        try:
+            int(war.winner)
+        except:
+            war_outcome = war.winner
+        else:
+            if war.winner == '':
+                war_outcome = "ongoing"
+            elif int(war.winner) == nation.pk:
+                war_outcome = 'won'
+            else:
+                 war_outcome = 'lost'
     return mark_safe(war_outcome)
 
 register.filter('warstatus', warstatus)
@@ -95,14 +104,8 @@ def aidamount(aidobject):
     txt = ''
     if aidobject.resource == 'budget':
         txt = "$%sk" % aidobject.amount
-    elif aidobject.resource == 'troops':
-        txt = "%sk" % aidobject.amount
-    elif aidobject.resource == 'oil':
-        txt = "%s mbbls" % aidobject.amount
-    elif aidobject.resource == 'research':
-        txt = "%s units" % aidobject.amount
     else:
-        txt = "%s tons" % aidobject.amount
+        txt = "%s" % aidobject.amount
 
     return mark_safe(txt)
 
@@ -115,4 +118,7 @@ register.filter('aidamount', aidamount)
 @register.inclusion_tag('mod/ip_list.html', takes_context=True)
 def ip_listing(context):
     return context
+
+
+
     

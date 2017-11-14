@@ -17,7 +17,6 @@ import random
 def view(request):
     nation = Nation.objects.select_related('alliance', 'permissions', 'alliance__bank', 'alliance__initiatives').get(user=request.user)
     if request.is_ajax():
-        print request.POST
         return post_handler(request)
     permissions = nation.permissions
     alliance = nation.alliance
@@ -28,7 +27,6 @@ def view(request):
     context = {'headers': allianceheaders(request), 'page': page}
 
     
-
     if page == 'general':
         context.update(general(nation, alliance))
         context.update(notifications(alliance))

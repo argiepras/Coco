@@ -1,0 +1,200 @@
+{% extends "mod/nationbase.html" %}
+{% load static %}
+{% block scripts %}
+    <script src="{% static 'maid.js' %}"></script>
+{% endblock scripts %}
+
+{% block mod %}
+    {% load modtags %}
+    <div class="row ">
+        <div class="col-xs-12"><h3>{{ target.name }}s aid</h3></div>
+        <div class="col-xs-12">
+            <a href="#" data-toggle="tooltip" title="This is the value of incoming - outgoing aid">
+                <p>Trade balance is ${{ target.trade_balance }}k
+                <small>
+                    <span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span>
+                </small>
+            </p></a>
+        </div>
+    </div>
+    <br>
+    <p>
+        {% if incoming %}
+            <a href="{{ target.get_absolute_url }}"><b>{{ target.name }}</b></a>
+            recieves the most aid from 
+                <a href="{{ incoming.player.get_absolute_url }}"><b>{{ incoming.player.name }}</b></a>
+                (<b>{{ incoming.count }}</b>)
+        {% endif %}
+    </p>
+
+    <p>
+        {% if outgoing %}
+            <a href="{{ target.get_absolute_url }}"><b>{{ target.name }}</b></a>
+            sends the most aid from 
+                <a href="{{ outgoing.player.get_absolute_url }}"><b>{{ outgoing.player.name }}</b></a>
+                (<b>{{ outgoing.count }}</b>)
+        {% endif %}
+    </p>
+
+    <div>Totals
+        {% if not mobile %}
+            <div class="row">
+            <div class="col-md-6 col-md-offset-3">
+        {% endif %}
+        <table class="table">
+            <thead>
+                <th>Resource</th>
+                <th>In</th>
+                <th>Out</th>
+            </thead>
+            <tbody>
+                {% for resource in totals %}
+                <tr>
+                    <td>{{ resource.resource }}</td>
+                    {% if resource.resource == "Cash" %}
+                        <td>${{ resource.incoming }}k</td>
+                        <td>${{ resource.outgoing }}k</td>
+                    {% elif resource.resource == "Troops" %}
+                        <td>{{ resource.incoming }}k</td>
+                        <td>{{ resource.outgoing }}k</td>
+                    {% else %}
+                        <td>{{ resource.incoming }}</td>
+                        <td>{{ resource.outgoing }}</td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not mobile %}
+            </div></div>
+        {% endif %}
+    </div>
+
+    <br>
+
+    {% include "nation/pagination.html" %}
+
+    {% if mobile %}
+    <table class="table" style="margin-bottom: 0px">
+        <thead>
+            <th>
+                <a href="#" id="sender" class="sortie">Player
+                    {% if ordering == "sender" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="#" id="resource" class="sortie">Resource
+                    {% if ordering == "resource" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+            <th style="width: 20%">
+                <a href="#" id="amount" class="sortie">Amount
+                    {% if ordering == "amount" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+            <th>
+                <a href="#" id="timestamp" class="sortie">Time
+                    {% if ordering == "timestamp" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+        </thead>
+    </table>
+    <table class="table">
+            {% for aid in aids %}
+                <tr>
+                    <td style="text-align: center;">
+                        <div style="margin-top: 0.5em;">
+                            {% if aid.sender == target %}
+                                <a href="{{ aid.reciever.get_absolute_url }}">
+                                    <b>{{ aid.reciever }}</b>
+                                </a>
+                                <small class="out-aid">
+                        <span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span>
+                                </small>
+                            {% else %}
+                                <a href="{{ aid.sender.get_absolute_url }}">
+                                    <b>{{ aid.sender }}</b>
+                                </a>
+                                <small class="in-aid"><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></small>
+                            {% endif %}
+                            {% if aid.resource != 'budget' %}
+                                <img src="{% static 'nation/bottom/'|add:aid.resource|add:'.png' %}" height="20px">
+                            {% endif %}
+                            {{ aid|aidamount }}
+                        </div>
+                        <div style="margin-top: 0.5em; margin-bottom: 1em">
+                            {{ aid.timestamp|date:"o/m/d G:i" }}
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+    </table>
+    {% else %}
+    <div class="row">
+    <div class="col-md-6 col-md-offset-3">
+    <table class="table" style="margin-bottom: 0px">
+        <thead>
+            <th style="width: 25%; text-align: center;">
+                <a href="#" id="sender" class="sortie">Player
+                    {% if ordering == "sender" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+            <th style="width: 25%; text-align: center;">
+                <a href="#" id="resource" class="sortie">Resource
+                    {% if ordering == "resource" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+            <th style="width: 25%; text-align: center;">
+                <a href="#" id="amount" class="sortie">Amount
+                    {% if ordering == "amount" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+            <th style="width: 25%; text-align: center;">
+                <a href="#" id="timestamp" class="sortie">Time
+                    {% if ordering == "timestamp" %}
+                        <b class="{{ direction }}"></b>    
+                    {% endif %}
+                </a>
+            </th>
+        </thead>
+    </table>    
+    <table class="table">
+            {% for aid in aids %}
+                <tr>
+                    <td class="cell-right">
+                        {% if aid.sender == target %}
+                            <a href="{{ aid.reciever.get_absolute_url }}">{{ aid.reciever }}</a>
+                            <small class="out-aid"><span class="glyphicon glyphicon-arrow-left" aria-hidden="true"></span></small>
+                        {% else %}
+                            <a href="{{ aid.sender.get_absolute_url }}">{{ aid.sender }}</a>
+                            <small class="in-aid"><span class="glyphicon glyphicon-arrow-right" aria-hidden="true"></span></small>
+                        {% endif %}
+                        {% if aid.resource != 'budget' %}
+                            <img src="{% static 'nation/bottom/'|add:aid.resource|add:'.png' %}" height="20px">
+                        {% endif %}
+                        {{ aid|aidamount }}
+                    </td>
+                    <td></td>
+                    <td class="cell-left">{{ aid.timestamp|date:"o/m/d G:i" }}</td>
+                </tr>
+            {% endfor %}
+    </table>
+    </div></div>
+    {% endif %}
+
+
+{% endblock mod %}

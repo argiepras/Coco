@@ -5,11 +5,11 @@ from . import variables as v
 
 #creates a dictionary available to every template rendered ever
 def boilerplate(request):
-    c = {}
+    c = {'mobile': request.mobile}
     if request.user.is_anonymous():
-        c = {'logged_in': False, 'login_form': loginform()}
+        c.update({'logged_in': False, 'login_form': loginform()})
     else:
-        c = {'logged_in': True}
+        c.update({'logged_in': True})
         try:
             nation = request.user.nation
             stats = {}

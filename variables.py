@@ -4,7 +4,7 @@ def now():
     return timezone.now()
 
 def onlineleaders(): #threshold for showing online leaders
-    return now() - timezone.timedelta(minutes=10)
+    return now() - timezone.timedelta(minutes=60)
 
 #1 day war protection for newbies
 def initprotection():
@@ -140,6 +140,8 @@ aidnames = {
     'mg': 'Manufactured Goods',
     'oil': 'Oil',
     'food': 'Food',
+    'uranium': 'Uranium',
+    'weapons': 'Weapons',
     'research': 'Research',
     'troops': 'Troops',
     'nuke': 'Nukes',

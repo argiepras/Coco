@@ -309,37 +309,20 @@ def landcheck(nation, loss):
 
 
 def get_player(ID):
-    nation = False
-    try:
-        nation = Nation.objects.get(index=ID)
-    except:
-        pass
-    try:
-        nation = Nation.objects.get(name=ID)
-    except:
-        pass
-    try:
-        nation = Nation.objects.get(user__username=ID)
-    except:
-        pass
-    return nation
+    return _getplayer(Nation.objects, ID)
 
 
 def get_active_player(ID):
+    return _getplayer(Nation.actives, ID)
+
+
+def _getplayer(query, ID):
     nation = False
-    query = Nation.objects.actives()
-    try:
-        nation = query.get(index=ID)
-    except:
-        pass
-    try:
-        nation = query.get(name__iexact=ID)
-    except:
-        pass
-    try:
-        nation = query.get(user__username__iexact=ID)
-    except:
-        pass
+    for item in ['index', 'name__iexact', 'user__username__iexact']:
+        try:
+            nation = query.get(**{item: ID})
+        except:
+            pass
     return nation
 
 

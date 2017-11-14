@@ -6,74 +6,13 @@
 {% load static %}
 <img src="{% static 'img/alliances.gif' %}">
 
-<div class="search">
-<form method="POST"> {% csrf_token %}
-    <div class="row">
-        <div class="col-xs-4 col-xs-offset-4">
-            <div class="input-group">
-                {{ searchform.nation }}
-                <span class="input-group-btn">
-                    <button class="btn btn-default" type="submit">Search</button>
-                </span>
-            </div>
-        </div>
-    </div>
-</form>
-</div>
-
-{% if results %}
-    {% for player in results %}
-        {% if forloop.last %}
-             <a href="{{ player.get_absolute_url }}">{{ player.name }}</a>
-        {% else %}
-             <a href="{{ player.get_absolute_url }}">{{ player.name }}</a>, 
-        {% endif %}
-    {% endfor %}
-{% endif %}
+{% include "nation/ranksearch.html" %}
 
 
 {% include "nation/pagination.html" %}
 
 
-<table class="table table-striped">
-    <tr>
-        <td><b>Nation</b></td>
-        <td><b>Leader</b></td>
-        <td><b>GDP (millions)</b></td>
-        <td><b>Region</b></td>
-        <td><b>Alignment</b></td>
-        <td><b>Alliance</b></td>
-        {% if nation %}
-        <td><b>War</b></td>
-        {% endif %}
-    </tr>
-    {% for player in nations %}
-    <tr>
-        <td>
-            <a href="{{ player.get_absolute_url }}">
-                <img src="{{ player.settings.showflag }}" height="40">
-            <b>{{ player.name }}</b>
-            </a>
-        </td>
-        <td>{{ player.user.username }}</td>
-        <td>${{ player.gdp }}m</td>
-        <td>{{ player.subregion }}</td>
-        <td>{{ player.alignment|alignment }}</td>
-    {% if player.has_alliance %}
-        <td>
-            <a href="{{ player.alliance.get_absolute_url }}">
-                {{ player.alliance.name }}
-            </a>
-        </td>
-    {% else %}
-        <td>None</td>
-    {% endif %}
-    {% if nation %}
-        <td>{{ player|warstatus:nation }}</td>
-    {% endif %}
-    </tr>
-    {% endfor %}
-</table>
+{% include "nation/rankingstable.html" %}
 
 
 {% endblock %}

@@ -62,11 +62,17 @@ def ajax_handling(request):
     from . import military
     from . import foreign
     nation = Nation.objects.select_for_update().get(user=request.user)
+    update = False
     if request.POST['policy'] in Policy.registry:
         policy = Policy.registry[request.POST['policy']](nation)
         if policy.can_apply():
+            update = True
             policy.enact()
         rval = policy.json()
+        if update:
+            rval.update({'update': update})
+    else:
+        rval = {'result': 'invalid policy'}
     return JsonResponse(rval)
 
 

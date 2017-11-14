@@ -116,14 +116,14 @@ def wardetails(request, war_id):
     context = {}
     nation = request.user.nation
     try:
-        war = Warlog.objects.select_related('attacker', 'defender').get(pk=war_id)
+        war = War.objects.select_related('attacker', 'defender').get(pk=war_id)
     except:
         return render(request, 'mod/not_found.html')
     if request.method == "POST":
         if 'delete' in request.POST:
-            war.warlog.over = True
-            war.warlog.save()
-            war.delete()
+            war.over = True
+            war.winner = "Ended by %s" % request.user.username
+            war.save()
             nation.mod_actions.create(
                 action="Deleted war between %s and %s" % (war.attacker.name, war.defender.name),
                 reason=form.cleaned_data['reason'],
@@ -292,9 +292,8 @@ def nation_page(request, nation_id):
 
     if can_see:
         context.update({
-                'warlogs': Warlog.objects.filter(Q(attacker=target)|Q(defender=target))[0:10],
-                'incoming_aid': target.incoming_aid.all()[0:20],
-                'outgoing_aid': target.outgoing_aid.all()[0:20],
+                'warlogs': War.objects.filter(Q(attacker=target)|Q(defender=target))[0:10],
+                'aids': Aidlog.objects.filter(Q(sender=target)|Q(reciever=target))[0:10],
                 'actionlogs': target.actionlogs.all()[0:10],
                 'login_times': target.login_times.all()[0:10],
                 'associated_IPs': target.IPs.all(),

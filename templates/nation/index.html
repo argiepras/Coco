@@ -3,13 +3,13 @@
 {% block content %}
 <div class="container-fluid">
 {% load static %}
-<img src="{% static 'assets/logo.png' %}">
+<img src="{% static 'assets/logo.png' %}" style="max-width: 100%">
 
 <br /><br />
 <p>Cold Conflict is an MMO nation simulation game placed at the height of the cold war.</p>
 <br />
 <p>Oppress your populace as a dictator, or rule with a velvet glove in a free democracy.</p>
-<br />N
+<br />
 <p>Free the proletariat from the bourgeoisie as a communist, or fight back against the red menace as a capitalist.</p>
 <br />
 <p>Develop peacefully through resource production and technological breakthroughs, or plunder the riches of other nations for yourself.</p>
@@ -24,6 +24,8 @@
 
 
 <br>
+{% if donors %}
+    
 <p>speshul thanks to people who support this game</p>
 <div class="row">
 {% for donor in donors %}
@@ -32,6 +34,7 @@
     </div>
 {% endfor %}
 </div>
+{% endif %}
 </div>
 
 {% endblock %}

@@ -1,14 +1,13 @@
 <table class="table table-hover">
-      <form method="post">{% csrf_token %}
     <tr>
         <td>Action</td>
         <td>Description</td>
         <td>Cost</td>
         <td></td><td>
     </tr>
-    
-    {% if spy.location.pk != nation.pk %}
 
+    {% if spy.location.pk != nation.pk %}
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Withdraw</td>
         <td>Returns agent to your nation. Chance of being caught at the border.</td>
@@ -17,7 +16,8 @@
             <button type="submit" class="btn btn-default" name="action" value="withdraw">Command</button>
         </td>    
     </tr>
-
+    </form>
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Arm Rebels</td>
         <td>Increases strength of the rebel forces. Chances depend on approval of target government. Small reputation drop if failure.</td>
@@ -26,7 +26,8 @@
             <button type="submit"  class="btn btn-default" name="action" value="armrebels" />Command</button>
         </td>
     </tr>
-
+    </form>
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Fund Opposition</td>
         <td>Decreases approval for government if successful. Small reputation drop if failure. 
@@ -36,7 +37,8 @@
             <button type="submit"  class="btn btn-default" name="action" value="fundopposition">Command</button>
         </td>
     </tr>
-
+    </form>
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Terrorist Attack</td>
         <td>Decreases stability of government if successful. Large reputation drop if failure. High risk.</td>
@@ -45,21 +47,24 @@
             <button type="submit"  class="btn btn-default" name="action" value="terroristattack">Command</button>
         </td>
     </tr>
-    
+    </form>
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Sabotage Oil Well</td>
         <td>Destroys oil well if successful. Moderate reputation drop if failure.</td>
         <td>2 weapons, ${{ sabotagewell }}k, 20 infiltration</td>
         <td><button type="submit"  class="btn btn-default" name="action" value="sabotagewell" />Command</button></td>
     </tr>
-    
+    </form>
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Sabotage Mine</td>
         <td>Destroys mine if successful. Moderate reputation drop if failure.  </td>
         <td>2 weapons, ${{ sabotagemine }}k, 20 infiltration</td> 
         <td><button type="submit"  class="btn btn-default" name="action" value="sabotagemine" />Command</button></td>
     </tr>
-    
+    </form>
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Poison Crops</td>
         <td>Reduces target nation's agricultural development level. Large reputation drop if failure.</td>
@@ -68,13 +73,14 @@
             <button type="submit"  class="btn btn-default" name="action" value="poison" />Command</button>
         </td>
     </tr>
+    </form>
 
     {% elif spy.nation.pk != nation.pk and spy.discovered %}
     
     
 
     {% else %}
-
+    <form method="post">{% csrf_token %}
     <tr>
         <td>Counterintelligence Sweep</td>
         <td>Hunts out other spies in the agent's current location. Success depends on relative infiltration and experience to the other spies.</td>
@@ -83,8 +89,6 @@
             <button type="submit"  class="btn btn-default" name="action" value="counter" />Command</button>
         </td>
     </tr>
-    {% endif %}
-    
-    
     </form>
+    {% endif %}
 </table>

@@ -4,7 +4,7 @@
 </div>
 
     <a href="#" data-toggle="tooltip" data-placement="left" title="Your budget increases every ten minutes, reaching 0.10% of your GDP (${{ nation.gdp }}k) after 12 hours. You may save up to 0.20% of your GDP (${{ nation.gdp|add:nation.gdp }}k).">
-    Available budget: ${{ stats.budget }}k <i class="icon-question-sign"></i></a>
+    Available budget: $<span id="budget">{{ stats.budget }}</span>k <i class="icon-question-sign"></i></a>
     <br /><br />
 
     
@@ -60,6 +60,9 @@ $(document).ready(function(){
 });
 
 function updatestuff(x, y, z){
+    if(x.update){
+        refresh();
+    }
     $(".result").show();
     if (x.img !== "")
     {

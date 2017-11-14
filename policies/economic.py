@@ -40,47 +40,42 @@ class great_leap(Policy):
     result = 'Mediocre pig iron! You have failed to improve economic growth!'
 
 
-class reactor(Policy):
+class foreigninvestment(Policy):
     def __init__(self, nation):
-        super(reactor, self).__init__(nation)
-        if self.nation.military.reactor == 20:
-            self.contextual = True
-    cost = {
-        'budget': 5000,
-        'uranium': 1,
-        'research': 50
-    }
-    requirements = cost
-    name = "Develop Nuclear Reactor"
-    button ="Develop"
-    description = """Turn that yellow cake into magical electricity. Gives an extra 
-        $1 million growth a turn while operational and allows for the 
-        peaceful development of nuclear weapons."""
+        super(foreigninvestment, self).__init__(nation)
+        self.cost = {
+            'budget': 75,
+            'rm': (nation.growth/6 if nation.growth > 2 else 1)
+        }
+        self.requirements = self.cost
+        self.low = {'FI': (5 if nation.growth <= 5 else nation.growth), 'economy': 1}
+        self.gain = {'growth': 1}
+        self.gain.update(self.low)
+
+    name = 'Encourage Foreign Investment'
+    description = """Invite rich yankees to exploit your cheap labor and resources. 
+    Slight chance of increasing economic growth... but the rest could always be 
+    nationalized later. Not available to communist countries."""
+    button = "Pander"
 
     def extra(self):
-        return self.nation.military.reactor < 20
+            return utils.econsystem(self.nation.economy) > 0 #no commies allowed
 
     def errors(self):
-        if self.nation.military.reactor == 20:
-            return "We already have a nuclear reactor!"
+            if not self.extra():
+                return "No investors will invest in a planned economy!"
 
     def enact(self):
         chance = random.randint(1, 10)
-        progress = 0 
-        if chance > 4:
-            progress = utils.attrchange(self.nation.military.reactor, 1, upper=20)
-            if progress + self.nation.military.reactor == 20:
-                self.result = "Our scientist finish and we now have a fully operational reactor!"
-            else:
-                self.result = "Progress continues toward a working reactor!"
-        elif chance < 2 and self.nation.military.reactor > 1:
-            progress = utils.attrchange(self.nation.military.reactor, -1, upper=20)
-            self.result = "A stealth bomber has struck your reactor in the middle of construction! Someone doesn't want you getting nuclear weapons... Progress is set back."
+        if chance > 7:
+            self.result = "Foreign investment pours in which trickles down all over your economy, generating growth!"
+            self.img = "foreigninvest.jpg"
+        elif chance < 4:
+            self.gain = self.low
+            self.result = "Foreign investment pours in but unfortunately there is no trickling down on the domestic economy!"
         else:
-            self.result = "Your nuclear scientists unfortunately fail to make progress..."
-        self.nation.military.reactor += progress
-        self.nation.military.save(update_fields=['reactor'])
-        super(reactor, self).enact()
+            self.result = "No one takes up your offer to invest!"
+        super(foreigninvestment, self).enact()
 
 
 class blood(Policy):
@@ -204,7 +199,7 @@ class labordiscipline(Policy):
         self.description = """The random executions will continue until morale improves. 
         Produces %s ton%s of manufactured goods, %s per factory, but cost rises in oil and 
         raw materials for each time done in a single turn along with a decline in 
-        approval. Cost is less in Asia.""" % (self.gain['mg'], ('s' if self.gain['mg'] > 1 else ''), gain)
+        approval. Cost is less in Asia and scales with research.""" % (self.gain['mg'], ('s' if self.gain['mg'] > 1 else ''), gain)
 
     result = 'Your people take to the assembly lines!'
     img = "http://i.imgur.com/ZAxmwGG.jpg"
@@ -415,44 +410,6 @@ class humanitarian(Policy):
         return self.nation.gdp < 290
 
 
-class foreigninvestment(Policy):
-    def __init__(self, nation):
-        super(foreigninvestment, self).__init__(nation)
-        self.cost = {
-            'budget': 75,
-            'rm': (nation.growth/6 if nation.growth > 2 else 1)
-        }
-        self.requirements = self.cost
-        self.low = {'FI': (5 if nation.growth <= 5 else nation.growth), 'economy': 1}
-        self.gain = {'growth': 1}
-        self.gain.update(self.low)
-
-    name = 'Encourage Foreign Investment'
-    description = """Invite rich yankees to exploit your cheap labor and resources. 
-    Slight chance of increasing economic growth... but the rest could always be 
-    nationalized later. Not available to communist countries."""
-    button = "Pander"
-
-    def extra(self):
-            return utils.econsystem(self.nation.economy) > 0 #no commies allowed
-
-    def errors(self):
-            if not self.extra():
-                return "No investors will invest in a planned economy!"
-
-    def enact(self):
-        chance = random.randint(1, 10)
-        if chance > 7:
-            self.result = "Foreign investment pours in which trickles down all over your economy, generating growth!"
-            self.img = "foreigninvest.jpg"
-        elif chance < 4:
-            self.gain = self.low
-            self.result = "Foreign investment pours in but unfortunately there is no trickling down on the domestic economy!"
-        else:
-            self.result = "No one takes up your offer to invest!"
-        super(foreigninvestment, self).enact()
-
-
 class mine(Policy):
     def __init__(self, nation):
         super(mine, self).__init__(nation)
@@ -648,3 +605,47 @@ class sez(Policy):
             self.gain = self.low
             self.result = "Opposition from hardliners stops the creation of an SEZ! Government popularity drops slightly..."
         super(sez, self).enact()
+
+
+
+class reactor(Policy):
+    def __init__(self, nation):
+        super(reactor, self).__init__(nation)
+        if self.nation.military.reactor == 20:
+            self.contextual = True
+    cost = {
+        'budget': 5000,
+        'uranium': 1,
+        'research': 50
+    }
+    requirements = cost
+    name = "Develop Nuclear Reactor"
+    button ="Develop"
+    description = """Turn that yellow cake into magical electricity. Gives an extra 
+        $1 million growth a turn while operational and allows for the 
+        peaceful development of nuclear weapons."""
+
+    def extra(self):
+        return self.nation.military.reactor < 20
+
+    def errors(self):
+        if self.nation.military.reactor == 20:
+            return "We already have a nuclear reactor!"
+
+    def enact(self):
+        chance = random.randint(1, 10)
+        progress = 0 
+        if chance > 4:
+            progress = utils.attrchange(self.nation.military.reactor, 1, upper=20)
+            if progress + self.nation.military.reactor == 20:
+                self.result = "Our scientist finish and we now have a fully operational reactor!"
+            else:
+                self.result = "Progress continues toward a working reactor!"
+        elif chance < 2 and self.nation.military.reactor > 1:
+            progress = utils.attrchange(self.nation.military.reactor, -1, upper=20)
+            self.result = "A stealth bomber has struck your reactor in the middle of construction! Someone doesn't want you getting nuclear weapons... Progress is set back."
+        else:
+            self.result = "Your nuclear scientists unfortunately fail to make progress..."
+        self.nation.military.reactor += progress
+        self.nation.military.save(update_fields=['reactor'])
+        super(reactor, self).enact()

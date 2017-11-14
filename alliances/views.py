@@ -141,8 +141,7 @@ def bankinterface(request):
     }
     incomebreakdown = Bankstats()
     incomebreakdown.populate(turnchange.alliancetotal(alliance, display=True))
-    page = (request.GET['page'] if 'page' in request.GET else 1)
-    pager, logs = utils.paginate_me(alliance.bank_logs.all(), 15, page)
+    pager, logs = utils.paginate_me(alliance.bank_logs.all(), 15, request.GET.get('page', 1))
     context.update({
         'pages': utils.pagination(pager, logs),
         'logentries': logs,
@@ -155,9 +154,8 @@ def bankinterface(request):
 @nation_required
 def alliancerankings(request):
     #this big chunk retrieves alliances ordered by highest membercount
-    page = (request.GET['page'] if 'page' in request.GET else 1)
     alliances = Alliance.objects.annotate(membercount=Count('members')).order_by('-membercount')
-    paginator, alliancelist = utils.paginate_me(alliances, 10, page)
+    paginator, alliancelist = utils.paginate_me(alliances, 10, request.GET.get('page', 1))
     context = {
         'pages': utils.pagination(paginator, alliancelist),
         'alliances': alliancelist,
@@ -173,9 +171,8 @@ def alliancedeclarations(request):
     if request.method == 'POST':
         context.update({'result': oa.declare(nation, request.POST)})
 
-    page = (request.GET['page'] if 'page' in request.GET else 1)
     declarations = Alliancedeclaration.objects.select_related('nation', 'nation__settings', 'alliance').all().order_by('-pk')
-    paginator, declist = utils.paginate_me(declarations, 10, page)
+    paginator, declist = utils.paginate_me(declarations, 10, request.GET.get('page', 1))
 
     context.update({
         'pages': utils.pagination(paginator, declist),
@@ -193,9 +190,8 @@ def chat(request):
     result = False
     if request.method == "POST":
         context.update({'result': ma.post_chat(nation, request.POST)})
-    page = (request.GET['page'] if 'page' in request.GET else 1)
     chats = Alliancechat.objects.select_related('nation').filter(alliance=alliance).order_by('-pk')
-    paginator, chatslist = utils.paginate_me(chats, 10, page)
+    paginator, chatslist = utils.paginate_me(chats, 10, request.GET.get('page', 1))
     context.update({
         'chatlist': chatslist, 
         'pages': utils.pagination(paginator, chatslist),

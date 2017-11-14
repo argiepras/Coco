@@ -69,7 +69,12 @@ def alliance_expenditures(alliance):
     if count == None:
         count = 0
     if alliance.averagegdp == None:
-        alliance.averagegdp = 0
+        return {
+            'literacy_cost':  0,
+            'healthcare_cost': 0,
+            'freedom_cost': 0,
+            'weapontrade_cost': 0,
+        }
     return {
         'literacy_cost':  alliance_litcost(alliance, count),
         'healthcare_cost': alliance_healthcost(alliance, count),

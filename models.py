@@ -245,6 +245,10 @@ class Nation(Nationattrs):
     creationtime = models.DateTimeField(default=v.now)
     subregion = models.CharField(max_length=25, default="Carribean")
     objects = Actives()
+    
+    class Meta:
+        ordering = ['gdp', 'pk']
+
     def __unicode__(self):
         return u"%s" % self.name
 
@@ -391,7 +395,7 @@ class Nation(Nationattrs):
         for region in v.regionshort:
             if v.regionshort[region] == self.subregion:
                 sub = region
-        return reverse('regionrankings', kwargs={'region': sub, 'page': 1})
+        return reverse('regionrankings', kwargs={'region': sub})
 
     def get_mod_url(self):
         if self.settings.mod:
@@ -572,6 +576,9 @@ class Comm(models.Model):
     def __unicode__(self):
         return u"to %s from %s" % (self.recipient, self.sender)
 
+    class Meta:
+        ordering = ['-timestamp']
+
 class Sent_comm(models.Model):
     message = models.TextField(max_length=1000)
     sender = models.ForeignKey(Nation, related_name='sent_comms',blank=True, null=True, on_delete=models.CASCADE)
@@ -581,32 +588,8 @@ class Sent_comm(models.Model):
     modcomm = models.BooleanField(default=False)
     masscomm = models.BooleanField(default=False)
 
-
-class War(models.Model):
-    attacker = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="offensives")
-    defender = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="defensives")
-    attackerpeace = models.BooleanField(default=False)
-    defenderpeace = models.BooleanField(default=False)
-    timestamp = models.DateTimeField(default=v.now)
-    attacked = models.BooleanField(default=False)
-    defended = models.BooleanField(default=False)
-    airattacked = models.BooleanField(default=False)
-    airdefended = models.BooleanField(default=False)
-    navyattacked = models.BooleanField(default=False)
-    navydefended = models.BooleanField(default=False)
-    over = models.BooleanField(default=False)
-    def __unicode__(self):
-        return u"%s attacking %s" % (self.attacker.name, self.defender.name)
-    def peace(self):
-        if self.attackerpeace and self.defenderpeace:
-            return True
-        return False
-
-class Peace(models.Model):
-    war = models.ForeignKey(War, on_delete=models.CASCADE, related_name="peace_offers")
-    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="peace_offers")
-    timestamp = models.DateTimeField(auto_now_add=True)
-
+    class Meta:
+        ordering = ['-timestamp']
 
 class Donor(models.Model):
     name = models.CharField(max_length=30)
@@ -633,7 +616,7 @@ class Event(models.Model):
     seen = models.BooleanField(default=False)
     class Meta:
         get_latest_by = "timestamp"
-        ordering = ['timestamp']
+        ordering = ['-event', '-timestamp']
 
 
 
@@ -643,6 +626,48 @@ class Eventhistory(models.Model):
     choice = models.CharField(max_length=50)
     timestamp = models.DateTimeField(default=v.now)
 
+
+class War(models.Model):
+    attacker = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="offensives", blank=True, null=True)
+    defender = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="defensives", blank=True, null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    ended = models.DateTimeField(auto_now_add=True)
+    over = models.BooleanField(default=False)
+    winner = models.CharField(max_length=50)
+    def __unicode__(self):
+        return u"%s attacking %s" % (self.attacker.name, self.defender.name)
+
+    def has_attacked(self, nation, attack_type):
+        return self.attacks.filter(attacker=nation, attack_type=attack_type, turn=current_turn()).exists()
+
+class Peace(models.Model):
+    war = models.ForeignKey(War, on_delete=models.CASCADE, related_name="peace_offers")
+    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="peace_offers")
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+
+class Attack(models.Model):
+    war = models.ForeignKey(War, on_delete=models.CASCADE, related_name="attacks")
+    attacker = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="attacks", blank=True, null=True)
+    attack_type = models.CharField(max_length=10) #ground, naval, air, chem, nuke
+    lost = models.IntegerField(default=0)
+    turn = models.IntegerField(default=current_turn)
+    timestamp = models.DateTimeField(auto_now_add=True)
+    class Meta:
+        ordering = ['-turn', '-pk']
+
+class Loss(models.Model):
+    attack = models.ForeignKey(Attack, on_delete=models.CASCADE, related_name="kills")
+    loss_type = models.CharField(max_length=15)
+    amount = models.IntegerField(default=0)
+
+
+
+class Wargains(models.Model): #for log purposes
+    war = models.ForeignKey(War, on_delete=models.CASCADE, related_name="gains")
+    resource = models.CharField(max_length=15)
+    amount = models.IntegerField(default=0)
+    turn = models.IntegerField(default=current_turn)
 
 
 #######################
@@ -724,6 +749,7 @@ class Market(models.Model):
     food_counter = models.IntegerField(default=15)
     foodprice = models.IntegerField(default=30)
     change = models.IntegerField(default=0) #change in market activity
+    last_updated = models.IntegerField(default=0)
     def __unicode__(self):
         return u'Market data for turn %s' % self.pk
 
@@ -735,6 +761,10 @@ class Market(models.Model):
             except:
                 continue
         return r
+
+    def changed(self):
+        from time import time
+        self.last_updated = int(time())
 
 #to preventing gaming the market by buying and selling to increase the sold/bought volumes
 class Marketlog(models.Model):
@@ -1090,7 +1120,9 @@ class Aidlog(models.Model):
     reciever = models.ForeignKey(Nation, related_name="incoming_aid", on_delete=models.SET_NULL, null=True, blank=True)
     resource = models.CharField(max_length=20)
     amount = models.IntegerField(default=0)
+    value = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
+    
 
 class Aid(models.Model):
     sender = models.ForeignKey(Nation, related_name="outgoing_aidspam", on_delete=models.SET_NULL, null=True, blank=True)
@@ -1098,72 +1130,6 @@ class Aid(models.Model):
     resource = models.CharField(max_length=20)
     amount = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
-
-
-
-
-class Warlog(models.Model):
-    war = models.OneToOneField(War, blank=True, null=True, on_delete=models.SET_NULL)
-    attacker = models.ForeignKey(Nation, on_delete=models.SET_NULL, blank=True, null=True, related_name="offensive_warlogs")
-    defender = models.ForeignKey(Nation, on_delete=models.SET_NULL, blank=True, null=True, related_name="defensive_warlogs")
-    winner = models.ForeignKey(Nation, on_delete=models.SET_NULL, blank=True, null=True, related_name="warlog_wins")
-    last_attack = models.DateTimeField(default=v.now)
-    timestart = models.DateTimeField(default=v.now)
-    timeend = models.DateTimeField(default=v.now)
-    attacker_armystart = models.IntegerField(default=0)
-    attacker_armyend = models.IntegerField(default=0)
-    attacker_techstart = models.IntegerField(default=0)
-    attacker_techend = models.IntegerField(default=0)
-    attacker_groundattacks = models.IntegerField(default=0)
-    attacker_groundloss = models.IntegerField(default=0)
-    attacker_airattacks = models.IntegerField(default=0)
-    attacker_airloss = models.IntegerField(default=0)
-    attacker_navyattacks = models.IntegerField(default=0)
-    attacker_navyloss = models.IntegerField(default=0)
-    attacker_chemmed = models.IntegerField(default=0)
-    attacker_factoryloss = models.IntegerField(default=0)
-
-    defender_armystart = models.IntegerField(default=0)
-    defender_armyend = models.IntegerField(default=0)
-    defender_techstart = models.IntegerField(default=0)
-    defender_techend = models.IntegerField(default=0)
-    defender_groundattacks = models.IntegerField(default=0)
-    defender_groundloss = models.IntegerField(default=0)
-    defender_airattacks = models.IntegerField(default=0)
-    defender_airloss = models.IntegerField(default=0)
-    defender_navyattacks = models.IntegerField(default=0)
-    defender_navyloss = models.IntegerField(default=0)
-    defender_chemmed = models.IntegerField(default=0)
-    defender_factoryloss = models.IntegerField(default=0)
-    def __unicode__(self):
-        return u'%s against %s war log' % (self.attacker.name, self.defender.name)
-
-    def get_absolute_url(self):
-        return reverse('mod:war', kwargs={'war_id': (str(self.pk))})
-
-    def isover(self):
-        return self.timeend > self.timestart
-
-
-#class Wargain(models.Model):
-
-
-
-class Lastattack(models.Model):
-    log = models.ForeignKey(Warlog, related_name='last_attacks', on_delete=models.CASCADE)
-    nation = models.ForeignKey(Nation, on_delete=models.SET_NULL, null=True)
-    killed = models.IntegerField(default=0)
-    lost = models.IntegerField(default=0)
-    timestamp = models.DateTimeField(default=v.now)
-
-
-class Lastaction(models.Model):
-    log = models.ForeignKey(Warlog, related_name='last_actions', on_delete=models.CASCADE)
-    nation = models.ForeignKey(Nation, on_delete=models.SET_NULL, null=True)
-    action = models.CharField(max_length=50, default="none")
-    outcome = models.CharField(max_length=100, default="none")
-    timestamp = models.DateTimeField(default=v.now)
-
 
 
 ###########

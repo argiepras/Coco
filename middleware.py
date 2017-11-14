@@ -21,11 +21,17 @@ class Meta_middleware(MiddlewareMixin):
     def process_request(self, request):
         #storing metadata for last online and multi detection
         #delegated to a celery process because dbio
-        if not request.is_ajax() or not request.user.is_authenticated:
-            try:
-                header = request.META['HTTP_USER_AGENT']
-            except:
-                header = ''
+        try:
+            header = request.META['HTTP_USER_AGENT']
+        except:
+            header = ''
+        if 'ios' in header.lower() or \
+        'android' in header.lower() or \
+        'mobile' in header.lower():
+            request.mobile = True
+        else:
+            request.mobile = False
+        if not request.is_ajax() and not request.user.is_anonymous():
             referral = request.META.get('REFERER')
             ip = request.META.get('REMOTE_ADDR')
             pk = request.user.pk

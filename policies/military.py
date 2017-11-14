@@ -438,3 +438,4 @@ class nuke(Policy):
     def enact(self):
         self.nation.military.nukes += 1
         self.nation.military.save(update_fields=['nukes'])
+        self.enact()

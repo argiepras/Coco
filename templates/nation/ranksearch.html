@@ -1,0 +1,24 @@
+<div class="search">
+<form method="GET">
+    <div class="row">
+        <div class="col-xs-4 col-xs-offset-4">
+            <div class="input-group">
+                {{ searchform.query }}
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="submit">Search</button>
+                </span>
+            </div>
+        </div>
+    </div>
+</form>
+</div>
+
+{% if results %}
+    {% for player in results %}
+        {% if forloop.last %}
+             <a href="{{ player.get_absolute_url }}">{{ player.name }}</a>
+        {% else %}
+             <a href="{{ player.get_absolute_url }}">{{ player.name }}</a>, 
+        {% endif %}
+    {% endfor %}
+{% endif %}

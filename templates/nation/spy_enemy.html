@@ -1,5 +1,4 @@
 <table class="table table-hover">
-      <form method="post">{% csrf_token %}
     <tr>
         <td>Action</td>
         <td>Description</td>
@@ -7,33 +6,33 @@
         <td></td><td>
     </tr>
     {% if not spy.arrested %}
-    <tr>
+    <tr><form method="post">{% csrf_token %}
         <td>Arrest</td>
         <td>Issues an arrest order on the spy. Success depends on infiltration, experience and time passed since the spy was discovered.</td>
         <td>$20k</td>
         <td>
             <button type="submit"  class="btn btn-default" name="action" value="arrest">Arrest</button>
         </td>
-    </tr>
-    <tr>
+    </tr></form>
+    <tr><form method="post">{% csrf_token %}
         <td>Execute</td>
         <td>Arrangements are made for the spy to have an accident. Success depends on infiltration, experience and time passed since the spy was discovered.</td>
         <td>${{ accidentcost }}k</td>
         <td>
             <button type="submit"  class="btn btn-default" name="action" value="accident">Command</button>
         </td>
-    </tr>
+    </tr></form>
     {% if spy.surveillance %}
-    <tr>
+    <tr><form method="post">{% csrf_token %}
         <td>End suvelliance</td>
         <td>Ends the surveillance of the foreign agent.</td>
         <td>No cost</td>
         <td>
             <button type="submit"  class="btn btn-default" name="action" value="end_surveillance">End</button>
         </td>
-    </tr>
+    </tr></form>
     {% else %}
-    <tr>
+    <tr><form method="post">{% csrf_token %}
         <td>Place under surveillance</td>
         <td>Assigns a spy to shadow the agent. Enemy agents under surveillance has a much greater chance to be arrested and lower chance to succeed in sabotage</td>
         <td>${{ surveilcost }}k</td>
@@ -43,18 +42,18 @@
             </div>
             <button type="submit"  class="btn btn-default" name="action" value="surveillancing">Assign</button>
         </td>
-    </tr>
+    </tr></form>
     {% endif %}
     {% else %}
-    <tr>
+    <tr><form method="post">{% csrf_token %}
         <td>Execute</td>
         <td>Labels the spy an enemy of the state and issues an execution order on him.</td>
         <td>$50k</td>
         <td>
             <button type="submit"  class="btn btn-default" name="action" value="execute" />Execute</button>
         </td>
-    </tr>
-    <tr>
+    </tr></form>
+    <tr><form method="post">{% csrf_token %}
         <td>Extradite</td>
         <td>Sends a transfer request to another country to make him not our problem anymore.</td>
         <td>
@@ -67,8 +66,8 @@
             </div>
             <button type="submit"  class="btn btn-default" name="action" value="extradite" />Send off</button>
         </td>
-    </tr>
-    <tr>
+    </tr></form>
+    <tr><form method="post">{% csrf_token %}
         <td>Deport</td>
         <td>Releases and deports the spy in question.</td>
         <td>
@@ -77,7 +76,6 @@
         <td>
             <button type="submit"  class="btn btn-default" name="action" value="deport" />Deport</button>
         </td>
-    </tr>
+    </tr></form>
     {% endif %}
-    </form>
 </table>

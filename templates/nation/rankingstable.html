@@ -1,0 +1,40 @@
+{% load basetags %}
+<table class="table table-striped">
+    <tr>
+        <td><b>Nation</b></td>
+        <td><b>Leader</b></td>
+        <td><b>GDP (millions)</b></td>
+        <td><b>Region</b></td>
+        <td><b>Alignment</b></td>
+        <td><b>Alliance</b></td>
+        {% if nation %}
+        <td><b>War</b></td>
+        {% endif %}
+    </tr>
+    {% for player in nations %}
+    <tr>
+        <td>
+            <a href="{{ player.get_absolute_url }}">
+                <img src="{{ player.settings.showflag }}" height="40">
+            <b>{{ player.name }}</b>
+            </a>
+        </td>
+        <td>{{ player.user.username }}</td>
+        <td>${{ player.gdp }}m</td>
+        <td><a href="{{ player.get_ranking_url }}">{{ player.subregion }}</a></td>
+        <td>{{ player.alignment|alignment }}</td>
+    {% if player.has_alliance %}
+        <td>
+            <a href="{{ player.alliance.get_absolute_url }}">
+                {{ player.alliance.name }}
+            </a>
+        </td>
+    {% else %}
+        <td>None</td>
+    {% endif %}
+    {% if nation %}
+        <td>{{ player|warstatus:nation }}</td>
+    {% endif %}
+    </tr>
+    {% endfor %}
+</table>

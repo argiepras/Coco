@@ -4,6 +4,7 @@ from .utilities import get_active_player
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
 from decorators import nation_required
+from django.db.models import F
 from math import sqrt
 import random
 import nation.news as news
@@ -685,6 +686,7 @@ def counter(nation, spy):
     elif nation.budget < cost:
         result = "You do not have the funding for this!"
     else:
+        Nation.objects.filter(user=nation.user).update(budget=F('budget') - cost)
         strength = spy.experience + spy.infiltration - utils.attrchange(nation.stability, 100)
         spyactions = {
             'actioned': {'action': 'set', 'amount': True},

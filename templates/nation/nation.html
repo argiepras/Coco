@@ -2,13 +2,17 @@
 {% block content %}
 {% load basetags %}
 {% load humanize %}
-
+    {% if atwar %}
+        <h3 class="red">We are at war</h3><br>
+    {% endif %}
               <center>
 
             <p><i class="lead">{{ target.show_descriptor|descriptor }}</i></p>
               <p id="nationtitle"><b>{{ target.name }}</b></p>
 
-    
+    {% if result %}
+        <div class="oldresult">{{ result }}</div>
+    {% endif %}
         <div class="result"></div>
 
     <img src="{{ flag }}" height="170">
@@ -248,7 +252,7 @@
              </tr>
         <tr>
             <td>Region:</td>
-            <td><i>{{ target.subregion }}</i></td>
+            <td><a href="{{ nation.get_ranking_url }}"><i>{{ target.subregion }}</i></a></td>
         </tr>
              <tr>
                  <td>Alliance:</td>
@@ -562,15 +566,6 @@
             </td>
         </tr>
         {% endif %}
-    {% if nation.military.army > 10 %}
-        <tr>
-            <td>Send 10k man expeditionary force</td>
-            <td></td>
-            <td>
-                <button id="aid" class="btn btn-default" name="expeditionary">Send</button>
-            </td>
-        </tr>
-    {% endif %}
     {% if aidform.oil %}
         <tr>
             <td>Ship Oil</td>
@@ -607,6 +602,13 @@
             </td>
         </tr>
     {% endif %}
+        <tr>
+            <td>Send 10k man expeditionary force</td>
+            <td></td>
+            <td>
+                <button class="btn btn-default aid" name="expedition">Send</button>
+            </td>
+        </tr>
         <tr>
             <td>Cede 100km of Territory</td>
             <td>
@@ -674,6 +676,7 @@
     });
 
     function updatestuff(x, y, z){
+        if(x.update){refresh();}
         $(".aidresult").show();
         $(".aidresult").html(x.result);
     };

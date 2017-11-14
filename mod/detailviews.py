@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Sum
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.core.paginator import *
@@ -32,6 +32,73 @@ def nation_actions(request, nation_id, page):
     return render(request, 'mod/actions.html', context)
 
 
+@mod_required
+def aidpage(request, nation_id):
+    nation = utils.get_player(nation_id)
+    order = request.COOKIES.get('order_by', '-timestamp')
+    try:
+        if '-' in order:
+            Aid._meta.get_field(order[1:])
+        else:
+            Aid._meta.get_field(order)
+    except:
+        order = "-timestamp"
+    aid = Aid.objects.filter(Q(sender=nation)|Q(reciever=nation)).order_by(order)
+    pager, logs = utils.paginate_me(aid, 25, request.GET.get('page', 1))
+    
+    direction = "up"
+    if '-' in order:
+        direction = "down"
+        order = order[1:]
+      
+
+    context = {
+        'target': nation, 
+        'pages': utils.pagination(pager, logs), 
+        'aids': logs,
+        'ordering': order,
+        'direction': 'arrow-' + direction,
+    }
+
+    """incoming = calculaid(nation.incoming_aid, 'sender')
+    if incoming:
+        context.update({'incoming': {'player': incoming[0], 'count': incoming[1]}})
+    outgoing = calculaid(nation.outgoing_aid, 'reciever')
+    if outgoing:
+        context.update({'outgoing': {'player': outgoing[0], 'count': outgoing[1]}})
+        """
+    ordering = ['budget', 'rm', 'mg', 'oil', 'food', 'troops', 'weapons', 'research', 'uranium', 'nuke']
+    totals = []
+    for resource in ordering:
+        total_in = nation.incoming_aid.filter(resource=resource).aggregate(total=Sum('amount'))['total']
+        total_in = (total_in if total_in != None else 0)
+        total_out = nation.outgoing_aid.filter(resource=resource).aggregate(total=Sum('amount'))['total']
+        total_out = (total_out if total_out != None else 0)
+        totals.append({'resource': v.aidnames[resource], 'incoming': total_in, 'outgoing': total_out})
+    context.update({'totals': totals})
+    return render(request, 'mod/aidpage.html', context)
+
+
+def calculaid(aid, var):
+    distincts = []
+    data = []
+    #this first part is to get a list of unique senders/recipients
+    for aids in aid.all().distinct(var):
+        if getattr(aid, var): #avoid NULLed entries
+            distincts.append(getattr(aid, var))
+    if not distincts:
+        return None
+
+    current = 0
+    highest = 0
+    hp = None
+    #then find out who has the most entries
+    for player in distincts:
+        current = aids.filter(**{var: player}).count()
+        if current > highest:
+            highest = current
+            hp = player
+    return hp, highest
 
 
 @mod_required

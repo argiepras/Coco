@@ -94,6 +94,7 @@ def alliance_gain():
     return add_budget()
 
 
+
 def add_budget():
     #alliance members gets paid first, then regular nations
     for alliance in Alliance.objects.select_related('initiatives').annotate(membercount=Count('members')).filter(membercount__gte=1):
@@ -247,28 +248,11 @@ def econturn(debug=False):
 
 
 def allianceturn(debug=False):
-    for alliance in Alliance.objects.all().iterator():
-        try:
-            totalgdp = alliance.members.actives().aggregate(Sum('gdp'))['gdp__sum']
-            alliance.averagegdp = totalgdp / alliance.members.actives().count()
-            alliance.save(update_fields=['averagegdp'])
-        except: #nobody in the alliance
-            pass
-    Memberstats.objects.all().update(oil=0, mg=0, rm=0, food=0, budget=0)
+    Memberstats.objects.all().update(budget=0)
     return warcleanup()
 
 
 def warcleanup(debug=False):
-    War.objects.all().update(
-        attacked=False, 
-        defended=False, 
-        airattacked=False, 
-        airdefended=False, 
-        navyattacked=False, 
-        navydefended=False)
-    #delete wars that hasn't had an offensive in >48 hours
-    War.objects.filter(warlog__last_attack__lte=timezone.now() - timezone.timedelta(hours=48)).delete()
-    War.objects.filter(over=True, timestamp__lte=timezone.now()).delete()
     return marketturn()
 
 
@@ -352,6 +336,7 @@ def create_snapshot(nation, turn):
 
 @shared_task
 def meta_processing(agent, ip, userpk, referral=None):
+    print "meta processing"
     #part of detecting multis is using metadata
     #like user agents and whether or not referral links are submitted
     #normal users with actual browsers submit referral links most of the time
@@ -365,5 +350,6 @@ def meta_processing(agent, ip, userpk, referral=None):
     IP.objects.get_or_create(nation=nation, IP=ip)
     #since we're doing all this database stuff
     #set the last seen var here as well
-    Nation.objects.filter(user__pk=userpk).update(last_seen=timezone.now())
+    nation.last_seen = timezone.now()
+    nation.save(update_fields=['last_seen'])
 

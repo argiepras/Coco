@@ -34,19 +34,17 @@ def delegate(request):
     }
     mils = ['nuke', 'weapons', 'expedition']
     if request.POST['action'] in mils:
-        nation = Nation.objects.select_for_update().select_related('military').get(user=request.user)
-        target = Nation.objects.select_for_update().select_related('military').get(pk=request.POST['target'])
-    else:
-        nation = Nation.objects.select_for_update().get(user=request.user)
-        target = Nation.objects.select_for_update().get(pk=request.POST['target'])
+        Military.objects.select_for_update().filter(Q(nation__user=request.user)|Q(nation__pk=request.POST['target']))
+    nation = Nation.objects.select_for_update().get(user=request.user)
+    target = Nation.objects.select_for_update().get(pk=request.POST['target'])
     if nation.pk == target.pk:
         return JsonResponse({'result': '"no"'})
     if request.POST['action'] in options:
         args = {'nation': nation, 'target': target, 'POST': request.POST}
         result = options[request.POST['action']](**args)
     else:
-        result = 'NO'
-    return JsonResponse({'result': result})
+        result = {'result': 'NO'}
+    return JsonResponse(result)
 
 
 def send_aid(*args, **kwargs):
@@ -64,7 +62,7 @@ def send_aid(*args, **kwargs):
                 amount=aid_amount, 
                 timestamp__gte=v.now() - timezone.timedelta(minutes=10)
                     ).count() > 5:
-                return 'no'
+                return {'result': 'no'}
             market = Market.objects.latest('pk')
             tariff = 0
             if (nation.economy < 33 and target.economy > 66) or (target.economy < 33 and nation.economy > 66):
@@ -96,13 +94,14 @@ def send_aid(*args, **kwargs):
             nation.save(update_fields=uf)
             target.save(update_fields=uf)
             log_aid(nation, target, resource, aid_amount)
+            result = {'result': result, 'update': True}
         else:
-            result = "invalid resurce"
+            result = {'result': '"nvalid resource'}
     else:
         try:
-            result = form.errors.as_data()['amount'][0][0]
+            result = {'result': form.errors.as_data()['amount'][0][0]}
         except:
-            result = "invalid resource"
+            result = {'result': '"nvalid resource'}
     return result
 
 
@@ -128,8 +127,10 @@ def give_weapons(*args, **kwargs):
             nation.save(update_fields=['_reputation'])
         news.sending_weapons(nation, target)
         log_aid(nation, target, 'weapons', 5)
-        result = "The weapons are packed in crates and shipped off. The UN didn't seem too happy."
-    return result
+        return {'result': "The weapons are packed in crates and shipped off. The UN didn't seem too happy.",
+                'update': True,
+            }
+    return {'result': result}
 
 
 def cede(*args, **kwargs):
@@ -153,7 +154,7 @@ def cede(*args, **kwargs):
         result = "We cede the land and lose respect of the people!"
         news.ceding_territory(nation, target)
         log_aid(nation, target, 'land', 100)
-    return result
+    return {'result': result}
 
 
 def expeditionary(*args, **kwargs):
@@ -174,7 +175,7 @@ def expeditionary(*args, **kwargs):
         news.aidnews(nation, target, 'troops', 10)
         log_aid(nation, target, 'troops', 10)
         result = "10k of our active personnel are shipped off to %s" % target.name
-    return result
+    return {'result': result}
 
 
 def nukes(*args, **kwargs):
@@ -192,14 +193,14 @@ def nukes(*args, **kwargs):
         news.nukesent(nation, target)
         log_aid(nation, target, 'nukes', 1)
         result = "A nuclear bomb is carefully disgused and transported to %s" % target.name
-    return result
+    return {'result': result}
 
 
 def research(*args, **kwargs):
     nation = kwargs.pop('nation')
     target = kwargs.pop('target')
     if nation.research < 50:
-        result = "stop it"
+        return {'result': "stop it"}
     else:
         nation.research -= 50
         target.research += 50
@@ -207,8 +208,7 @@ def research(*args, **kwargs):
         target.save(update_fields=['research'])
         news.aidnews(nation, target, 'research', 50)
         log_aid(nation, target, 'research', 50)
-        result = "50 research gets transferred to %s!" % target.name
-    return result
+    return {'result': "50 research gets transferred to %s!" % target.name, 'update': True}
 
 
 def uranium(*args, **kwargs):
@@ -225,7 +225,7 @@ def uranium(*args, **kwargs):
         news.uraniumaid(nation, target)
         log_aid(nation, target, 'uranium', 1)
         result = "You send off the yellow cake to %s" % target.name
-    return result   
+    return {'result': result}   
 
 
 def log_aid(nation, target, resource, amount):

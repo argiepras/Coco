@@ -34,7 +34,7 @@ class ajaxaidform(forms.Form):
 
 
 class searchform(forms.Form):
-    nation = forms.CharField(max_length=50, min_length=1, widget=forms.TextInput(attrs={
+    query = forms.CharField(max_length=50, min_length=1, widget=forms.TextInput(attrs={
         'placeholder': 'Search for nation...', 'class': 'form-control'
         }))
 
