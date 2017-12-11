@@ -401,6 +401,8 @@ class chems(Policy):
     and your military NEEDS some Sarin and Mustard Gas... just in case. 
     Decreases reputation, takes five successful developments to actually 
     create usuable chemical weapons."""
+    errors = {'reputation': "Your reputation is too low, the necessary chemicals have been barred from importation!"}
+
 
     def extra(self):
         return self.nation.military.chems < 10
@@ -412,8 +414,19 @@ class chems(Policy):
     def enact(self):
         chance = random.randint(1, 10)
         if chance > 4:
-            self.nation.military.chems += 2
-            self.nation.military.save(update_fields=['chems'])
+            if self.nation.military.chems < 9:
+                self.nation.military.chems += 2
+                self.result = "Progress continues toward usable chemical weapons!"
+            else:
+                self.nation.military.chems = 10
+        elif chance == 1:
+            progress = self.nation.military.chems
+            self.nation.military.chems = (progress - 1 if progress > 1 else 0)
+            self.result = "A stealth bomber has struck your chemical plant in the middle of production! \
+                            Someone doesn't want you getting chemical weapons... Progress is set back."
+        else:
+            self.result = "Your chemists unfortunately fail to make progress..."
+        self.nation.military.save(update_fields=['chems'])
         super(chems, self).enact()
 
 
@@ -438,4 +451,4 @@ class nuke(Policy):
     def enact(self):
         self.nation.military.nukes += 1
         self.nation.military.save(update_fields=['nukes'])
-        self.enact()
+        super(nuke, self).enact()

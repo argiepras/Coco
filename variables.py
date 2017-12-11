@@ -40,7 +40,7 @@ foodproduction = {
     500: 1,
 }
 
-#decay of approval, stability*, manpower* and growth*
+#decay of approval, stability, manpower and growth
 faminecost = -10
 
 regions = ['Africa', 'South America', 'Arabia', 'Asia']

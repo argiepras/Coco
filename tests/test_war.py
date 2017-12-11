@@ -7,7 +7,7 @@ from django.utils import timezone
 
 class ground_tests(TestCase):
     def setUp(self):
-        self.attacker = nation_generator()
+        self.attacker = nation_generator(random=False)
         self.attacker.military.army = 30
         self.attacker.military.weapons = 50
         self.attacker.military.save()
@@ -23,7 +23,7 @@ class ground_tests(TestCase):
         self.assertGreater(20, self.defender.military.army)
         self.assertGreater(50, self.attacker.military.weapons)
         self.assertGreater(self.attacker.land, self.defender.land)
-        self.assertEqual(self.defender.news.all().count(), 1)
+        self.assertEqual(self.defender.news.all().count(), 2)
         self.assertTrue(self.war.attacks.all().exists())
         self.assertEqual(Loss.objects.all().count(), 1, msg="Losses are army guys")
         self.assertEqual(Wargains.objects.all().count(), 1)
@@ -39,13 +39,13 @@ class ground_tests(TestCase):
         self.war.refresh_from_db()
         self.assertTrue(self.war.over)
         self.assertEqual(self.war.winner, self.attacker.name)
-        self.assertEqual(self.defender.news.all().count(), 1)
+        self.assertEqual(self.defender.news.all().count(), 2)
         self.assertGreater(self.defender.protection, timezone.now())
 
 
 class naval_tests(TestCase):
     def setUp(self):
-        self.attacker = nation_generator()
+        self.attacker = nation_generator(random=False)
         self.attacker.military.navy = 30
         self.attacker.military.weapons = 50
         self.attacker.military.save()
@@ -68,7 +68,7 @@ class naval_tests(TestCase):
         self.assertEqual(self.war.attacks.all().count(), 1)
         self.assertEqual(self.war.attacks.all()[0].attacker, self.attacker)
         self.assertGreater(20, self.defender.military.army)
-        self.assertEqual(self.defender.news.all().count(), 1)
+        self.assertEqual(self.defender.news.all().count(), 2)
 
 
     def test_naval_battle(self):
@@ -81,13 +81,13 @@ class naval_tests(TestCase):
         self.assertEqual(self.war.attacks.all().count(), 1)
         self.assertEqual(self.war.attacks.all()[0].attacker, self.attacker)
         self.assertGreater(30, self.defender.military.navy)
-        self.assertEqual(self.defender.news.all().count(), 1)
+        self.assertEqual(self.defender.news.all().count(), 2)
 
 
 class air_tests(TestCase):
     def setUp(self):
-        self.attacker = nation_generator()
-        self.defender = nation_generator()
+        self.attacker = nation_generator(random=False)
+        self.defender = nation_generator(random=False)
         self.attacker.military.planes = 10
         self.attacker.military.save()
         self.defender.military.planes = 1
@@ -110,7 +110,7 @@ class air_tests(TestCase):
     def test_city_bombing(self):
         self.attack(citybombing)
         self.assertEqual(self.defender.manpower, 90)
-        self.assertGreater(nation_generator().qol, self.defender.qol)
+        self.assertGreater(nation_generator(random=False).qol, self.defender.qol)
 
     def test_naval_bombing(self):
         self.attack(navalbombing)
@@ -151,7 +151,7 @@ class air_tests(TestCase):
     def base_tests(self):
         self.assertEqual(self.war.attacks.all().count(), 1)
         self.assertTrue(self.war.attacks.filter(attack_type="air").exists())
-        self.assertEqual(self.defender.news.all().count(), 1)
+        self.assertEqual(self.defender.news.all().count(), 2)
 
 
 

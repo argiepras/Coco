@@ -7,14 +7,13 @@ import nation.variables as v
 
 class policytests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()
+        self.subject = nation_generator(random=False)
 
 
     def test_praise_ussr(self):
         nation = self.subject
         #default nations should be able to praise the ussr
         policy = praise_ussr(nation)
-        print policy.cost
         self.assertTrue(policy.can_apply())
         nation.alignment = 1
         self.assertFalse(policy.can_apply())
@@ -28,6 +27,7 @@ class policytests(TestCase):
         nation.refresh_from_db()
         self.assertNotEqual(snap.alignment, nation.alignment)
         self.assertEqual(nation.alignment, 1)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_praise_us(self):
@@ -46,6 +46,7 @@ class policytests(TestCase):
         nation.refresh_from_db()
         self.assertNotEqual(snap.alignment, nation.alignment)
         self.assertEqual(nation.alignment, 3)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_neutrality(self):
@@ -64,6 +65,7 @@ class policytests(TestCase):
         nation.refresh_from_db()
         self.assertNotEqual(snap.alignment, nation.alignment)
         self.assertEqual(nation.alignment, 2)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_us_intervention(self):
@@ -81,6 +83,7 @@ class policytests(TestCase):
         nation.military.refresh_from_db()
         self.assertGreater(nation.military.army, troops)
         self.assertEqual(nation.us_points, 0)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_ussr_intervention(self):
@@ -98,6 +101,7 @@ class policytests(TestCase):
         nation.military.refresh_from_db()
         self.assertGreater(nation.military.army, troops)
         self.assertEqual(nation.soviet_points, 0)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_usaid(self):
@@ -114,6 +118,7 @@ class policytests(TestCase):
         nation.refresh_from_db()
         cost_check(self, nation, snap, policy.cost)
         self.assertGreater(nation.growth, snap.growth)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_sovietaid(self):
@@ -130,5 +135,5 @@ class policytests(TestCase):
         nation.refresh_from_db()
         cost_check(self, nation, snap, policy.cost)
         self.assertGreater(nation.growth, snap.growth)
-
+        self.assertNotEqual(policy.result, '')
 

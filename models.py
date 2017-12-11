@@ -107,14 +107,12 @@ class Alliance(Allianceoptions):
             tax = self.initiatives.poor_tax
         else:
             tax = self.initiatives.lowermiddle_tax
-        print tax
         if tax == 0:
             return 0
         else:
             return tax/100.0
 
     def taxtype(self, member):
-        print member
         if member.gdp/2 > self.averagegdp:
             tax = "wealthy_tax"
         elif member.gdp > self.averagegdp:
@@ -123,7 +121,6 @@ class Alliance(Allianceoptions):
             tax = "poor_tax"
         else:
             tax = "lowermiddle_tax"
-        print tax
         return tax
 
     def kick(self, member):
@@ -141,6 +138,13 @@ class ID(models.Model):
     freeIDs = models.IntegerField(default=50)
     #because overriding primary key values pose all sorts of problems
     #so nation IDs will be simple int fields
+    def next(self):
+        while True:
+            self.index += 1
+            if Nation.objects.filter(index=self.index).exists():
+                continue
+            break 
+        self.save(update_fields=['index'])
 
 
 class Actives(models.Manager):
@@ -230,6 +234,7 @@ class Nationattrs(Baseattrs):
 
 class Nation(Nationattrs):
     index = models.IntegerField(default=0)
+    cleared = models.BooleanField(default=False) #cleared means no longer a subject for multi checks
     user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=30)
     alliance = models.ForeignKey(Alliance, related_name='members', blank=True, null=True, on_delete=models.SET_NULL)
@@ -417,19 +422,9 @@ class Nation(Nationattrs):
             return reverse('nations:nationpage', kwargs={'url': (str(self.index))})
 
 
-class Snapshot(Nationattrs):
-    #snapshot of the state of a nation during a given turn
-    nation = models.ForeignKey(Nation, related_name="snapshots", on_delete=models.CASCADE)
-    turn = models.IntegerField(default=current_turn)
-    alliance = models.ForeignKey(Alliance, related_name="member_snapshots", null=True, blank=True, on_delete=models.SET_NULL)
-    def __unicode__(self):
-        return u"snapshot of %s from turn %s" % (self.nation.name, self.turn)
-
-
 class Settings(models.Model):
     nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
     vacation_timer = models.DateTimeField(default=v.now)
-    cleared = models.BooleanField(default=False)
     suspect = models.BooleanField(default=False)
     auto_flagged = models.BooleanField(default=False)
     donor = models.BooleanField(default=False)
@@ -480,8 +475,8 @@ class IP(models.Model):
     def get_absolute_modurl(self):
         return reverse('mod:ip_view', kwargs={'ip': self.IP})
 
-class Military(models.Model):
-    nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
+
+class Militarybase(models.Model):
     army = models.IntegerField(default=20)
     navy = models.IntegerField(default=0)
     planes = models.IntegerField(default=0)
@@ -490,6 +485,12 @@ class Military(models.Model):
     chems = models.IntegerField(default=0) #moves from 0-10
     reactor = models.IntegerField(default=0) #moves from 0 to 20 
     nukes = models.IntegerField(default=0)
+    class Meta:
+        abstract = True
+
+
+class Military(Militarybase):
+    nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
     def __unicode__(self):
         return "%ss military data" % self.nation.name
 
@@ -706,6 +707,14 @@ class Suspected(models.Model):
     timestamp = models.DateTimeField(default=v.now)
 
 
+class Modnote(models.Model):
+    nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name='notes')
+    note = models.CharField(max_length=100, default="default")
+    auto_type = models.CharField(max_length=50, default="manual")
+    def __unicode__(self):
+        return "Note on %s" % self.nation.name
+
+
 #what mods do, visible to admins and head mod
 class Modaction(models.Model):
     mod = models.ForeignKey(Nation, related_name="mod_actions", on_delete=models.CASCADE)
@@ -731,6 +740,53 @@ class Ban(models.Model):
     def __unicode__(self):
         return u"%s" % self.IP
 
+
+## specifically for multi stuff
+#likeliness meters of sort
+#ranging from 0 to 100
+#higher is higher chance of being a multi
+#new nations are continually assessed and the values will tick up or down
+#depending on behaviour, below a point the cleared flag is set
+#and they no longer get assessed
+class Multimeter(models.Model):
+    nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
+    aid = models.IntegerField(default=50)
+    comms = models.IntegerField(default=50)
+    IP = models.IntegerField(default=50)
+    actions = models.IntegerField(default=50)
+    meta = models.IntegerField(default=50)
+    logins =  models.IntegerField(default=50)
+    logouts = models.IntegerField(default=50)
+    
+    def __unicode__(self):
+        return "multimeter for %s" % self.nation.name
+
+    def total(self):
+        x = 0
+        for field in ['aid', 'comms', 'IP', 'actions', 'meta', 'logins', 'logouts']:
+            x += getattr(self, field)
+        return x
+
+
+class Trade_balance(models.Model):
+    multimeter = models.ForeignKey(Multimeter, on_delete=models.CASCADE, related_name='trade_balances')
+    trade_balance = models.IntegerField(default=0)
+    change = models.IntegerField(default=0)
+    turn = models.IntegerField(default=current_turn)
+    class Meta:
+        ordering = ['-turn']
+        get_latest_by = '-turn'
+
+
+class Aidcheck(models.Model):
+    multimeter = models.ForeignKey(Multimeter, on_delete=models.CASCADE, related_name='aidchecks')
+    turn = models.IntegerField(default=current_turn)
+    increment = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['-turn']
+
+
 ###################
 ####MARKET SHIT####
 ###################
@@ -750,6 +806,10 @@ class Market(models.Model):
     foodprice = models.IntegerField(default=30)
     change = models.IntegerField(default=0) #change in market activity
     last_updated = models.IntegerField(default=0)
+    turn = models.IntegerField(default=current_turn)
+
+    class Meta:
+        get_latest_by = "turn"
     def __unicode__(self):
         return u'Market data for turn %s' % self.pk
 
@@ -774,7 +834,7 @@ class Marketlog(models.Model):
     cost = models.IntegerField(default=0) #positive for buys negative for sells
     turn = models.IntegerField(default=current_turn) #set to market.pk
     def __unicode__(self):
-        'Turn %s market log for %s' % (self.turn, self.nation.name)
+        return 'Turn %s market log for %s' % (self.turn, self.nation.name)
 
 
 class Marketoffer(models.Model):
@@ -1077,26 +1137,39 @@ class Permissions(models.Model):
 
 
 
-
-
 ##############
 #### LOGS ####
 ##############
+
+
+class Snapshot(Nationattrs, Militarybase):
+    #snapshot of the state of a nation during a given turn
+    nation = models.ForeignKey(Nation, related_name="snapshots", on_delete=models.CASCADE)
+    turn = models.IntegerField(default=current_turn)
+    alliance = models.ForeignKey(Alliance, related_name="member_snapshots", null=True, blank=True, on_delete=models.SET_NULL)
+    
+    def __unicode__(self):
+        return u"snapshot of %s from turn %s" % (self.nation.name, self.turn)
+
+
 #primarily for multi detection and other such protection
+class Loginbase(models.Model):
+    timestamp = models.DateTimeField(default=v.now)
+    IP = models.GenericIPAddressField()
+    turn = models.IntegerField(default=current_turn)
+    class Meta:
+        abstract = True
 
-class Loginlog(models.Model):
+
+class Loginlog(Loginbase):
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="login_times")
-    timestamp = models.DateTimeField(default=v.now)
-    IP = models.GenericIPAddressField()
     def __unicode__(self):
-        return u"%s seen at %s" % (self.nation.name, self.timOestamp)
+        return u"%s logged in at %s" % (self.nation.name, self.timestamp)
 
-class Logoutlog(models.Model):
+class Logoutlog(Loginbase):
     nation = models.ForeignKey(Nation, on_delete=models.CASCADE, related_name="logout_times")
-    timestamp = models.DateTimeField(default=v.now)
-    IP = models.GenericIPAddressField()
     def __unicode__(self):
-        return u"%s seen at %s" % (self.nation.name, self.timestamp)
+        return u"%s logged out at %s" % (self.nation.name, self.timestamp)
 
 
 
@@ -1122,7 +1195,8 @@ class Aidlog(models.Model):
     amount = models.IntegerField(default=0)
     value = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
-    
+    turn = models.IntegerField(default=current_turn)
+
 
 class Aid(models.Model):
     sender = models.ForeignKey(Nation, related_name="outgoing_aidspam", on_delete=models.SET_NULL, null=True, blank=True)
@@ -1130,6 +1204,7 @@ class Aid(models.Model):
     resource = models.CharField(max_length=20)
     amount = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
+    turn = models.IntegerField(default=current_turn)
 
 
 ###########
@@ -1188,11 +1263,11 @@ class Header(models.Model):
     user_agent = models.CharField(max_length=200)
     set_referrals = models.IntegerField(default=0)
     empty_referrals = models.IntegerField(default=0) #bots don't submit referral fields; probably
+    timestamp = models.DateTimeField(auto_now_add=True)
 
 
 
     
-
 
 
 

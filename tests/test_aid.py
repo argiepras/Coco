@@ -8,8 +8,8 @@ import nation.news as news
 
 class test_aid(TestCase):
     def setUp(self):
-        self.sender = nation_generator()
-        self.recipient = nation_generator()
+        self.sender = nation_generator(random=False)
+        self.recipient = nation_generator(random=False)
         Market.objects.get_or_create()
 
     def test_uranium_aid(self):
@@ -28,7 +28,6 @@ class test_aid(TestCase):
         result = aidfunc(**args)
         self.assertEqual(getattr(rec, resource), 0, msg="Shouldn't recieve %s with sender having 0" % resource)
         self.assertTrue(result != '')
-        +69
 
         setattr(send, resource, amount)
         send.save()
@@ -166,10 +165,10 @@ class test_aid(TestCase):
 
     def vanilla_aid(self, resource):
         #all aid should behave the same so single, recyclable function should work just fine
-        send = nation_generator()
+        send = nation_generator(random=False)
         send.mg = 10
         send.save()
-        rec = nation_generator()
+        rec = nation_generator(random=False)
         rec.mg = 10
         rec.save()
         send_snap = snapshoot(send)
@@ -180,11 +179,11 @@ class test_aid(TestCase):
         payload = {'amount': send.__dict__[resource]*2, 'resource': resource}
         args = {'nation': send, 'target': rec, 'POST': payload}
         #expected failure
-        result = send_aid(**args)
+        result = send_aid(**args)['result']
         refresh(send, rec)
         self.assertTrue(result != '', msg="Result shouldn't be empty")
         self.assertTrue(result != 'invalid resource', msg="POST data is invalid")
-        self.assertTrue(result == 'You cannot send off more than you have!', msg="POST data is invalid")
+        self.assertTrue(result == 'You cannot send off more than you have!')
         self.assertEqual(getattr(send, resource), getattr(send_snap, resource), msg="Failed %s aid shouldn't send" % resource)
         self.assertEqual(getattr(rec, resource), getattr(rec_snap, resource), msg="Failed %s aid shouldn't send" % resource)
         self.assertEqual(rec.news.all().count(), newscount, msg="newscount shouldn't increase for a failure")
@@ -203,8 +202,8 @@ class test_aid(TestCase):
 
 
     def aid_tariffs(self, resource, t_type, t_val):
-        send = nation_generator()
-        rec = nation_generator()
+        send = nation_generator(random=False)
+        rec = nation_generator(random=False)
         setattr(send, resource, 500)
         setattr(rec, resource, 500)
         send.budget = 5000
@@ -225,10 +224,10 @@ class test_aid(TestCase):
 
     
     def spamming(self, resource):
-        send = nation_generator()
+        send = nation_generator(random=False)
         send.mg = 20
         send.save()
-        rec = nation_generator()
+        rec = nation_generator(random=False)
         rec.mg = 20
         rec.save()
 
@@ -246,8 +245,8 @@ class test_aid(TestCase):
 
 
     def test_nukes(self):
-        send = nation_generator()
-        rec = nation_generator()
+        send = nation_generator(random=False)
+        rec = nation_generator(random=False)
         #vanilla nation have 0 nukes so calling it right off the bat should yield a failure
         result = nukes(**{'nation': send, 'target': rec})
         self.assertTrue(result != '')

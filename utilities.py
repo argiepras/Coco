@@ -392,3 +392,7 @@ def string_list(iterable, field=False):
             entry = getattr(entry, field)
         result += '%s%s' % (entry, mod)
     return result
+
+
+def link_me(model):
+    return '<a href="%s"><b>%s</b></a>' % (model.get_absolute_url(), model.name)

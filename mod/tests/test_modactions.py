@@ -9,16 +9,10 @@ class Actiontests(TestCase):
     @classmethod
     def setUpTestData(cls):
         q = Nation.objects.create(index=1)
-        Settings.objects.create(mod=True, nation=q)
-        Military.objects.create(nation=q)
-        Econdata.objects.create(nation=q)
-        Researchdata.objects.create(nation=q)
+        q.settings.mod = True
+        q.settings.save()
         cls.mod = q
         q = Nation.objects.create(index=2)
-        Settings.objects.create(nation=q)
-        Military.objects.create(nation=q)
-        Econdata.objects.create(nation=q)
-        Researchdata.objects.create(nation=q)
         cls.pleb = q
         ID.objects.get_or_create()
         cls.pleb.reports.create(reported=cls.mod)

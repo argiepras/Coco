@@ -96,12 +96,12 @@ def send_aid(*args, **kwargs):
             log_aid(nation, target, resource, aid_amount)
             result = {'result': result, 'update': True}
         else:
-            result = {'result': '"nvalid resource'}
+            result = {'result': 'invalid resource'}
     else:
         try:
             result = {'result': form.errors.as_data()['amount'][0][0]}
         except:
-            result = {'result': '"nvalid resource'}
+            result = {'result': 'invalid resource'}
     return result
 
 
@@ -240,9 +240,10 @@ def log_aid(nation, target, resource, amount):
 
     #now for action logging
     query = nation.actionlogs.filter(
-        action='Sent %s' % resource, 
+        action='Sent aid',
+        extra=resource,
         timestamp__gte=v.now() - timezone.timedelta(minutes=10))
     if query.exists():
         query.update(amount=F('amount') + 1)
     else:
-        nation.actionlogs.create(action='Sent %s' % resource)   
+        nation.actionlogs.create(action='Sent aid', extra=resource)   

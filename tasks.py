@@ -14,6 +14,7 @@ import nation.news as news
 from nation.turnchange import *
 from math import sqrt
 from nation.events import *
+from nation.mod.multidetect import *
 
 
 
@@ -336,7 +337,6 @@ def create_snapshot(nation, turn):
 
 @shared_task
 def meta_processing(agent, ip, userpk, referral=None):
-    print "meta processing"
     #part of detecting multis is using metadata
     #like user agents and whether or not referral links are submitted
     #normal users with actual browsers submit referral links most of the time
@@ -353,3 +353,11 @@ def meta_processing(agent, ip, userpk, referral=None):
     nation.last_seen = timezone.now()
     nation.save(update_fields=['last_seen'])
 
+
+
+#check for multis halfway between turns
+#why?
+#because
+@periodic_task(run_every=crontab(minute="0", hour="6, 18", day_of_week="*"))
+def multicheck():
+    for nation in Nation.objects.actives().filter(cleared=False).iterator():

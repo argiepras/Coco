@@ -7,7 +7,7 @@ import nation.variables as v
 
 class policytests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()
+        self.subject = nation_generator(random=False)
 
 
     def test_conscription(self):
@@ -32,6 +32,7 @@ class policytests(TestCase):
         self.assertEqual(troops, nation.military.army - 2) #supposed to increase army size by 2k
         cost_check(self, nation, snap, policy.cost)
         self.assertGreater(training, nation.military.training)
+        self.assertNotEqual(policy.result, '')
 
     def test_training(self):
         nation = self.subject
@@ -50,6 +51,7 @@ class policytests(TestCase):
         nation.refresh_from_db()
         cost_check(self, nation, snap, policy.cost)
         self.assertEqual(training, nation.military.training - 10)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_demobilize(self):
@@ -65,6 +67,7 @@ class policytests(TestCase):
         nation.military.refresh_from_db()
         #demobilization reduces army size, so reference is bigger than database data
         self.assertGreater(army, nation.military.army)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_attack_rebels(self):
@@ -81,6 +84,7 @@ class policytests(TestCase):
         if not 'defeated' in policy.result:
             self.assertGreater(snap.rebels, nation.rebels)
         self.assertGreater(snap.budget, nation.budget)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_gas_rebels(self):
@@ -102,6 +106,7 @@ class policytests(TestCase):
         nation.military.refresh_from_db()
         self.assertGreater(snap.rebels, nation.rebels)
         self.assertGreater(snap.reputation, nation.reputation)
+        self.assertNotEqual(policy.result, '')
 
 
     def test_foreign_weapons(self):
@@ -111,7 +116,7 @@ class policytests(TestCase):
 
 
     def relation_weapons(self, testingpolicy, relations):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = testingpolicy(nation)
         self.assertFalse(policy.can_apply())
         setattr(nation, relations, 100)
@@ -135,6 +140,7 @@ class policytests(TestCase):
             nation.military.refresh_from_db()
             self.assertGreater(nation.military.weapons, weapons)
             self.assertGreater(getattr(snap, relations), getattr(nation, relations))
+            self.assertNotEqual(policy.result, '')
 
 
     def test_weapons(self):
@@ -159,6 +165,7 @@ class policytests(TestCase):
             nation.military.refresh_from_db()
             self.assertGreater(nation.military.weapons, weaponcount)
             self.assertGreater(snap.mg, nation.mg)
+            self.assertNotEqual(policy.result, '')
 
 
     def test_planes(self):
@@ -169,7 +176,7 @@ class policytests(TestCase):
 
 
     def relation_planes(self, testingpolicy, relations):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         #default nations do not have the necessary resources to
         #buy planes right out of the gate
         policy = testingpolicy(nation)
@@ -191,13 +198,14 @@ class policytests(TestCase):
         for cost in policy.cost:
             self.assertGreater(getattr(snap, cost), getattr(nation, cost), msg="%s didn't get subtracted properly" % cost)
         self.assertGreater(nation.military.planes, planes, msg="plane didn't get added")
-
+        self.assertNotEqual(policy.result, '')
         #shouldn't be accessible of planes == 10
         nation.military.planes = 10
         nation.military.save()
         policy = testingpolicy(nation)
         set_nation(nation, policy.cost)
         self.assertFalse(policy.can_apply(), msg="Cannot get more at 10 planes")
+        self.assertNotEqual(policy.result, '')
 
 
     def test_planes(self):
@@ -222,13 +230,14 @@ class policytests(TestCase):
         for cost in policy.cost:
             self.assertGreater(getattr(snap, cost), getattr(nation, cost), msg="%s didn't get subtracted properly" % cost)
         self.assertGreater(nation.military.planes, planes, msg="plane didn't get added")
-
+        self.assertNotEqual(policy.result, '')
         #shouldn't be accessible of planes == 10
         nation.military.planes = 10
         nation.military.save()
         policy = aircraft(nation)
         set_nation(nation, policy.cost)
         self.assertFalse(policy.can_apply(), msg="Cannot get more at 10 planes")
+        self.assertNotEqual(policy.result, '')
 
 
     def test_navy(self):
@@ -250,9 +259,10 @@ class policytests(TestCase):
         cost_check(self, nation, snap, policy.cost)
         self.assertGreater(nation.military.navy, ships)
         self.assertEqual(nation.military.navy, ships+1)
+        self.assertNotEqual(policy.result, '')
 
 
-    def chems(self):
+    def test_chems(self):
         nation = self.subject
         nation.budget = 0
         policy = chems(nation)
@@ -263,12 +273,14 @@ class policytests(TestCase):
         self.assertTrue(policy.can_apply())
         snap = snapshoot(nation)
         progress = nation.military.chems
-        for x in xrange(1000):
+        while True:
             policy.enact()
+            self.assertNotEqual(policy.result, '')
             nation.refresh_from_db()
             nation.military.refresh_from_db()
-            if nation.military.chems > progress:
+            cost_check(self, nation, snap, policy.cost)
+            if progress < nation.military.chems:
                 break
-            else:
-                raise ValueError 
-        cost_check(self, nation, snap, policy.cost)
+            policy = chems(nation)
+            set_nation(nation, policy.requirements)
+        self.assertNotEqual(policy.result, '')

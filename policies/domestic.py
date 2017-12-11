@@ -184,7 +184,9 @@ class wage(Policy):
 class freefood(Policy):
     def __init__(self, nation):
         super(freefood, self).__init__(nation)
-        self.cost = {'food': (nation.qol/10*nation.approval/10*nation.gdp/200/4)}
+        food = (nation.qol/10*nation.approval/10*nation.gdp/200/4)
+        food = (2 if food < 2 else food)
+        self.cost = {'food': food}
         self.requirements = self.cost
 
     def extra(self):
@@ -288,11 +290,13 @@ class hospital(Policy):
         self.requirements = self.cost
 
     def extra(self):
-        return self.nation.healthcare < 100
+        return self.nation.healthcare < 100 and utils.econsystem(self.nation.economy) < 2
 
     def errors(self):
         if self.nation.healthcare == 100:
             return "Our healthcare is already the best in the world!"
+        elif utils.econsystem(self.nation.economy) == 2:
+            return "Not available to free markets"
 
     gain = {'healthcare': 10}
     name = "Construct Free Hospital"
@@ -310,11 +314,13 @@ class medicalresearch(Policy):
         self.requirements = self.cost
 
     def extra(self):
-        return self.nation.healthcare < 100
+        return self.nation.healthcare < 100 and utils.econsystem(self.nation.economy) > 0
 
     def errors(self):
         if self.nation.healthcare == 100:
             return "We've run out of guinea pigs!"
+        elif utils.econsystem(self.nation.economy) == 0:
+            return "Not available to communists"
 
     gain = {'healthcare': 10}
     name = "Fund Medical Research"

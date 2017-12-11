@@ -103,12 +103,7 @@ def newuser(request, regid):
                 government=form.cleaned_data['government'],
                 economy=form.cleaned_data['economy'],
                 subregion=form.cleaned_data['subregion'])
-            Settings.objects.create(nation=nation)
             IP.objects.create(nation=nation, IP=request.META.get('REMOTE_ADDR'))
-            Military.objects.create(nation=nation)
-            Econdata.objects.create(nation=nation)
-            Researchdata.objects.create(nation=nation)
-            nation.news.create(content='newbie_event', event=True)
             context.update({'result': "Your nation has been successfully created!"})
             #now we log the user in ;)
             user = authenticate(username=user.username, 

@@ -11,22 +11,40 @@ def namegen():
     return ''.join(choice(string.ascii_letters) for x in range(8))
 
 
-def nation_generator(amount=1):
+def nation_generator(amount=1, random=True):
     nations = []
     t = ID.objects.get_or_create()[0]
     for x in range(amount):
         index = x + t.index
-        q = Nation.objects.create(
-            user=User.objects.create(username=namegen()),
-            index=index, 
-            name=''.join(choice(string.ascii_letters) for x in range(8)),
-            creationip=ip_generator()[0],
-            )
+        if random:
+            q = Nation.objects.create(
+                user=User.objects.create(username=namegen()),
+                index=index, 
+                name=''.join(choice(string.ascii_letters) for x in range(8)),
+                creationip=ip_generator()[0],
+                gdp=randint(300, 15000),
+                factories=randint(0, 10),
+                mines=randint(0, 20),
+                wells=randint(0, 20),
+                creationtime=timezone.now() - timezone.timedelta(hours=random.randint(1, 100)),
+                universities=randint(0, 10),
+                FI=randint(0, 15000),
+                research=randint(0, 250),
+                oilreserves=randint(0, 25000),
+                uranium=randint(0, 10),
+                )
+            for field in Baseattrs._meta.fields:
+                setattr(q, field.name, randint(0, 100))
+            q.save()
+
+        else:
+            q = Nation.objects.create(
+                user=User.objects.create(username=namegen()),
+                index=index, 
+                name=''.join(choice(string.ascii_letters) for x in range(8)),
+                creationip=ip_generator()[0],
+                )
         t.index += 1
-        Settings.objects.create(nation=q)
-        Military.objects.create(nation=q)
-        Econdata.objects.create(nation=q)
-        Researchdata.objects.create(nation=q)
         q.IPs.create(IP=q.creationip)
         nations.append(q)
     t.save()

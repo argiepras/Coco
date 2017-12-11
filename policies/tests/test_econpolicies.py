@@ -7,7 +7,7 @@ import nation.variables as v
 
 class policytests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()
+        self.subject = nation_generator(random=False)
 
     def test_great_leap(self):
         #a newly created nation is unable to do GP

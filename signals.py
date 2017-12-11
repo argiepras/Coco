@@ -1,6 +1,6 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
-from nation.models import Nation, Alliance, Initiatives, Permissiontemplate, Bank, Bankstats, Timers
+from nation.models import *
 
 
 @receiver(post_save, sender=Alliance, dispatch_uid='nation.signals.alliance_creation')
@@ -33,3 +33,26 @@ def alliance_creation(sender, instance, created, **kwargs):
 
 
 
+@receiver(post_save, sender=Nation, dispatch_uid='nation.signals.nation_creation')
+def nation_creation(sender, instance, created, **kwargs):
+    if created:
+        if instance.index == 0:
+            x = ID.objects.get_or_create()[0]
+            instance.index = x.index
+            x.next()
+            instance.save(update_fields=['index'])
+        Settings.objects.create(nation=instance)
+        Military.objects.create(nation=instance)
+        Econdata.objects.create(nation=instance)
+        Researchdata.objects.create(nation=instance)
+        Multimeter.objects.create(nation=instance)
+        instance.news.create(content='newbie_event', event=True)
+
+
+#easiest way to completely reset a snapshot, circumventing defaults
+@receiver(pre_save, sender=Snapshot, dispatch_uid='nation.signals.snapshot_creation')
+def create_snapshot(*args, **kwargs):
+    instance = kwargs['instance']
+    for field in Snapshot._meta.fields:
+        if getattr(instance, field.name) == field.default:
+            setattr(instance, field.name, 0)

@@ -8,10 +8,10 @@ import nation.variables as v
 
 class generaltests(TestCase):
     def setUp(self):
-        self.subject = nation_generator()
+        self.subject = nation_generator(random=False)
 
     def test_arrest(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = arrest(nation)
         #default nations can arrest until they turn blue in the face
         self.assertTrue(policy.can_apply())
@@ -29,7 +29,7 @@ class generaltests(TestCase):
 
 
     def test_releasing(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = release(nation)
         #same as above lol, just in reverse
         self.assertTrue(policy.can_apply())
@@ -47,7 +47,7 @@ class generaltests(TestCase):
 
 
     def test_martial_law(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = martial(nation)
         #again, fresh nations can do it
         self.assertTrue(policy.can_apply())
@@ -70,7 +70,7 @@ class generaltests(TestCase):
 
     
     def test_elections(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = elections(nation)
         self.assertTrue(policy.can_apply())
         #only requirements are budgetary
@@ -87,7 +87,7 @@ class generaltests(TestCase):
 
 
     def test_housing(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = housing(nation)
         #default behaviour is increasing approval at the cost of budget
         #and slight decrease in economy
@@ -113,7 +113,7 @@ class generaltests(TestCase):
 
 
     def test_wage(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = wage(nation)
         #increase approval at the cost of growth
         #not available to commies
@@ -133,7 +133,7 @@ class generaltests(TestCase):
 
 
     def test_freefood(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = freefood(nation)
         #food for approval
         #everyone can do if they have the food
@@ -154,7 +154,7 @@ class generaltests(TestCase):
 
 
     def test_school(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = school(nation)
         #increases literacy at the cost of budget
         #cost decreases with uni count
@@ -182,7 +182,7 @@ class generaltests(TestCase):
 
 
     def test_university(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = university(nation)
         self.assertFalse(policy.can_apply())
         set_nation(nation, policy.cost)
@@ -199,7 +199,7 @@ class generaltests(TestCase):
 
 
     def test_unicost(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = university(nation)
         cost = policy.cost
         nation.closed_universities = 1
@@ -214,7 +214,7 @@ class generaltests(TestCase):
 
 
     def test_closinguni(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = closeuni(nation)
         self.assertFalse(policy.can_apply())
         self.assertEqual(nation.closed_universities, 0)
@@ -228,7 +228,7 @@ class generaltests(TestCase):
 
 
     def test_openuni(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = reopenuni(nation)
         self.assertFalse(policy.can_apply())
         nation.closed_universities = 1
@@ -246,7 +246,7 @@ class generaltests(TestCase):
 
 
     def test_hospitals(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = hospital(nation)
         nation.budget = 0
         nation.rm = 0
@@ -267,7 +267,7 @@ class generaltests(TestCase):
 
 
     def test_medicalresearch(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = medicalresearch(nation)
         nation.budget = 0
         nation.research = 0
@@ -288,7 +288,7 @@ class generaltests(TestCase):
 
 
     def test_cultofpersonality(self):
-        nation = nation_generator()
+        nation = nation_generator(random=False)
         policy = cult(nation)
         self.assertTrue(policy.can_apply())
         nation.budget = 0
