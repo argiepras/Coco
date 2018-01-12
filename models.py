@@ -771,6 +771,12 @@ class Multimeter(models.Model):
             x += getattr(self, field)
         return x
 
+    def highest(self):
+        x = 0
+        for field in ['aid', 'comms', 'IP', 'actions', 'meta', 'logins', 'logouts']:
+            value = getattr(self, field)
+            x = (x if x > value else value)
+        return x
 
 class Trade_balance(models.Model):
     multimeter = models.ForeignKey(Multimeter, on_delete=models.CASCADE, related_name='trade_balances')
