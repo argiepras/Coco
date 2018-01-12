@@ -369,10 +369,9 @@ def multicheck():
 def clear_nations():
     query = Nation.objects.select_related('multimeter').actives().filter(cleared=False)
     for nation in query.iterator():
-        if nation.multimeter.total() < 200 and nation.multimeter.highest < 50:
+        if nation.multimeter.total() < 200 and nation.multimeter.highest() < 50:
             nation.cleared = True
             nation.save(update_fields=['cleared'])
-
 
 
 
