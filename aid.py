@@ -1,8 +1,8 @@
-from nation.models import Nation, Econdata, Military, Market
+from nation.models import Nation, Econdata, Military, Market, Marketofferlog
 from nation.variables import min_land
 from django.http import JsonResponse
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, F
+from django.db.models import Q, F, Avg
 from django.db import transaction
 from django.utils import timezone
 
@@ -229,14 +229,15 @@ def uranium(*args, **kwargs):
 
 
 def log_aid(nation, target, resource, amount):
+    value = get_value(resource, amount)
     query = nation.outgoing_aid.filter(
         resource=resource,
         reciever=target,
         timestamp__gte=v.now() - timezone.timedelta(minutes=10))
     if query.exists():
-        query.update(amount=F('amount') + amount)
+        query.update(amount=F('amount') + amount, value=F('value') + value)
     else:
-        nation.outgoing_aid.create(reciever=target, resource=resource, amount=amount)
+        nation.outgoing_aid.create(reciever=target, resource=resource, amount=amount, value=value)
 
     #now for action logging
     query = nation.actionlogs.filter(
@@ -246,4 +247,28 @@ def log_aid(nation, target, resource, amount):
     if query.exists():
         query.update(amount=F('amount') + 1)
     else:
-        nation.actionlogs.create(action='Sent aid', extra=resource)   
+        nation.actionlogs.create(action='Sent aid', extra=resource)
+
+
+def get_value(resource, amount):
+    if resource == "budget":
+        return amount
+    if resource == "land":
+        return amount * 100
+    if resource == "nukes": 
+        return 5000*25
+    if resource == "uranium" or \
+        resource == "troops" or \
+        resource == "research" or \
+        resource ==  "weapons":
+        minimums = {'uranium': 5000, 'troops': 1500, 'research': 400, 'weapons': 500}
+        if Marketofferlog.objects.filter(sold=resource).exists():
+            value = Marketofferlog.objects.filter(sold=resource)[0:20].aggregate(
+                Avg('unitprice'))['unitprice__avg']
+            if value < minimums[resource]:
+                value = minimums[resource]
+        else:
+            value = minimums[resource]
+        return value * amount
+    price = getattr(Market.objects.latest(), "%sprice" % resource)
+    return price * amount

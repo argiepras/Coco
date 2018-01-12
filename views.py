@@ -1071,7 +1071,7 @@ def war_win(attacker, defender, war):
     }
     waractions = {
         'over': {'action': 'set', 'amount': True},
-        'ended': {'action': 'set', 'amount': v.now()},
+        'ended': {'action': 'set', 'amount': current_turn()},
         'winner': {'action': 'set', 'amount': attacker.name}
     }
     for resource in atkactions:
@@ -1417,7 +1417,7 @@ def nuked(nation, target):
         'gdp': {'action': 'set', 'amount': target.gdp/2},
         'growth': {'action': 'subtract', 'amount': 100},
         'factories': {'action': 'set', 'amount': target.factories/2},
-        'manpower': {'action': 'subtract', 'amount': (manpower/2 if manpower/2 > 20 else (20 if manpower >= 20 else manpower))}
+        'manpower': {'action': 'subtract', 'amount': manpower}
     }
     reactor = target.military.reactor
     if reactor > 0:

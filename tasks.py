@@ -14,7 +14,7 @@ import nation.news as news
 from nation.turnchange import *
 from math import sqrt
 from nation.events import *
-from nation.mod.multidetect import *
+from nation.mod.multidetect import cron_detect
 
 
 
@@ -58,7 +58,7 @@ def alliance_gain():
                                 alliance.bank.budget -= expenditures[initiative]
                             else:
                                 alliance.initiatives.__dict__[initiative.split('_')[0]] = False
-                                #collecting fields to update on save()
+                                #collecting fields to update on sav0e()
                                 fields += [initiative, alliance.initiatives.reset_timer(initiative.split('_')[0])]
                                 unaffordable.append(v.initiative_loss[initiative.split('_')[0]])
                     #First we calculated what the alliance in question could afford
@@ -206,6 +206,7 @@ def turnchange(debug=False):
                 nation.refresh_from_db()
                 continue
             eventhandler.trigger_events(nation)
+            trade_balancing(nation)
             break
     return milturn()
 
@@ -361,3 +362,27 @@ def meta_processing(agent, ip, userpk, referral=None):
 @periodic_task(run_every=crontab(minute="0", hour="6, 18", day_of_week="*"))
 def multicheck():
     for nation in Nation.objects.actives().filter(cleared=False).iterator():
+        cron_detect(nation)
+    return clear_nations()
+
+
+def clear_nations():
+    query = Nation.objects.select_related('multimeter').actives().filter(cleared=False)
+    for nation in query.iterator():
+        if nation.multimeter.total() < 200 and nation.multimeter.highest < 50:
+            nation.cleared = True
+            nation.save(update_fields=['cleared'])
+
+
+
+
+
+def trade_balancing(nation):
+    if nation.multimeter.trade_balances.all().count() == 0:
+        change = nation.trade_balance
+    else:
+        old_tb = nation.multimeter.trade_balances.all().latest().trade_balance
+        change = nation.trade_balance - old_tb
+    nation.multimeter.trade_balances.create(
+        trade_balance=nation.trade_balance,
+        change=change)

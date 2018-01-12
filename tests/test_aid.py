@@ -242,6 +242,8 @@ class test_aid(TestCase):
         self.assertGreater(send.outgoing_aid.all().count(), 0, msg="outgoing aidlogs should be created")
         self.assertGreater(rec.incoming_aid.all().count(), 0, msg="Incoming aidlogs should be created")
         self.assertGreater(send.actionlogs.all().count(), 0, msg="Actionlogs should be created")
+        for log in send.outgoing_aid.all():
+            self.assertGreater(log.value, 0, msg="Value of aid should be set")
 
 
     def test_nukes(self):
@@ -263,3 +265,32 @@ class test_aid(TestCase):
         self.assertEqual(rec.military.nukes, 1, msg="Nuke didn't transfer")
         self.assertGreater(100, send.reputation, msg="Reputation didn't subtract")
         self.log_check(send, rec)
+
+
+    def test_value_setting_base(self):
+        value = get_value('rm', 1)
+        price = Market.objects.latest().rmprice
+        self.assertEqual(value, price, msg="Value should be market price")
+
+
+    def test_value_setting_low(self):
+        for x in range(10):
+            Marketofferlog.objects.create(
+                sold="uranium", 
+                bought="budget", 
+                sold_amount=1, 
+                bought_amount=1500)
+        value = get_value("uranium", 1)
+        self.assertGreater(value, 1500, msg="Minimum value of uranium is 5000")
+
+
+    def test_value_setting_low(self):
+        for x in range(10):
+            Marketofferlog.objects.create(
+                sold="uranium", 
+                bought="budget", 
+                sold_amount=1, 
+                bought_amount=7500)
+        value = get_value("uranium", 1)
+        self.assertGreater(value, 5000)
+

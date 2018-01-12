@@ -235,6 +235,9 @@ class Nationattrs(Baseattrs):
 class Nation(Nationattrs):
     index = models.IntegerField(default=0)
     cleared = models.BooleanField(default=False) #cleared means no longer a subject for multi checks
+    #set as safe so auto reports won't be generated
+    #mostly for when someone creates fake multis to generate reports against a player
+    safe = models.BooleanField(default=False)
     user = models.OneToOneField(User, null=True, blank=True, on_delete=models.CASCADE)
     name = models.CharField(max_length=30)
     alliance = models.ForeignKey(Alliance, related_name='members', blank=True, null=True, on_delete=models.SET_NULL)
@@ -632,7 +635,8 @@ class War(models.Model):
     attacker = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="offensives", blank=True, null=True)
     defender = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="defensives", blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
-    ended = models.DateTimeField(auto_now_add=True)
+    begun = models.IntegerField(default=current_turn)
+    ended = models.IntegerField(default=0)
     over = models.BooleanField(default=False)
     winner = models.CharField(max_length=50)
     def __unicode__(self):
@@ -661,7 +665,6 @@ class Loss(models.Model):
     attack = models.ForeignKey(Attack, on_delete=models.CASCADE, related_name="kills")
     loss_type = models.CharField(max_length=15)
     amount = models.IntegerField(default=0)
-
 
 
 class Wargains(models.Model): #for log purposes
@@ -751,6 +754,7 @@ class Ban(models.Model):
 class Multimeter(models.Model):
     nation = models.OneToOneField(Nation, primary_key=True, on_delete=models.CASCADE)
     aid = models.IntegerField(default=50)
+    trade_balance = models.IntegerField(default=50)
     comms = models.IntegerField(default=50)
     IP = models.IntegerField(default=50)
     actions = models.IntegerField(default=50)
@@ -775,7 +779,7 @@ class Trade_balance(models.Model):
     turn = models.IntegerField(default=current_turn)
     class Meta:
         ordering = ['-turn']
-        get_latest_by = '-turn'
+        get_latest_by = 'turn'
 
 
 class Aidcheck(models.Model):
@@ -884,6 +888,7 @@ class Marketofferlog(models.Model):
     bought_amount = models.IntegerField(default=0)
     posted = models.DateTimeField(default=v.now) #when the offer was posted
     timestamp = models.DateTimeField(default=v.now) #and when it was accepted
+    unitprice = models.IntegerField(default=0) #unit price in cash money for easier comparisons
     def __unicode__(self):
         return u"%s bought from %s" % (self.buyer.name, self.seller.name)
 
@@ -1157,6 +1162,7 @@ class Loginbase(models.Model):
     timestamp = models.DateTimeField(default=v.now)
     IP = models.GenericIPAddressField()
     turn = models.IntegerField(default=current_turn)
+    header = models.CharField(max_length=200, default="")
     class Meta:
         abstract = True
 
@@ -1196,6 +1202,9 @@ class Aidlog(models.Model):
     value = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now)
     turn = models.IntegerField(default=current_turn)
+    class Meta:
+        get_latest_by = "timestamp"
+        ordering = ['-timestamp']
 
 
 class Aid(models.Model):

@@ -1,4 +1,4 @@
-from nation.models import *
+from nation.models import Nation, IP
 import nation.utilities as utils
 import nation.variables as v
 
@@ -18,9 +18,9 @@ def correlated_ips(ipset): #queryset of IP objects
     # ie any nation who has an IP associated with it that's also found
     # in the set of IPs associated with the nation associated with the given IP
     """
-           IPs
+           IP(s)
             |
-         nations
+         nation(s)
             |
          all IPs
             |

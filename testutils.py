@@ -26,7 +26,7 @@ def nation_generator(amount=1, random=True):
                 factories=randint(0, 10),
                 mines=randint(0, 20),
                 wells=randint(0, 20),
-                creationtime=timezone.now() - timezone.timedelta(hours=random.randint(1, 100)),
+                creationtime=timezone.now() - timezone.timedelta(hours=randint(1, 100)),
                 universities=randint(0, 10),
                 FI=randint(0, 15000),
                 research=randint(0, 250),

@@ -1,6 +1,7 @@
 from django.db.models.signals import post_save, pre_save
 from django.dispatch import receiver
 from nation.models import *
+from nation.aid import get_value
 
 
 @receiver(post_save, sender=Alliance, dispatch_uid='nation.signals.alliance_creation')
@@ -56,3 +57,23 @@ def create_snapshot(*args, **kwargs):
     for field in Snapshot._meta.fields:
         if getattr(instance, field.name) == field.default:
             setattr(instance, field.name, 0)
+
+
+
+@receiver(post_save, sender=Aidlog, dispatch_uid='nation.signals.Aidlog_creation')
+def Aidlog_creation(sender, instance, created, **kwargs):
+    if created:
+        value = get_value(instance.resource, instance.amount)
+        instance.value = value
+        instance.save(update_fields=['value'])
+
+
+@receiver(post_save, sender=Marketofferlog, dispatch_uid='nation.signals.Marketofferlog_creation')
+def Marketofferlog_creation(sender, instance, created, **kwargs):
+    if created:
+        if instance.sold == "budget":
+            instance.unitprice = instance.sold_amount / instance.bought_amount
+        else:   
+            value = get_value(instance.bought, instance.bought_amount)
+            instance.unitprice = value / instance.sold_amount
+        instance.save(update_fields=['unitprice'])
