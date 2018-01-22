@@ -98,7 +98,6 @@ class Alliance(Allianceoptions):
         Nation.objects.filter(pk=nation.pk).update(alliance=self)
 
     def taxrate(self, member):
-        print self.averagegdp
         if member.gdp/2 > self.averagegdp:
             tax = self.initiatives.wealthy_tax
         elif member.gdp > self.averagegdp:

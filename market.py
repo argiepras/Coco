@@ -30,7 +30,6 @@ def free_market(request):
 
 @transaction.atomic
 def market_action(request):
-    print request.POST
     market = Market.objects.select_for_update().latest('pk')
     nation = Nation.objects.select_for_update().get(user=request.user)
     econ = utils.econsystem(nation.economy)

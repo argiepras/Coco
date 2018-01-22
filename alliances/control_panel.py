@@ -76,7 +76,6 @@ def change(request):
     if request.method == "POST":
         form = newtemplateform(nation.permissions, request.POST)
         if form.is_valid():
-            print request.POST
             if request.POST['template'] == 'new':
                 template = alliance.templates.create()
                 result = "Template successfully created"

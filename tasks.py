@@ -146,7 +146,7 @@ def fire_turn():
 
 
 
-def turnchange(debug=False):
+def turnchange():
     ID.objects.all().update(turn=F('turn') + 1)
     turn = ID.objects.get().turn
     for nation in Nation.objects.actives().select_related('alliance__initiatives').iterator():
@@ -199,19 +199,17 @@ def turnchange(debug=False):
                     'mg': {'action': 'add', 'amount': mg},
                     'food': {'action': 'add', 'amount': food},
                 }
-                if debug:
-                    print nation
                 utils.atomic_transaction(Nation, nation.pk, actions)
             except OperationalError:
                 nation.refresh_from_db()
                 continue
-            eventhandler.trigger_events(nation)
+            eventhandler.trigger_sevents(nation)
             trade_balancing(nation)
             break
     return milturn()
 
 
-def milturn(debug=False):
+def milturn():
     Military.objects.filter(
         nation__vacation=False, 
         nation__deleted=False, 
@@ -220,7 +218,7 @@ def milturn(debug=False):
     return econturn()
 
 
-def econturn(debug=False):
+def econturn():
     Econdata.objects.filter(
         nation__vacation=False, 
         nation__deleted=False,
@@ -249,16 +247,16 @@ def econturn(debug=False):
     return allianceturn()
 
 
-def allianceturn(debug=False):
+def allianceturn():
     Memberstats.objects.all().update(budget=0)
     return warcleanup()
 
 
-def warcleanup(debug=False):
+def warcleanup():
     return marketturn()
 
 
-def marketturn(debug=False):
+def marketturn():
     market = Market.objects.latest('pk')
     new_market = Market()
     for field in v.resources[1:]: #inheriting the counters

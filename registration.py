@@ -19,7 +19,6 @@ from nation.decorators import nologin_required
 def register(request):
     context = {}
     result = ''
-    print request.POST
     if request.method == 'POST':
         form = registrationform(request.POST)
         if 'submit' in request.POST:
@@ -36,7 +35,6 @@ def register(request):
                 result = 'Not a valid email'
 
         elif 'retry' in request.POST:
-            print "retried"
             if form.is_valid():
                 try:  
                     reg = Confirm.objects.get(email=form.cleaned_data['email'])
@@ -44,7 +42,6 @@ def register(request):
                     result = "Email doesn't exist!"
                 else:
                     result = send_registrationmail(reg)
-                    print result
                     if result[0] == 'S':
                         result = "Signup email has been re-sent!"
             else:
@@ -53,7 +50,6 @@ def register(request):
         'form': registrationform(),
         'result': result,
         })
-    print context
     return render(request, 'registration/register.html', context)
 
 

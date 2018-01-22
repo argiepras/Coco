@@ -2,6 +2,9 @@ from random import randint, choice
 from nation.models import *
 from django.contrib.auth.models import User
 import string
+import glob
+import os
+
 
 def ip_generator(amount=1):
     #simply returns a list of n length with randomly generated IPs
@@ -52,6 +55,7 @@ def nation_generator(amount=1, random=True):
 
 
 def alliance_generator(founder=nation_generator(), members=0, officers=0):
+    founder = Nation.objects.get(pk=founder.pk)
     alliance = Alliance.objects.create(name=namegen(), founder=founder.name)
     if members:
         for member in nation_generator(members):
@@ -105,3 +109,26 @@ def refresh(*args, **kwargs):
         if related:
             for model in related:
                 getattr(nation, model).refresh_from_db()
+
+
+
+def find_prints():
+    flist = []
+    for directory, subdir, files in os.walk('.'):
+        for filename in files:
+            if filename[-3:] == '.py':
+                if 'testutils' in filename:
+                    continue
+                if len(directory) == 1:
+                    flist.append(filename)
+                else:
+                    flist.append(directory[2:] + '/' + filename)
+    
+    prints = {}
+    for file in flist:
+        with open(file, 'r') as open_file:
+            for line in open_file:
+                if 'print ' in line:
+                    prints[file] = True
+
+    return prints

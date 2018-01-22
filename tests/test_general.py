@@ -1,5 +1,6 @@
 from django.test import SimpleTestCase
 from nation.utilities import *
+from nation.testutils import find_prints
 
 class test_utils(SimpleTestCase):
     def test_stringlisting(self):
@@ -38,3 +39,9 @@ class test_utils(SimpleTestCase):
         self.assertEqual(econsystem(70), 2)
         self.assertEqual(econsystem(90), 2)
         self.assertEqual(econsystem(100), 2)
+
+
+    def test_prints(self):
+        offenders = find_prints()
+        error_message = "The following files contain prints: %s" % string_list(offenders)
+        self.assertEqual(len(offenders), 0, msg=error_message)

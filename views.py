@@ -595,7 +595,9 @@ def regionalrankings(request, region):
     try:
         bigregion = v.regionshort[region]
     except:
-        return render(request, 'nation/notfound.html', {'item': region})
+        response = render(request, 'nation/notfound.html', {'item': region})
+        response.status_code = 404
+        return response
     context = {}
     page = (request.GET['page'] if 'page' in request.GET else 1)
     if 'query' in request.GET:

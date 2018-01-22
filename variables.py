@@ -264,7 +264,7 @@ urlregions = {
     'latin_america': 'Latin America',
     'africa': 'Africa',
 }
- 
+
 regions = {
     'Asia': {'Pacific Rim': 1, 'Southeast Asia': 2, 'China': 3, 'The Subcontinent': 4},
     'Middle East': {'Persia': 5, 'Mesopotamia': 7, 'Arabia': 7, 'North Africa': 9},
