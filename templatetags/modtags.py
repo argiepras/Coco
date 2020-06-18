@@ -2,6 +2,7 @@ from django import template
 from django.utils.safestring import mark_safe
 import nation.variables as v
 import nation.utilities as utils
+import json
 
 register = template.Library()
 
@@ -22,12 +23,16 @@ register.filter('wartype', wartype)
 
 
 def lastip(nation):
-    return mark_safe(nation.IPs.all().latest('pk'))
+    if nation.IPs.all().exists():
+        return mark_safe(nation.IPs.all().latest('pk'))
+    return mark_safe("no IPs found")
 
 register.filter('lastip', lastip)
 
 def lastipurl(nation):
-    return mark_safe(nation.IPs.all().latest('pk').get_absolute_modurl())
+    if nation.IPs.all().exists():
+        return mark_safe(nation.IPs.all().latest('pk').get_absolute_modurl())
+    return mark_safe("no")
 
 register.filter('lastipurl', lastipurl)
 
@@ -112,6 +117,30 @@ def aidamount(aidobject):
 
 
 register.filter('aidamount', aidamount)
+
+
+def costdisplay(costs):
+    if costs:
+        costs = json.loads(costs)
+        insert = []
+        base = '<img height="15px" src="/static/nation/bottom/!.png"></img>'
+        for resource in costs:
+            if resource == 'budget':
+                txt = "$%sk" % costs[resource]
+            elif resource in v.resources:
+                txt = "%s " % costs[resource]
+                txt += base.replace('!', resource)
+            else:
+                continue
+            insert.append(txt)
+        txt = utils.string_list(insert)
+    else:
+        txt = "None"
+    return mark_safe(txt)
+
+
+
+register.filter('costdisplay', costdisplay)
 
 
 

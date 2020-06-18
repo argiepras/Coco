@@ -20,6 +20,7 @@ import intelligence
 import datetime as time
 from math import sqrt
 import random
+import json
 # Create your views here.
 
 def index(request):
@@ -144,12 +145,12 @@ def reset_nation(request):
 
 
 def declarations(request):
-    context = {}
-    nation = request.user.nation
+    context = {}    
     result = ''
     page = (request.GET['page'] if 'page' in request.GET else 1)
-    if request.method == 'POST':
+    if request.method == 'POST' and not request.user.is_anonymous():
         if 'declare' in request.POST:
+            nation = request.user.nation
             form = declarationform(request.POST)
             if form.is_valid():
                 if nation.budget < v.declarationcost:
@@ -177,16 +178,16 @@ def declarations(request):
             ).order_by('-pk')
     paginator, declist = utils.paginate_me(declarations, 10, page)
     context.update({
-        'mod': nation.settings.mod,
         'declarations': declist, 
         'decform': declarationform(),
         'deccost': v.declarationcost,
         'pages': utils.pagination(paginator, declist),
         'result': result,
         })
-    return render(request, 'nation/declarations.html', context)
+    return render(request, 'nation/bday.html', context)
 
-
+@login_required
+@nation_required
 def regionaldeclarations(request):
     nation = request.user.nation
     context = {'region': nation.region()}
@@ -288,8 +289,8 @@ def commpage(request):
     return render(request, 'nation/comms.html', context)
 
 
-@nation_required
 @login_required
+@nation_required
 def sentcomms(request):
     nation = request.user.nation
     context = {}
@@ -331,7 +332,7 @@ def nation_page(request, url):
         if Nation.objects.filter(deleted=False, reset=False, index=int(url)).exists():
             return nationpage(request, int(url))
         else:
-            return render(request, 'nation/notfound.html', {'item': 'nation'})
+            return render(request, 'nation/notfound.html', {'item': 'nation'}, status=404)
     return nationpage(request, idnumber)
 
 
@@ -579,8 +580,22 @@ def newspage(request):
 
 def rankings(request):
     context = {}
+    template = 'nation/rankings.html'
+    subregion = (request.GET['region'] if 'region' in request.GET else None)
     page = (request.GET['page'] if 'page' in request.GET else 1)
-    paginator, nationlist = utils.paginate_me(Nation.objects.actives().select_related('settings').order_by('-gdp'), 15, page)
+    query = Nation.objects.actives().select_related('settings').order_by('-gdp')
+    if subregion:
+        try:
+            bigregion = v.regionshort[subregion]
+        except:
+            return render(request, 'nation/notfound.html', {'item': bigregion}, status=404)
+        query.filter(subregion=subregion)
+        context.update({
+        'region': bigregion,
+        'shortregion': subregion,
+        })
+        template = 'nation/regionalrankings.html'
+    paginator, nationlist = utils.paginate_me(query, 15, page)
     if 'query' in request.GET:
         context.update(rankingsearch(request))
     context.update({
@@ -588,16 +603,14 @@ def rankings(request):
         'nations': nationlist,
         'searchform': searchform(),
         })
-    return render(request, 'nation/rankings.html', context)
+    return render(request, template, context)
 
 
 def regionalrankings(request, region):
     try:
         bigregion = v.regionshort[region]
     except:
-        response = render(request, 'nation/notfound.html', {'item': region})
-        response.status_code = 404
-        return response
+        return render(request, 'nation/notfound.html', {'item': region}, status=404)
     context = {}
     page = (request.GET['page'] if 'page' in request.GET else 1)
     if 'query' in request.GET:
@@ -614,7 +627,8 @@ def regionalrankings(request, region):
     return render(request, 'nation/regionalrankings.html', context)
 
 
-def rankingsearch(request, subregion=False):
+def rankingsearch(request):
+    subregion = (request.GET['region'] if 'region' in request.GET else None)
     form = searchform(request.GET)
     if form.is_valid():
         query = Nation.objects.actives().filter(
@@ -644,7 +658,6 @@ def nation404(request):
 @login_required
 @novacation
 def research(request):
-    import json
     nation = Nation.objects.select_related('researchdata').get(user=request.user)
     context = {}
     cost = researchcost(nation)
@@ -739,7 +752,6 @@ def statistics(request):
         'newstats': stats,
         })
     return render(request, 'nation/globalnews.html', context)
-
 
 
 @login_required

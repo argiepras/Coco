@@ -13,13 +13,9 @@
         </div>
     </div>
 <div class="bigspacer">
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'mod:nation_actions' target.index page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-</div>
+
+{% include "nation/pagination.html" %}
+
 <form method="POST">{% csrf_token %}
     <table class="table table-striped">
         <thead>

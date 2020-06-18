@@ -9,7 +9,9 @@ import nation.news as news
 class test_aid(TestCase):
     def setUp(self):
         self.sender = nation_generator(random=False)
+        self.sender.subregion = "China"
         self.recipient = nation_generator(random=False)
+        self.recipient.subregion = "China"
         Market.objects.get_or_create()
 
     def test_uranium_aid(self):
@@ -94,7 +96,7 @@ class test_aid(TestCase):
         self.assertTrue(result != '')
         send.refresh_from_db()
         rec.refresh_from_db()
-        self.assertGreater(rec.land, send.land, msg="Land didn't cede")
+        self.assertGreater(rec.land, send.land, msg="Land didn't cede: %s" % result)
         self.assertGreater(reference, send.land, msg="Land didn't get subtracted")
         self.assertGreater(rec.land, reference, msg="Land didn't get added")
         self.assertGreater(rec.news.all().count(), newscount, msg="Newsitem should be created")

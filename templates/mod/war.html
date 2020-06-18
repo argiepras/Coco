@@ -1,149 +1,64 @@
 {% extends 'nation/base.html' %}
+
+{% block scripts %}
+{% load static %}
+    <link href="{% static 'nation/css/timelines.css' %}" rel="stylesheet" type="text/css"/>
+{% endblock scripts %}
+
 {% block content %}
 {% load modtags %}
 <div class="container">
     <p class="spacer"><h2>{{ war.attacker.name }}s offense against {{ war.defender.name }}</h2></p>
-<div class="bigspacer">
-    <div style="display: inline-block; margin-right: 4em">
-        <p><h3>{{ war.attacker.name }}s data</h3></p>
-        <table class="table table-striped table-bordered">
-            <tbody>
-                <tr>
-                    <td>War Start: </td>
-                    <td>{{ war.timestart|date:"o/m/d G:i" }}</td>
-                </tr>
-                <tr>
-                    <td>Outcome: </td>
-                    <td>{{ war|outcome:war.attacker }}</td>
-                </tr>
-                <tr>
-                    <td>Starting army: </td>
-                    <td>{{ war.attacker_armystart }}k</td>
-                </tr>
-                {% if war.war.over %}
-                <tr>
-                    <td>Ending army: </td>
-                    <td>{{ war.attacker_armyend }}k</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td>Starting weapons: </td>
-                    <td>{{ war.attacker_techstart }}k</td>
-                </tr>
-                {% if war.war.over %}
-                <tr>
-                    <td>Ending weapons: </td>
-                    <td>{{ war.attacker_techend }}k</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td>Ground attacks: </td>
-                    <td>{{ war.attacker_groundattacks }}</td>
-                </tr>
-                <tr>
-                    <td>Ground losses: </td>
-                    <td>{{ war.attacker_groundloss }}k</td>
-                </tr>
-                <tr>
-                    <td>Air attacks: </td>
-                    <td>{{ war.attacker_airattacks }}</td>
-                </tr>
-                <tr>
-                    <td>Air losses: </td>
-                    <td>{{ war.attacker_airloss }} planes</td>
-                </tr>
-                <tr>
-                    <td>Navy attacks: </td>
-                    <td>{{ war.attacker_airattacks }}</td>
-                </tr>
-                <tr>
-                    <td>Navy losses: </td>
-                    <td>{{ war.attacker_airloss }} ships</td>
-                </tr>
-                <tr>
-                    <td>Chemical attacks: </td>
-                    <td>{{ war.attacker_chemmed }}</td>
-                </tr>
-                {% if war|warstatus:war.attacker == 'lost' %}
-                <tr>
-                    <td>Lost factories: </td>
-                    <td>{{ war.attacker_factoryloss }}</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
 
-    <div style="display: inline-block; margin-left: 4em">
-        <p><h3>{{ war.defender.name }}s data</h3></p>
-        <table class="table table-striped table-bordered">
-            <tbody>
-                <tr>
-                    <td>War Start: </td>
-                    <td>{{ war.timestart|date:"o/m/d G:i" }}</td>
-                </tr>
-                <tr>
-                    <td>Outcome: </td>
-                    <td>{{ war|outcome:war.defender }}</td>
-                </tr>
-                <tr>
-                    <td>Starting army: </td>
-                    <td>{{ war.defender_armystart }}k</td>
-                </tr>
-                {% if war.war.over %}
-                <tr>
-                    <td>Ending army: </td>
-                    <td>{{ war.defender_armyend }}k</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td>Starting weapons: </td>
-                    <td>{{ war.defender_techstart }}k</td>
-                </tr>
-                {% if war.war.over %}
-                <tr>
-                    <td>Ending weapons: </td>
-                    <td>{{ war.defender_techend }}k</td>
-                </tr>
-                {% endif %}
-                <tr>
-                    <td>Ground attacks: </td>
-                    <td>{{ war.defender_groundattacks }}</td>
-                </tr>
-                <tr>
-                    <td>Ground losses: </td>
-                    <td>{{ war.defender_groundloss }}k</td>
-                </tr>
-                <tr>
-                    <td>Air attacks: </td>
-                    <td>{{ war.defender_airattacks }}</td>
-                </tr>
-                <tr>
-                    <td>Air losses: </td>
-                    <td>{{ war.defender_airloss }} planes</td>
-                </tr>
-                <tr>
-                    <td>Navy attacks: </td>
-                    <td>{{ war.defender_airattacks }}</td>
-                </tr>
-                <tr>
-                    <td>Navy losses: </td>
-                    <td>{{ war.defender_airloss }} ships</td>
-                </tr>
-                <tr>
-                    <td>Chemical attacks: </td>
-                    <td>{{ war.defender_chemmed }}</td>
-                </tr>
-                {% if war|warstatus:war.defender == 'lost' %}
-                <tr>
-                    <td>Lost factories: </td>
-                    <td>{{ war.defender_factoryloss }}</td>
-                </tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
+    <p>The war against 
+        <a href="{{ war.defender.get_mod_url }}">{{ war.defender.name }}</a>
+     was started on turn {{ war.begun }} -  {{ war.timestamp|date:"o/m/d G:i" }} and is currently <b>ongoing</b></p>
 
+     <div class="spacer">
+        <h5>Attack order: first to last <div class="arrow-up"></div></h5>
+     </div>
+        {% if wardata %}
+        <div class="timeline">
+            {% for turn in  wardata %}
+                <div class="boxmid">
+                    <div class="turnbox">Turn {{ turn.turn }} </div>
+                </div>
+
+                {% for data in turn.attacks  %}
+                    <div class="box{{ data.side }}">
+                        <div class="tl_attack">{{ data.attack.attack_type }}</div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+            <div class="boxleft">
+                <div class="tl_attack">hello</div>
+            </div>
+            <div class="boxright">
+                <div class="tl_attack">hello</div>
+            </div>
+            <div class="boxmid">
+                <div class="turnbox">Turn 55505</div>
+            </div>
+            <div class="boxleft">
+                <div class="tl_attack">hello</div>
+            </div>
+            <div class="boxright">
+                <div class="tl_attack">hello</div>
+            </div>
+            <div class="boxleft">
+                <div class="tl_attack">hello</div>
+            </div>
+            <div class="boxright">
+                <div class="tl_attack">hello</div>
+            </div>
+            <div class="boxleft">
+                <div class="tl_attack">hello</div>
+            </div>
+        {% else %}
+            No attacks have been made
+        {% endif %}
+
+    </div>
     {% if war|warstatus:war.defender == 'ongoing' %}
         <div class="bigspacer">
             <form method="POST">{% csrf_token %}
@@ -159,7 +74,4 @@
         </div>
     {% endif %}
 
-
-
-</div>
 {% endblock %}

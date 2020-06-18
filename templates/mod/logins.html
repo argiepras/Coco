@@ -19,11 +19,7 @@
     {% endif %}
 
     <div> 
-        <ul class="pagination">
-        {% for page in pages %}
-            <li><a href="{% url 'mod:nations' page.page %}">{{ page.page }}</a></li>
-        {% endfor %}
-        </ul> 
+        {% include "nation/pagination.html" %} 
     </div>
 
 

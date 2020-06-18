@@ -9,9 +9,13 @@ from django.db import models
 from django.db.models import F, Q, Avg
 from django.utils import timezone
 
+from random import choice
 
 def current_turn():
     return ID.objects.get_or_create()[0].turn #get_or_create to make tests behave
+
+def random_region():
+    return choice(v.regionshort.values())
 
 class Allianceoptions(models.Model):
     accepts_applicants = models.BooleanField(
@@ -53,6 +57,9 @@ class Alliance(Allianceoptions):
     foibonus = models.IntegerField(default=0)
     anthem = models.CharField(max_length=15, default="eFTLKWw542g")
     icon = models.CharField(max_length=40, default="/static/alliance/defaulticon.png")
+
+    class Meta:
+        ordering = ['pk']
 
     def _officers(self):
         return self.members.filter(permissions__template__rank__lt=5)
@@ -250,7 +257,7 @@ class Nation(Nationattrs):
     title = models.CharField(max_length=100, default="")
     creationip = models.GenericIPAddressField(default="127.0.0.1") #default only used for testing
     creationtime = models.DateTimeField(default=v.now)
-    subregion = models.CharField(max_length=25, default="Carribean")
+    subregion = models.CharField(max_length=25, default=random_region)
     objects = Actives()
     
     class Meta:
@@ -402,7 +409,8 @@ class Nation(Nationattrs):
         for region in v.regionshort:
             if v.regionshort[region] == self.subregion:
                 sub = region
-        return reverse('regionrankings', kwargs={'region': sub})
+                break
+        return reverse('rankings') + "?region=%s" % sub
 
     def get_mod_url(self):
         if self.settings.mod:
@@ -439,6 +447,10 @@ class Settings(models.Model):
     donatorflag = models.CharField(max_length=200, default='none')
     anthem = models.CharField(max_length=20, default='')
     autoplay = models.BooleanField(default=True)
+
+    class Meta:
+        ordering = ['pk']
+
     def __unicode__(self):
         return u"%s settings" % self.nation.name
 
@@ -606,6 +618,10 @@ class Declaration(models.Model):
     deleted = models.BooleanField(default=False)
     deleter = models.ForeignKey(Nation, related_name="deleted_declarations", on_delete=models.SET_NULL, null=True, blank=True)
     deleted_timestamp = models.DateTimeField(default=v.now)
+
+    class Meta:
+        ordering = ['-timestamp']
+
     def __unicode__(self):
         return "%s declaration in %s" % (self.nation.name, self.region)
 
@@ -629,20 +645,31 @@ class Eventhistory(models.Model):
     choice = models.CharField(max_length=50)
     timestamp = models.DateTimeField(default=v.now)
 
+    class Meta:
+        ordering = ['-timestamp']
+
 
 class War(models.Model):
     attacker = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="offensives", blank=True, null=True)
     defender = models.ForeignKey(Nation, on_delete=models.SET_NULL, related_name="defensives", blank=True, null=True)
     timestamp = models.DateTimeField(auto_now_add=True)
+    timestamp_end = models.DateTimeField(auto_now_add=True)
     begun = models.IntegerField(default=current_turn)
     ended = models.IntegerField(default=0)
     over = models.BooleanField(default=False)
     winner = models.CharField(max_length=50)
+
+    class Meta:
+        ordering = ['-timestamp']
+
     def __unicode__(self):
         return u"%s attacking %s" % (self.attacker.name, self.defender.name)
 
     def has_attacked(self, nation, attack_type):
         return self.attacks.filter(attacker=nation, attack_type=attack_type, turn=current_turn()).exists()
+
+    def get_mod_url(self):
+        return reverse('mod:war', kwargs={'war_id': self.pk})
 
 class Peace(models.Model):
     war = models.ForeignKey(War, on_delete=models.CASCADE, related_name="peace_offers")
@@ -658,7 +685,7 @@ class Attack(models.Model):
     turn = models.IntegerField(default=current_turn)
     timestamp = models.DateTimeField(auto_now_add=True)
     class Meta:
-        ordering = ['-turn', '-pk']
+        ordering = ['-pk', '-turn']
 
 class Loss(models.Model):
     attack = models.ForeignKey(Attack, on_delete=models.CASCADE, related_name="kills")
@@ -679,16 +706,20 @@ class Wargains(models.Model): #for log purposes
 
 #player reports
 class Report(models.Model):
-    reporter = models.ForeignKey(Nation, related_name="reports", on_delete=models.CASCADE)
+    reporter = models.ForeignKey(Nation, related_name="reports", on_delete=models.CASCADE, blank=True, null=True)
     reported = models.ForeignKey(Nation, related_name="reported", on_delete=models.CASCADE)
     investigator = models.ForeignKey(Nation, related_name="investigated", on_delete=models.CASCADE, null=True, blank=True)
-    investigated = models.BooleanField(default=False)
+    closed = models.BooleanField(default=False)
     guilty = models.BooleanField(default=False)
     conclusion = models.CharField(max_length=500)
     reason = models.CharField(max_length=100, default="multi")
+    automatic = models.BooleanField(default=False)
     comment = models.CharField(max_length=500, default="none")
     timestamp = models.DateTimeField(default=v.now)
     mod_timestamp = models.DateTimeField(default=v.now)
+
+    class Meta:
+        ordering = ['-closed', '-timestamp']
 
     def __unicode__(self):
         return u"report of %s by %s" % (self.reported.name, self.reporter.name)
@@ -700,13 +731,6 @@ class Report(models.Model):
 
     def get_absolute_url(self):
         return reverse('mod:report', kwargs={'report_id': self.pk})
-
-#automatically generated reports
-class Suspected(models.Model):
-    suspect = models.ForeignKey(Nation, on_delete=models.CASCADE)
-    reason = models.CharField(max_length=200)
-    checked = models.BooleanField(default=False)
-    timestamp = models.DateTimeField(default=v.now)
 
 
 class Modnote(models.Model):
@@ -726,6 +750,9 @@ class Modaction(models.Model):
     reverse = models.TextField()
     timestamp = models.DateTimeField(default=v.now)
 
+    class Meta:
+        ordering = ['-timestamp']
+
 
 
 #for detecting mod abuse
@@ -735,6 +762,8 @@ class Modview(models.Model):
     page = models.CharField(max_length=30, default="overview")
     timestamp = models.DateTimeField(default=v.now)
 
+    class Meta:
+        ordering = ['-timestamp']
 
 #simple ban for now
 class Ban(models.Model):
@@ -769,6 +798,9 @@ class Multimeter(models.Model):
         for field in ['aid', 'comms', 'IP', 'actions', 'meta', 'logins', 'logouts']:
             x += getattr(self, field)
         return x
+
+    def average(self):
+        return self.highest() / 8
 
     def highest(self):
         x = 0
@@ -855,6 +887,9 @@ class Marketoffer(models.Model):
     request_amount = models.IntegerField(default=1)
     allow_tariff = models.BooleanField(default=False)
 
+    class Meta:
+        ordering = ['-timestamp']
+
     def __unicode__(self):
         return u"%s is selling %s %s" % (self.nation.name, self.offer_amount, self.offer)
 
@@ -894,14 +929,18 @@ class Marketofferlog(models.Model):
     posted = models.DateTimeField(default=v.now) #when the offer was posted
     timestamp = models.DateTimeField(default=v.now) #and when it was accepted
     unitprice = models.IntegerField(default=0) #unit price in cash money for easier comparisons
+    
+    class Meta:
+        ordering = ['-timestamp']
+
     def __unicode__(self):
         return u"%s bought from %s" % (self.buyer.name, self.seller.name)
 
 
 
-#######################
-#### ALLIANCE SHIT ####
-#######################
+########################
+#### ALLIANCE STUFF ####
+########################
 
 class Initiatives(models.Model):
     alliance = models.OneToOneField(Alliance, on_delete=models.CASCADE)
@@ -940,6 +979,9 @@ class Memberstats(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="memberstats", on_delete=models.CASCADE)
     budget = models.IntegerField(default=0)
     timestamp = models.DateTimeField(default=v.now) #functions as join time
+
+    class Meta:
+        ordering = ['-timestamp']
 
 #limits are either total or per nation
 
@@ -1015,6 +1057,9 @@ class Invite(models.Model):
     nation = models.ForeignKey(Nation, related_name='invites', on_delete=models.CASCADE)
     inviter = models.ForeignKey(Nation, null=True, blank=True, on_delete=models.SET_NULL)
     alliance = models.ForeignKey(Alliance, related_name="outstanding_invites", on_delete=models.CASCADE)
+    
+
+
     def __unicode__(self):
         return u"Invitation to %s from %s" % (self.nation.name, self.alliance.name)
 
@@ -1027,6 +1072,10 @@ class Alliancedeclaration(models.Model):
     deleted = models.BooleanField(default=False)
     deleter = models.ForeignKey(Nation, related_name="deleted_alliancedecs", on_delete=models.SET_NULL, null=True, blank=True)
     deleted_timestamp = models.DateTimeField(default=v.now)
+    
+    class Meta:
+        ordering = ['-timestamp']
+
     def __unicode__(self):
         return "Alliance declaration from %s - %s alliance" % (self.nation.name, self.alliance.name)
 #I know it's the exact same but is less clutter with dec/chat tables
@@ -1037,12 +1086,19 @@ class Alliancechat(models.Model):
     timestamp = models.DateTimeField(default=v.now)
     content = models.CharField(max_length=500)
 
+    class Meta:
+        ordering = ['-timestamp']
+
 
 class Application(models.Model):
     alliance = models.ForeignKey(Alliance, related_name="applications", on_delete=models.CASCADE)
     nation = models.ForeignKey(Nation, related_name="applications", on_delete=models.CASCADE)
     timestamp = models.DateTimeField(default=v.now)
     resume = models.CharField(max_length=300, default="")
+
+    class Meta:
+        ordering = ['-timestamp']
+
     def __unicode__(self):
         return u"%ss application to %s" % (self.nation.name, self.alliance.name)
 
@@ -1158,6 +1214,9 @@ class Snapshot(Nationattrs, Militarybase):
     turn = models.IntegerField(default=current_turn)
     alliance = models.ForeignKey(Alliance, related_name="member_snapshots", null=True, blank=True, on_delete=models.SET_NULL)
     
+    class Meta:
+        ordering = ['-turn']
+
     def __unicode__(self):
         return u"snapshot of %s from turn %s" % (self.nation.name, self.turn)
 
@@ -1193,6 +1252,9 @@ class Actionlog(models.Model):
     policy = models.BooleanField(default=True)
     timestamp = models.DateTimeField(auto_now=True)
     turn = models.IntegerField(default=current_turn) #for easier comparisons
+
+    class Meta:
+        ordering = ['-timestamp']
 
 #might seem redundant
 #but first one is used for the total amount going in or out and is displayed in the mod interface

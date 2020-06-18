@@ -9,21 +9,16 @@
         </div>
     {% endif %}
 
-    <div> 
-        <ul class="pagination">
-        {% for page in pages %}
-            <li><a href="{% url 'market:offers' page.page %}">{{ page.page }}</a></li>
-        {% endfor %}
-        </ul>
-    </div>
+    {% if reports %}
 
-
-{% if reports %}
-
-<p style="margin: 3em">To make things easier and to avoid accidentally doing double work, please claim a report that you intend to investigate, or conversely release a report you don't claimed but don't want to.</p>
+    {% include "nation/pagination.html" %}
 
 
 
+<p style="margin: 3em">To make things easier and to avoid accidentally doing double work, please claim a report that you intend to investigate, or conversely, release a report you claimed but don't want.</p>
+
+
+    
 <form method="POST">{% csrf_token %}
     <table class="table table-striped table-hover">
         <thead>
@@ -61,7 +56,9 @@
                         Claim
                     </button>
                 {% elif report.investigator != nation %}
-
+                    {% comment %}
+                        nothing goes here
+                    {% endcomment %}
                 {% else %}
                     <button type="submit" class="btn btn-default" name="release" value="{{ report.pk }}">
                         Release

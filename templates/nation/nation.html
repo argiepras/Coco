@@ -391,7 +391,7 @@
         </div>
     </form>
             
-        {% if True %}
+        {% if nation.military.planes > 0 %}
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">
             <button class="btn btn-danger attackgroup" data-toggle="collapse" data-target="#airattacks">
@@ -401,7 +401,10 @@
     </div>
         <div id="airattacks" class="collapse quick">
                 <a href="#" data-toggle="tooltip" title="Will destroy a level of the enemy's airforce.">
+
+
     <form method="POST">{% csrf_token %}
+        <p style="margin-top: 1em">What should we target?</p>
 
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">
@@ -412,21 +415,21 @@
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">
                 <a href="#" data-toggle="tooltip" title="Will destroy 1% of enemy GDP and reduce their growth by 5 million.">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="econ">Target economic infrastructure</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="econ">Economic infrastructure</button></a>
         </div>
     </div>
                
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4"> 
             <a href="#" data-toggle="tooltip" title="Will decrease manpower and decrease quality of life and stability, but result in a drop in reputation.">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="cities">Target cities</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="cities">Cities</button></a>
         </div>
     </div>
 
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">    
                 <a href="#" data-toggle="tooltip" title="Will reduce enemy military size by 5% with a minimum of 2k soldiers.">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="army">Target ground forces</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="army">Ground forces</button></a>
         </div>
     </div>        
            
@@ -434,28 +437,28 @@
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">   
                 <a href="#" data-toggle="tooltip" title="Will reduce enemy chemical weapons development, even if they have already completed it">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="chems">Target chemical weapons storage</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="chems">Chemical weapons storage</button></a>
         </div>
     </div>      
 
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">            
                 <a href="#" data-toggle="tooltip" title="Will destroy one factory.">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="industry">Target factories</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="industry">Factories</button></a>
         </div>
     </div>
                 
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">
                 <a href="#" data-toggle="tooltip" title="Will destroy one oil rig.">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="oil">Target oil wells.</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="oil">Oil wells</button></a>
         </div>
     </div>
             
     <div class="row">
         <div class="col-sm-4 col-sm-offset-4">
                 <a href="#" data-toggle="tooltip" title="Will decrease their agricultural level, reducing food production. Reduces reputation. Must have chemical weapons.">
-            <button type="submit" class="btn btn-danger airgroup" name="air" value="orange">Target Agriculture.</button></a>
+            <button type="submit" class="btn btn-danger airgroup" name="air" value="orange">Agriculture</button></a>
         </div>
     </div>
     </form>

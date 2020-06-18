@@ -213,6 +213,7 @@ input:checked + .slider:before {
   margin-top: 3em;
 }
 
+
 </style>
 
 {% if logged_in %}
@@ -321,11 +322,11 @@ input:checked + .slider:before {
           <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"> Moderation <b class="caret"></b></a>
           <ul class="dropdown-menu">
           <li><a href="{% url 'mod:main' %}">Moderation Center</a></li>
-          <li><a href="{% url 'mod:nations' 1 %}">View Nations</a></li>
+          <li><a href="{% url 'mod:nations' %}">View Nations</a></li>
           {% if nation.settings.head_mod %}
           <li><a href="{% url 'mod:mods' %}">Mods</a></li>
           {% endif %}
-          <li><a href="{% url 'mod:reports' 1 %}">Reports</a></li>
+          <li><a href="{% url 'mod:reports' %}">Reports</a></li>
 
         </ul>
         </li>

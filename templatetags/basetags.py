@@ -8,6 +8,8 @@ import nation.turnchange as changes
 
 register = template.Library()
 
+#this is used further down
+#simply in order to cut down on redundant code
 def vaccheck(f):
     def wrap(nation, *args, **kwargs):
         if nation.vacation:

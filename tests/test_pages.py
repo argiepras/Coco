@@ -1,7 +1,10 @@
 from django.test import TestCase, Client
-from nation.models import Nation, Spy
+from django.contrib.auth.models import User
+
+
+from nation.models import Nation, Spy, Market, Alliance
 from nation.testutils import nation_generator, alliance_generator
-from nation.variables import regions
+from nation.variables import regionshort
 """
 Basic tests of urls, mostly checking that they are redirecting when they should
 and they don't return 500 errors
@@ -55,7 +58,6 @@ news/
 """
 
 
-
 class logged_out(TestCase):
     @classmethod
     def setUpTestData(cls):
@@ -73,11 +75,13 @@ class logged_out(TestCase):
         payload = {'username': username, 'password': password}
         response = client.post('/login/', payload)
         self.assertEqual(response.status_code, 302, msg="valid logins should redirect to /main/")
+        response = client.get('/main/')
+        self.assertEqual(response.status_code, 200)
 
     def test_invalid_login(self):
         subject = nation_generator()
         username = subject.user.username
-        password = "password"
+        password = "totallythewrongpassword"
         client = Client()
         payload = {'username': username, 'password': password}
         response = client.post('/login/', payload)
@@ -101,7 +105,7 @@ class logged_out(TestCase):
 
     def test_chat(self):
         response = self.client.get('/chat/')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 301)
 
     def test_regional_discusses(self):
         response = self.client.get('/regiondiscussion/')
@@ -114,9 +118,9 @@ class logged_out(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_regional_rankings(self):
-        for region in regions:
-            response = self.client.get('/rankings/%s' % region)
-            self.assertEqual(response.status_code, 200)
+        for region in regionshort.keys():
+            response = self.client.get('/rankings/?region=%s' % region)
+            self.assertEqual(response.status_code, 200, msg=response.content)
 
         reponse = self.client.get('/rankings/notarealregion')
         self.assertEqual(response.status_code, 404)
@@ -194,11 +198,11 @@ class logged_out(TestCase):
 
     def test_alliances(self):
         response = self.client.get('/alliances/1/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_alliance_rankings(self):
         response = self.client.get('/alliances/rankings/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
 
 
@@ -248,14 +252,16 @@ class logged_out(TestCase):
 
 
 class alliance_less_nation(TestCase):
-    @classmethod
-    def setUpTestData(cls):
+    def setUp(cls):
         c = Client()
+        Market.objects.create()
+        q = User.objects.create_user('aaaa', 'aaa@aaa.aa', 'password')
+        a = Nation.objects.create(user=q)
         nation_generator(15)
-        a = nation_generator()
+        alliance_generator()
         a.spies.create(location=a)
         cls.subject = a
-        c.force_login(a.user)
+        c.force_login(q)
         cls.client = c
 
     def test_news(self):
@@ -276,7 +282,7 @@ class alliance_less_nation(TestCase):
 
     def test_chat(self):
         response = self.client.get('/chat/')
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 301)
 
     def test_regional_discusses(self):
         response = self.client.get('/regiondiscussion/')
@@ -289,7 +295,7 @@ class alliance_less_nation(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_regional_rankings(self):
-        for region in regions:
+        for region in regionshort:
             response = self.client.get('/rankings/%s' % region)
             self.assertEqual(response.status_code, 200)
 
@@ -302,11 +308,11 @@ class alliance_less_nation(TestCase):
 
     def test_recover(self):
         response = self.client.get('/recover/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_register(self):
         response = self.client.get('/register/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_index(self):
         response = self.client.get('/index/')
@@ -321,7 +327,8 @@ class alliance_less_nation(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_nationpage(self):
-        response = self.client.get('/nations/1')
+        index = Nation.objects.all().exclude(pk=self.subject.pk).order_by('?')[0].index
+        response = self.client.get('/nations/%s' % index)
         self.assertEqual(response.status_code, 200)
 
         response = self.client.get('/nations/100000')
@@ -343,9 +350,9 @@ class alliance_less_nation(TestCase):
         response = self.client.get('/alliances/main/chat/')
         self.assertEqual(response.status_code, 302)
 
-#    def test_alliances_mainstats(self):
-#        response = self.client.get('/alliances/main/statistics/')
-#        self.assertEqual(response.status_code, 302)
+    def test_alliances_mainstats(self):
+        response = self.client.get('/alliances/main/statistics/')
+        self.assertEqual(response.status_code, 302)
 
     def test_alliance_bank(self):
         response = self.client.get('/alliances/main/bank/')
@@ -406,11 +413,11 @@ class alliance_less_nation(TestCase):
 
     def test_new_nation(self):
         response = self.client.get('/main/new/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_nation_reset(self):
         response = self.client.get('/main/reset/')
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 302)
 
     def test_intelligence(self):
         response = self.client.get('/main/intelligence/')
@@ -424,15 +431,22 @@ class alliance_less_nation(TestCase):
 
 
 class allianced_player(TestCase):
-    @classmethod
-    def setUpTestData(cls):
+    def setUp(self):
         c = Client()
+        Market.objects.create()
+        q = User.objects.create_user('aaaa', 'aaa@aaa.aa', 'password')
+        a = Nation.objects.create(user=q)
         nation_generator(15)
         alliance = alliance_generator(members=10, officers=2)
-        subject = alliance.members.filter(permissions__template__rank=5)[3]
-        c.force_login(subject.user)
-        cls.client = c
+        alliance_generator(members=10, officers=2)
+        alliance.add_member(a)
+        c.force_login(q)
+        self.client = c
+        a.refresh_from_db()
+        self.subject = a
 
+    def test_has_alliance(self):
+        self.assertTrue(self.subject.has_alliance())
 
     def test_alliances_main(self):
         response = self.client.get('/alliances/main/')
@@ -446,9 +460,9 @@ class allianced_player(TestCase):
         response = self.client.get('/alliances/main/chat/')
         self.assertEqual(response.status_code, 200)
 
-#    def test_alliances_mainstats(self):
-#        response = self.client.get('/alliances/main/statistics/')
-#        self.assertEqual(response.status_code, 302)
+    def test_alliances_mainstats(self):
+        response = self.client.get('/alliances/main/statistics/')
+        self.assertEqual(response.status_code, 302)
 
     def test_alliance_bank(self):
         response = self.client.get('/alliances/main/bank/')
@@ -471,7 +485,7 @@ class allianced_player(TestCase):
         self.assertEqual(response.status_code, 302)
 
     def test_alliances(self):
-        response = self.client.get('/alliances/1/')
+        response = self.client.get('/alliances/2/')
         self.assertEqual(response.status_code, 200)
 
     def test_alliance_rankings(self):
@@ -481,18 +495,22 @@ class allianced_player(TestCase):
 
 
 class alliance_founder(TestCase):
-    @classmethod
-    def setUpTestData(cls):
+    def setUp(self):
         c = Client()
+        Market.objects.create()
+        q = User.objects.create_user('aaaa', 'aaa@aaa.aa', 'password')
+        a = Nation.objects.create(user=q)
         nation_generator(15)
-        alliance = alliance_generator(members=10, officers=2)
-        founder = alliance.members.filter(permissions__template__rank=0).get()
-        founder.user.set_password('password')
-        founder.user.save()
-        payload = {'username': founder.user.username, 'password': 'password'}
-        c.login(**payload)
-        cls.client = c
+        alliance = alliance_generator(founder=a, members=10, officers=2)
+        alliance_generator(members=10, officers=2)
+        c.force_login(q)
+        self.client = c
+        a.refresh_from_db()
+        self.founder = a
 
+    def test_isfounder(self):
+        alliance = Alliance.objects.get(pk=1)
+        self.assertEqual(alliance.founder, self.founder.name)
 
     def test_alliances_main(self):
         response = self.client.get('/alliances/main/')
@@ -506,9 +524,9 @@ class alliance_founder(TestCase):
         response = self.client.get('/alliances/main/chat/')
         self.assertEqual(response.status_code, 200)
 
-#    def test_alliances_mainstats(self):
-#        response = self.client.get('/alliances/main/statistics/')
-#        self.assertEqual(response.status_code, 200)
+    def test_alliances_mainstats(self):
+        response = self.client.get('/alliances/main/statistics/')
+        self.assertEqual(response.status_code, 200)
 
     def test_alliance_bank(self):
         response = self.client.get('/alliances/main/bank/')
@@ -519,7 +537,7 @@ class alliance_founder(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_alliance_cpchange(self):
-        response = self.client.get('/alliances/main/control_panel/change/')
+        response = self.client.get('/alliances/main/control_panel/change/?template=new')
         self.assertEqual(response.status_code, 200)
 
     def test_alliance_applications(self):
@@ -531,7 +549,7 @@ class alliance_founder(TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_alliances(self):
-        response = self.client.get('/alliances/1/')
+        response = self.client.get('/alliances/2/')
         self.assertEqual(response.status_code, 200)
 
     def test_alliance_rankings(self):

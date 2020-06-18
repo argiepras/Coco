@@ -280,6 +280,7 @@ class policytests(TestCase):
 
     def test_prospect(self):
         nation = self.subject
+        nation.subregion = "The Andes"
         nation.oilreserves = 0
         nation.budget = 0
         policy = prospect(nation)
@@ -292,10 +293,12 @@ class policytests(TestCase):
         self.assertGreater(nation.oilreserves, 0)
         self.assertEqual(nation.budget, 0)
 
+
         #check that ME cost reduction works
         cost = policy.cost['budget']
         oilgain = policy.gain['oilreserves']
         nation.subregion = 'Arabia'
+        nation.save()
         MEcost = prospect(nation).cost['budget']
         MEgain = prospect(nation).gain['oilreserves']
         self.assertGreater(cost, MEcost)

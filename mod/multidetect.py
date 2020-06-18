@@ -9,7 +9,7 @@ import math
 
 
 #for convenience sake this function is all we import into tasks.py
-#neatly tying it all together and letting tasks.py just feed nations into it
+#neatly tying it all together and letting tasks.py just feed nations into them
 def cron_detect(nation):
     trade_balance_check(nation)
     trade_balance_changes(nation)
@@ -21,7 +21,16 @@ def cron_detect(nation):
     outgoing_aid_by_value(nation)
     incoming_aid_check(nation)
     nation.multimeter.save()
+    return generate_reports(nation)
 
+
+def generate_reports(nation):
+    if nation.multimeter.average() > 75 or nation.multimeter.highest() >= 90:
+        nation.reported.create(
+            automatic=True,
+            reporter=None,
+            reason="Likely multi",
+        )
 
 
 def trade_balance_check(nation):

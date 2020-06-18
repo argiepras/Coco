@@ -13,44 +13,40 @@
         </div>
     </div>
 <div class="bigspacer">
-<div> 
-<ul class="pagination">
-{% for page in pages %}
-    <li><a href="{% url 'mod:nation_reports' target.index page.page %}">{{ page.page }}</a></li>
-{% endfor %}
-</ul> 
-</div>
+   {% include "nation/pagination.html" %} 
     <table class="table table-striped">
         <thead>
             <td>Reported</td>
-            <td>Type</td>
             <td>Claimed</td>
             <td>Investigating mod</td>
             <td>Time Reported</td>
-            <td>Details</td>
             <td></td>
         </thead>
         <tbody>
             {% for report in reports %}
                 <tr>
-                    <td><a href="{{ report.reported.get_modview_url }}">
-                    {{ report.reported.name }}
-                    </a></td>
-                    <td>{{ war|wartype:target }}</td>
-                    <td>{{ war|outcome:target }}</td>
-                    <td>{{ war|losses:target }}</td>
-                    <td>{{ war.timestart|date:"o/m/d G:i" }}</td>
-                    {% if war.war.over %}
-                    <td>{{ war.timeend|date:"o/m/d G:i" }}</td>
-                    {% else %}
-                    <td>N/A</td>
-                    {% endif %}
                     <td>
-                        <a href="{{ war.get_absolute_url }}">
-                            <button class="btn btn-default">
-                                View Details
-                            </button>
+                        <a href="{{ report.reported.get_modview_url }}">
+                            {{ report.reported.name }}
                         </a>
+                    </td>
+                    <td>
+                        {% if report.investigator %}
+                            <span class="green">Yes</span>
+                        {% else %}
+                            <span class="red">No</span>
+                        {% endif %}
+                    </td>
+                     <td>
+                        {% if report.investigator %}
+                            {{ report.investigator.name }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    <td>{{ report.timestamp|date:"o/m/d G:i" }}</td>
+                    <td>
+                        <button class="btn btn-default">See more</button>
                     </td>
                 </tr>
             {% endfor %}

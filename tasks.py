@@ -203,7 +203,7 @@ def turnchange():
             except OperationalError:
                 nation.refresh_from_db()
                 continue
-            eventhandler.trigger_sevents(nation)
+            eventhandler.trigger_events(nation)
             trade_balancing(nation)
             break
     return milturn()

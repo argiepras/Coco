@@ -14,15 +14,7 @@
     </div>
 <div class="bigspacer">
 <div> 
-<ul class="pagination">
-{% for page in pages %}
-    {% if direction == 'out' %}
-        <li><a href="{% url 'mod:nation_outgoing' target.index page.page %}">{{ page.page }}</a></li>
-    {% else %}
-        <li><a href="{% url 'mod:nation_incoming' target.index page.page %}">{{ page.page }}</a></li>
-    {% endif %}
-{% endfor %}
-</ul> 
+    {% include "nation/pagination.html" %}
 </div>
 <form method="POST">{% csrf_token %}
     <table class="table table-striped">

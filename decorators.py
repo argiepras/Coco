@@ -23,6 +23,15 @@ def alliance_required(f):
     wrap.__name__ = f.__name__
     return wrap
 
+def officer_required(f):
+    def wrap(request, *args, **kwargs):
+        if not request.user.nation.permissions.panel_access():
+            return redirect('alliance:main')
+        return f(request, *args, **kwargs)
+    wrap.__doc__ = f.__doc__
+    wrap.__name__ = f.__name__
+    return wrap
+
 def nation_required(f):
     def wrap(request, *args, **kwargs):
         try:
@@ -71,6 +80,7 @@ def novacation(f):
 
 
 def mod_required(f):
+    @nation_required
     def wrap(request, *args, **kwargs):
         if request.user.nation.settings.mod:
             return f(request, *args, **kwargs)
@@ -81,6 +91,7 @@ def mod_required(f):
 
 
 def headmod_required(f):
+    @mod_required
     def wrap(request, *args, **kwargs):
         if request.user.nation.settings.head_mod:
             return f(request, *args, **kwargs)

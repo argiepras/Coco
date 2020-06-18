@@ -1,0 +1,223 @@
+h1, h2, h3 {
+  font-weight: 300;
+}
+
+.timeline {
+  position: relative;
+  width: 100%;
+  margin-top: 1em;
+  min-height: 10em;
+}
+.timeline:before {
+  content: '';
+  position: absolute;
+  height: 100%;
+  width: 5px;
+  background: #dddddd;
+  left: 0;
+}
+.timeline h2 {
+  background: #dddddd;
+  max-width: 6em;
+  margin: 0 auto 1em;
+  position: relative;
+  clear: both;
+}
+.timeline ul {
+  list-style: none;
+  padding: 0 0 0 1em;
+  z-index: ;
+}
+.timeline_box {
+  background: rgba(80, 80, 80, 0.5);
+  padding: 1em;
+  border-radius: 1em;
+  margin-bottom: 2em;
+}
+
+.right-side:before {
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: 1em solid #dddddd;
+  border-left: 1em solid transparent;
+  position: absolute;
+  left: 0em;
+  top: 20%;
+}
+
+.left-side:after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: 1em solid #444444;
+  border-right: 1em solid transparent;
+  position: absolute;
+  right: 0em;
+  top: 20%;
+}
+.timeline h3 {
+  margin-top: 0;
+}
+.timeline time {
+  font-style: italic;
+}
+
+.boxleft {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.boxright {
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.boxmid {
+  display: flex;
+  flex-direction: row;
+}
+
+.tl_attack {
+  flex: 1 1 auto;
+  background: rgba(80, 80, 80, 0.5);
+  padding: 1em;
+  border-radius: 1em;
+  margin-bottom: 2em;
+  max-width: 90%;
+}
+
+.turnbox {
+  flex: 1 1 auto;
+  background: #dddddd;
+  color: #121212;
+  position: relative;
+  padding: 0.5em;
+  border-top-right-radius: 0.5em;
+  border-bottom-right-radius: 0.5em;
+  margin-bottom: 2em;
+  max-width: 24%;
+  min-width: 120px;
+}
+
+
+.arrow {
+    border-right: 2px solid; 
+    border-bottom: 2px solid;
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+    transform: rotate(-45deg);
+}
+
+.up {
+    transform: rotate(-135deg);
+    -webkit-transform: rotate(-135deg);
+}
+
+.down {
+    transform: rotate(45deg);
+    -webkit-transform: rotate(45deg);
+}
+
+
+
+@media screen and (max-width: 39em) {
+
+.boxright:after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: 1em solid rgba(80, 80, 80, 0.5);
+  border-left: 1em solid transparent;
+  position: relative;
+  top: 15px;
+}
+
+
+.boxleft:after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-top: 1em solid rgba(80, 80, 80, 0.5);
+  border-left: 1em solid transparent;
+  position: relative;
+  top: 15px;
+}
+}
+
+@media screen and (min-width: 40em) {
+
+  .timeline:before {
+    left: 50%;
+  }
+
+  .left-side:before {
+    border-top: 1em solid blue;
+    border-right: 1em solid transparent;
+    right: -1em;
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    left: auto;
+  }
+
+  .boxleft {
+  display: flex;
+  flex-direction: row;
+}
+
+  .boxright {
+    display: flex;
+    flex-direction: row-reverse;
+  }
+
+  .tl_attack {
+    flex: 1 1 auto;
+    background: rgba(80, 80, 80, 0.5);
+    padding: 1em;
+    border-radius: 1em;
+    margin-bottom: 2em;
+    max-width: 40%;
+  }
+
+  .boxright:after {
+    content: '';
+    width: 0;
+    height: 0;
+    border-top: 1em solid rgba(80, 80, 80, 0.5);
+    border-left: 1em solid transparent;
+    position: relative;
+    top: 15px;
+  }
+
+
+  .boxleft:after {
+    content: '';
+    width: 0;
+    height: 0;
+    border-top: 1em solid rgba(80, 80, 80, 0.5);
+    border-right: 1em solid transparent;
+    position: relative;
+    top: 15px;
+  }
+  .turnbox {
+    flex: 1 1 auto;
+    background: #dddddd;
+    color: #121212;
+    position: relative;
+    padding: 0.5em;
+    border-radius: 0.5em;
+    margin-bottom: 2em;
+    max-width: 15%;
+    min-width: 2em;
+    white-space: nowrap; 
+  }
+
+    .boxmid {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+  }
+
+}

@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect
 from django.db.models import Count, Q
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
+from django.http import HttpResponse
 from django.views.generic.base import TemplateView
 from django.views.generic.list import ListView
 from django.db import transaction
@@ -10,7 +11,7 @@ from django.contrib.auth.models import User
 from nation.models import *
 from .forms import *
 import nation.news as news
-from nation.decorators import alliance_required, nation_required
+from nation.decorators import alliance_required, nation_required, officer_required
 import nation.utilities as utils
 import nation.turnchange as turnchange
 from . import memberactions as ma
@@ -115,16 +116,23 @@ def alliancepage(request, alliancepk, msg=False):
     })
     return render(request, 'alliance/alliance.html', context)
 
-
+@login_required
+@nation_required
+@alliance_required
+@officer_required
 def stats(request):
-    pass
+    return HttpResponse()
 
 
 @login_required
 @nation_required
 @alliance_required
+@officer_required
 def bankinterface(request):
     alliance = request.user.nation.alliance
+    nation = request.user.nation
+    if not nation.permissions.has_permission('banking'):
+        return redirect('alliance:main')
     result = False
     if request.POST:
         if 'delete' in request.POST:
@@ -182,6 +190,8 @@ def alliancedeclarations(request):
 
 
 
+@login_required
+@nation_required
 @alliance_required
 def chat(request):
     context = {}

@@ -15,12 +15,13 @@ import nation.variables as v
 
 
 @mod_required
-def nation_actions(request, nation_id, page):
+def nation_actions(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
     context = {'target': target}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     utils.pagecheck(nation, target, "all actions")
 
     query = target.actionlogs.all().order_by('-pk')
@@ -60,13 +61,20 @@ def aidpage(request, nation_id):
         'direction': 'arrow-' + direction,
     }
 
-    """incoming = calculaid(nation.incoming_aid, 'sender')
+    """
+    disabled because not implemented for sqlite
+    incoming = calculaid(nation.incoming_aid, 'sender')
     if incoming:
         context.update({'incoming': {'player': incoming[0], 'count': incoming[1]}})
     outgoing = calculaid(nation.outgoing_aid, 'reciever')
     if outgoing:
         context.update({'outgoing': {'player': outgoing[0], 'count': outgoing[1]}})
         """
+
+    #This section is for the totals regarding aid
+    #like how much money has been sent or recieved
+    #in a specfic order so dicts don't derp it
+    #this data should be cached at some point to avoid the excess database hits
     ordering = ['budget', 'rm', 'mg', 'oil', 'food', 'troops', 'weapons', 'research', 'uranium', 'nuke']
     totals = []
     for resource in ordering:
@@ -102,11 +110,12 @@ def calculaid(aid, var):
 
 
 @mod_required
-def nation_incoming(request, nation_id, page):
+def nation_incoming(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     context = {'target': target, 'title': 'All incoming aid', 'direction': 'in'}
     utils.pagecheck(nation, target, "incoming aid")
     query = target.incoming_aid.all().order_by('-pk')
@@ -118,11 +127,12 @@ def nation_incoming(request, nation_id, page):
     return render(request, 'mod/aid.html', context)
 
 @mod_required
-def nation_outgoing(request, nation_id, page):
+def nation_outgoing(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     context = {'target': target, 'title': 'All outgoing aid', 'direction': 'out'}
     utils.pagecheck(nation, target, "outgoing aid")
     query = target.outgoing_aid.all().order_by('-pk')
@@ -134,12 +144,13 @@ def nation_outgoing(request, nation_id, page):
     return render(request, 'mod/aid.html', context)
 
 @mod_required
-def nation_allaid(request, nation_id, page):
+def nation_allaid(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
     context = {'target': target}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     utils.pagecheck(nation, target, "all aid")
     query = Aidlog.objects.filter(Q(sender=target)|Q(reciever=target)).order_by('-pk')
     paginator, actionlist = utils.paginate_me(query, 50, page)
@@ -150,15 +161,16 @@ def nation_allaid(request, nation_id, page):
     return render(request, 'mod/allaid.html', context)
 
 @mod_required
-def nation_wars(request, nation_id, page):
+def nation_wars(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
     context = {'target': target}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     utils.pagecheck(nation, target, "all wars")
-    query = Warlog.objects.filter(Q(attacker=target)|Q(defender=target)).order_by('-pk')
-    paginator, actionlist = utils.paginate_me(query, 50, page)
+    query = War.objects.filter(Q(attacker=target)|Q(defender=target)).order_by('-pk')
+    paginator, actionlist = utils.paginate_me(query, 50, request.GET.get('page', 1))
     context.update({
             'pages': utils.pagination(paginator, actionlist),
             'reports': actionlist,
@@ -167,12 +179,13 @@ def nation_wars(request, nation_id, page):
 
 
 @mod_required
-def nation_reports(request, nation_id, page):
+def nation_reports(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
     context = {'target': target}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     utils.pagecheck(nation, target, "all wars")
     query = target.reports.all().order_by('-pk')
     paginator, actionlist = utils.paginate_me(query, 50, page)
@@ -184,12 +197,13 @@ def nation_reports(request, nation_id, page):
 
 
 @mod_required
-def nation_logins(request, nation_id, page):
+def nation_logins(request, nation_id):
     nation = request.user.nation
     target = utils.get_player(nation_id)
     if target == False:
         return render(request, 'mod/not_found.html')
     context = {'target': target}
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     utils.pagecheck(nation, target, "all wars")
     query = target.login_times.all().order_by('-pk')
     paginator, actionlist = utils.paginate_me(query, 50, page)
@@ -200,8 +214,7 @@ def nation_logins(request, nation_id, page):
     return details(request, nation_id, page, 'logins')
 
 
-def details(request, nation_id, page, template):
-
+def details(request, nation_id, template):
     if template == 'logins':
         context = basedetails(request, nation_id, 'login_times', 'all logins')
 

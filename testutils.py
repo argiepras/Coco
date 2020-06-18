@@ -13,15 +13,19 @@ def ip_generator(amount=1):
 def namegen():
     return ''.join(choice(string.ascii_letters) for x in range(8))
 
+def mailgen():
+    return "%s@gmail.com" % namegen()
+
 
 def nation_generator(amount=1, random=True):
     nations = []
     t = ID.objects.get_or_create()[0]
     for x in range(amount):
         index = x + t.index
+        user = User.objects.create(username=namegen(), password='password')
         if random:
             q = Nation.objects.create(
-                user=User.objects.create(username=namegen()),
+                user=user,
                 index=index, 
                 name=''.join(choice(string.ascii_letters) for x in range(8)),
                 creationip=ip_generator()[0],
@@ -39,10 +43,9 @@ def nation_generator(amount=1, random=True):
             for field in Baseattrs._meta.fields:
                 setattr(q, field.name, randint(0, 100))
             q.save()
-
         else:
             q = Nation.objects.create(
-                user=User.objects.create(username=namegen()),
+                user=user,
                 index=index, 
                 name=''.join(choice(string.ascii_letters) for x in range(8)),
                 creationip=ip_generator()[0],
@@ -54,8 +57,9 @@ def nation_generator(amount=1, random=True):
     return (nations if amount > 1 else nations[0])
 
 
-def alliance_generator(founder=nation_generator(), members=0, officers=0):
-    founder = Nation.objects.get(pk=founder.pk)
+def alliance_generator(founder=None, members=0, officers=0):
+    if founder == None:
+        founder = nation_generator()
     alliance = Alliance.objects.create(name=namegen(), founder=founder.name)
     if members:
         for member in nation_generator(members):
@@ -129,6 +133,7 @@ def find_prints():
         with open(file, 'r') as open_file:
             for line in open_file:
                 if 'print ' in line:
-                    prints[file] = True
+                    if not 'script' in file:
+                        prints[file] = True
 
     return prints

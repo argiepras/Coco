@@ -200,6 +200,8 @@ class generaltests(TestCase):
 
     def test_unicost(self):
         nation = nation_generator(random=False)
+        nation.subregion = "Brasilia"
+        nation.save()
         policy = university(nation)
         cost = policy.cost
         nation.closed_universities = 1
@@ -209,12 +211,14 @@ class generaltests(TestCase):
 
         nation.refresh_from_db()
         nation.subregion = "China"
+        nation.save()
         policy = university(nation)
         self.assertLess(sum(policy.cost.values()), sum(cost.values()), msg="cost should decrease in Asia")
 
 
     def test_closinguni(self):
         nation = nation_generator(random=False)
+        nation.subregion = "Brasilia"
         policy = closeuni(nation)
         self.assertFalse(policy.can_apply())
         self.assertEqual(nation.closed_universities, 0)

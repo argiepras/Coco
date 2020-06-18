@@ -68,6 +68,9 @@ def control_panel_pages(permissions, page):
 
 
 #this here creates new/alters existing permission templates
+@login_required
+@nation_required
+@alliance_required
 def change(request):
     nation = request.user.nation
     alliance = request.user.nation.alliance

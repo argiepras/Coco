@@ -76,7 +76,7 @@
             <p class="leftie">Last 10 reports made</p>
         </div>
         <div class="col-xs-4"> 
-            <a href="{% url 'mod:nation_reports' target.index 1 %}">
+            <a href="{% url 'mod:nation_reports' target.index  %}">
             	<button class="btn btn-default">See all</button>
             </a>
         </div>
@@ -106,7 +106,7 @@
             <p class="leftie">Recent aid</p>
         </div>
         <div class="col-xs-4"> 
-            <a href="{% url 'mod:nation_outgoing' target.index 1 %}">
+            <a href="{% url 'mod:nation_aid' nation.index %}">
             	<button class="btn btn-default">See all</button>
             </a>
         </div>
@@ -119,7 +119,7 @@
             <td>Type</td>
             <td>Timestamp</td>
         <tbody>
-            {% for aid in aids %}
+            {% for aid in aids %} {% comment %} hehehehehehee {% endcomment %}
                 <tr>
                     <td><a href="{{ aid.reciever.get_modview_url }}">
                     {{ aid.reciever }}
@@ -144,7 +144,7 @@
             <p class="leftie">Last 10 wars</p>
         </div>
         <div class="col-xs-4"> 
-            <a href="{% url 'mod:nation_wars' target.index 1 %}">
+            <a href="{% url 'mod:nation_wars' target.index %}">
             	<button class="btn btn-default">See all</button>
             </a>
         </div>
@@ -167,13 +167,13 @@
                     <td>{{ war|wartype:target }}</td>
                     <td>{{ war|outcome:target }}</td>
                     <td>{{ war|losses:target }}</td>
-                    <td>{{ war.timestart|date:"o/m/d G:i" }}</td>
-                    {% if war.war.over %}
+                    <td>{{ war.timestamp|date:"o/m/d G:i" }}</td>
+                    {% if war.over %}
                     <td>{{ war.timeend|date:"o/m/d G:i" }}</td>
                     {% else %}
                     <td>N/A</td>
                     {% endif %}
-                    <td><a href="{{ war.get_absolute_url }}">
+                    <td><a href="{{ war.get_mod_url }}">
                     	<button class="btn btn-default">
                     		View details
                     	</button>
@@ -189,7 +189,7 @@
             <p class="leftie">Last 10 actions</p>
         </div>
         <div class="col-xs-4"> 
-            <a href="{% url 'mod:nation_actions' target.index 1 %}">
+            <a href="{% url 'mod:nation_actions' target.index %}">
             	<button class="btn btn-default">See all</button>
             </a>
         </div>
@@ -203,7 +203,7 @@
             {% for log in actionlogs %}
                 <tr>
                     <td>{{ log.action }}</td>
-                    <td>{{ log.cost }} + {{ log.total_cost }}</td>
+                    <td>{{ log.cost|costdisplay }}</td>
                     <td>{{ log.timestamp|date:"o/m/d G:i" }}</td>
                 </tr>
             {% endfor %}
@@ -213,10 +213,10 @@
 
     <div class="row" style="margin: 1em; margin-top: 5em">
         <div class="col-xs-7 col-xs-offset-1">
-            <p class="leftie">Last 10 login times</p>
+            <p class="leftie">Last 10 logins</p>
         </div>
         <div class="col-xs-4"> 
-            <a href="{% url 'mod:nation_logins' target.index 1 %}">
+            <a href="{% url 'mod:nation_logins' target.index %}">
             	<button class="btn btn-default">See all</button>
             </a>
         </div>

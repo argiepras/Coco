@@ -17,10 +17,11 @@ import nation.variables as v
 ## Actions made
 
 @mod_required
-def reports(request, page):
+def reports(request):
     context = {}
     nation = request.user.nation
     result = False
+    page = (request.GET['page'] if 'page' in request.GET else 1)
     if request.method == "POST":
         if 'claim' in request.POST:
             claimed = Report.objects.get(pk=request.POST['claim'])
@@ -33,7 +34,7 @@ def reports(request, page):
             result = "Report has been released."
 
 
-    reportquery = Report.objects.all().order_by('investigated')
+    reportquery = Report.objects.all()
     paginator, actionlist = utils.paginate_me(reportquery, 50, page)
     context.update({
             'result': result,

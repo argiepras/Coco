@@ -55,14 +55,16 @@
 <p>There are no global declarations yet! Be the first to make one!</p>
 
 {% endif %}
-<form method="POST">{% csrf_token %}
-<p><h5>Declarations costs ${{ deccost }}k each</h5></p>
-<div class="row">
-    <div class="col-sm-4 col-sm-offset-4">
-        {{ decform.message }}
+    {% if logged_in %}
+    <form method="POST">{% csrf_token %}
+    <p><h5>Declarations costs ${{ deccost }}k each</h5></p>
+    <div class="row">
+        <div class="col-sm-4 col-sm-offset-4">
+            {{ decform.message }}
+        </div>
     </div>
-</div>
-    <div><button type="submit" class="btn" style="margin: 20px" name="declare">Declare</button></div>
-</form>
+        <div><button type="submit" class="btn" style="margin: 20px" name="declare">Declare</button></div>
+    </form>
+{% endif %}
 </div>
 {% endblock %}

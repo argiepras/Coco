@@ -67,8 +67,7 @@ def main(request):
 
     context.update({
         'result': result,
-        'reportcount': Report.objects.filter(investigated=False).count(),
-        'suspectcount': Suspected.objects.filter(checked=False).count(),
+        'reportcount': Report.objects.filter(closed=False).count(),
         'globalcommform': globalcommform(),
         'quickactionform': quickactionform(),
         'viewplayerform': viewplayerform(),
@@ -109,7 +108,9 @@ def mods(request):
     return render(request, 'mod/mods.html', context)
 
 
-
+@mod_required
+def wars(request, war_id):
+    pass
 
 @mod_required
 def wardetails(request, war_id):
@@ -131,10 +132,31 @@ def wardetails(request, war_id):
                 reverse="not yet implemented",
                     )
             return redirect('mod:overview')
-            
+    
+    #we need to fetch all the attacks and arrange them for display
+    turns = war.attacks.all().values_list('turn', flat=True)
+    turns = list(set(turns)) #strip away multiples
+    #because this will be used as the iterable base in the template
+
+    ##break down into turns so it's easily iterable in the template
+    wardisplay = []
+    for turn in turns:
+        atk = {'turn': turn}
+        attacks = []
+        for attack in war.attacks.filter(turn=turn):
+            x = {}
+            x['side'] = ('left' if attack.attacker == nation else 'right')
+            x['attack'] = attack
+            attacks.append(x)
+        atk['attacks'] = attacks
+        wardisplay.append(atk)
+
+
+
     context.update({
         'reasonform': reasonform(),
         'war': war,
+        'wardata': wardisplay,
     })
     return render(request, 'mod/war.html', context)
 
@@ -167,7 +189,7 @@ def mod(request, modid):
     return render(request, 'mod/modpage.html', context)
 
 @mod_required
-def nation_overview(request, page):
+def nation_overview(request):
     context = {}
     if request.method == "POST":
         if 'search' in request.POST:
@@ -184,7 +206,7 @@ def nation_overview(request, page):
             else:
                 context.update({'result': 'Invalid input'})
     query = Nation.objects.filter(deleted=False, reset=False)
-    paginator, actionlist = utils.paginate_me(query, 50, page)
+    paginator, actionlist = utils.paginate_me(query, 50, request.GET.get('page', 1))
     context.update({
             'pages': utils.pagination(paginator, actionlist),
             'nations': actionlist,
